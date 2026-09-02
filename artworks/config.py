@@ -1,7 +1,9 @@
 import os
+import time
 from datetime import timedelta
 
 from sqlalchemy import inspect, text
+from sqlalchemy.exc import SQLAlchemyError
 
 from artworks.extensions import db
 
@@ -40,12 +42,21 @@ def _add_column(table: str, column: str, ddl: str) -> None:
     columns = {col["name"] for col in inspector.get_columns(table)}
     if column in columns:
         return
-    db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}"))
-    db.session.commit()
+    try:
+        db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}"))
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
 
 
 def ensure_schema() -> None:
-    db.create_all()
+    for _ in range(6):
+        try:
+            db.create_all()
+            break
+        except SQLAlchemyError:
+            db.session.rollback()
+            time.sleep(0.5)
     is_pg = db.engine.dialect.name == "postgresql"
     bool_false = "BOOLEAN DEFAULT FALSE" if is_pg else "BOOLEAN DEFAULT 0"
     dt_type = "TIMESTAMP" if is_pg else "DATETIME"
@@ -64,5 +75,8 @@ def ensure_schema() -> None:
 
     from artworks.seed import promote_admins, seed_examples
 
-    promote_admins()
-    seed_examples()
+    try:
+        promote_admins()
+        seed_examples()
+    except SQLAlchemyError:
+        db.session.rollback()
