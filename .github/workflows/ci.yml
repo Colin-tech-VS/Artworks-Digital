@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Lint et tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer les dépendances de développement
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          if [ -f requirements-dev.txt ]; then
+            pip install -r requirements-dev.txt
+          elif [ -f package.json ]; then
+            npm ci
+          else
+            echo "Aucun fichier requirements-dev.txt ou package.json."
+          fi
+
+      - name: Lint
+        run: |
+          set -euo pipefail
+          if command -v ruff >/dev/null 2>&1; then
+            ruff check .
+          elif command -v eslint >/dev/null 2>&1 || [ -x node_modules/.bin/eslint ]; then
+            npx eslint .
+          else
+            echo "Aucun test/lint configuré — vérifiez manuellement."
+          fi
+
+      - name: Tests
+        run: |
+          set -euo pipefail
+          if command -v pytest >/dev/null 2>&1; then
+            pytest
+          elif find . -type f \( -name 'test_*.py' -o -name '*_test.py' \) ! -path './.git/*' | grep -q .; then
+            python -m unittest discover -v
+          else
+            echo "Aucun test/lint configuré — vérifiez manuellement."
+          fi
