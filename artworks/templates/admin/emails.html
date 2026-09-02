@@ -6,7 +6,7 @@
   <div>
     <p class="eyebrow">Courrier</p>
     <h1>Emails</h1>
-    <p class="lead-sm">{% if mail_ok %}Envoi SMTP actif.{% else %}Réception interne active. Branchez MAIL_SERVER pour l’envoi réel.{% endif %}</p>
+    <p class="lead-sm">{% if mail_ok %}Envoi et réception via contact@artworksdigital.fr.{% else %}Les messages du site restent ici. Ajoutez MAIL_PASSWORD pour livrer et lire la boîte.{% endif %}</p>
   </div>
   <a class="btn btn-ink" href="{{ url_for('admin.compose') }}">Nouveau message</a>
 </section>

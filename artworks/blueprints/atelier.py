@@ -10,6 +10,7 @@ from artworks.mailer import send_email
 from artworks.models import Artist, MailMessage, Work
 from artworks.plans import active_offers, get_offer
 from artworks.slugs import unique_slug
+from artworks.mistral import mistral_ready
 from artworks.stripe_billing import cancel_to_free, checkout_url, portal_url, stripe_ready
 
 atelier_bp = Blueprint("atelier", __name__, url_prefix="/atelier")
@@ -151,6 +152,7 @@ def ai_tools():
         advanced=current_user.has_feature("priority"),
         draft=draft,
         works=works,
+        mistral_ok=mistral_ready(),
     )
 
 

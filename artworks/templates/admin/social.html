@@ -1,0 +1,87 @@
+{% extends "admin/shell.html" %}
+{% block title %}Réseaux — Admin{% endblock %}
+
+{% block admin %}
+<section class="atelier-head">
+  <div>
+    <p class="eyebrow">Diffusion</p>
+    <h1>Autopublication</h1>
+    <p class="lead-sm">Facebook et Instagram sont branchés par jeton de page. DeviantArt et Pinterest se connectent en OAuth.</p>
+  </div>
+</section>
+
+<ul class="stat-row">
+  {% for key, item in status.items() %}
+    <li>
+      <span>{{ item.name or "—" }}</span>
+      <em>{{ key }}</em>
+      <small class="{% if item.connected %}up{% else %}down{% endif %}">
+        {% if item.connected %}connecté{% elif item.configured %}à connecter{% else %}absent{% endif %}
+      </small>
+    </li>
+  {% endfor %}
+</ul>
+
+<div class="atelier-actions">
+  {% if status.deviantart.configured and not status.deviantart.connected %}
+    <a class="btn btn-ghost" href="{{ url_for('admin.social_oauth_start', platform='deviantart') }}">Connecter DeviantArt</a>
+  {% endif %}
+  {% if status.pinterest.configured and not status.pinterest.connected %}
+    <a class="btn btn-ghost" href="{{ url_for('admin.social_oauth_start', platform='pinterest') }}">Connecter Pinterest</a>
+  {% endif %}
+  {% if status.deviantart.connected %}
+    <form method="post" action="{{ url_for('admin.social_disconnect', platform='deviantart') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-ghost" type="submit">Déconnecter DeviantArt</button>
+    </form>
+  {% endif %}
+  {% if status.pinterest.connected %}
+    <form method="post" action="{{ url_for('admin.social_disconnect', platform='pinterest') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-ghost" type="submit">Déconnecter Pinterest</button>
+    </form>
+  {% endif %}
+</div>
+
+<form class="sheet" method="post" novalidate>
+  {{ form.hidden_tag() }}
+  <label>
+    Œuvre publiée
+    <select name="work_id">
+      <option value="">— sans œuvre —</option>
+      {% for work in works %}
+        <option value="{{ work.id }}">{{ work.artist.display_name }} — {{ work.title }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>{{ form.title.label }}{{ form.title() }}</label>
+  <label>{{ form.message.label }}{{ form.message(rows=6) }}
+    {% for error in form.message.errors %}<small>{{ error }}</small>{% endfor %}
+  </label>
+  <div class="split">
+    <label>{{ form.link.label }}{{ form.link(placeholder="https://www.artworksdigital.fr/…") }}</label>
+    <label>{{ form.image_url.label }}{{ form.image_url() }}</label>
+  </div>
+  <div class="flag-grid">
+    <label class="check">{{ form.facebook() }}<span>Facebook</span></label>
+    <label class="check">{{ form.instagram() }}<span>Instagram</span></label>
+    <label class="check">{{ form.pinterest() }}<span>Pinterest</span></label>
+    <label class="check">{{ form.deviantart() }}<span>DeviantArt</span></label>
+  </div>
+  <button class="btn btn-ink" type="submit">Publier</button>
+</form>
+
+{% if logs %}
+  <section class="panel">
+    <header class="panel-head"><h2>Historique</h2></header>
+    <ul class="mini-table">
+      {% for item in logs %}
+        <li>
+          <strong>{{ item.platform }} · {{ item.status }}</strong>
+          <span>{{ item.title or item.body[:80] }}{% if item.error %} — {{ item.error }}{% endif %}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endif %}
+{% endblock %}

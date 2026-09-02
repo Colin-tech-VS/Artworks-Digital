@@ -6,7 +6,7 @@
   <div>
     <p class="eyebrow">Pilotage</p>
     <h1>Tableau de bord</h1>
-    <p class="lead-sm">{{ total_artists }} ateliers · {{ rooms }} salles ouvertes · {{ total_works }} œuvres · MRR {{ mrr_label }}{% if not stripe_ok %} · Stripe non branché{% endif %}</p>
+    <p class="lead-sm">{{ total_artists }} ateliers · {{ rooms }} salles ouvertes · {{ total_works }} œuvres · MRR {{ mrr_label }} · {% if stripe_ok %}Stripe{% else %}Stripe off{% endif %} · {% if mail_ok %}SMTP{% else %}SMTP off{% endif %} · {% if mistral_ok %}Mistral{% else %}Mistral off{% endif %}</p>
   </div>
   <div class="range-tabs">
     <a href="?days=7" class="{% if days == 7 %}is-on{% endif %}">7 jours</a>

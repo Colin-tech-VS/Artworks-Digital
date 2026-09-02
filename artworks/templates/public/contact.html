@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Contact — Artworksdigital{% endblock %}
+{% block description %}Écrire à Artworksdigital. Une question, un atelier, une galerie.{% endblock %}
+{% block body_class %}contact-page{% endblock %}
+
+{% block content %}
+<section class="room-head">
+  <p class="eyebrow">Écrire</p>
+  <h1>Contact</h1>
+  <p class="lead">Un message arrive sur contact@artworksdigital.fr. Pas de formulaire anonyme, pas de newsletter forcée.</p>
+</section>
+
+<section class="contact-block">
+  {% if sent %}
+    <p class="flash flash-ok">Message envoyé. Merci.</p>
+  {% endif %}
+  <form class="sheet contact-form" method="post" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="split">
+      <label>{{ form.name.label }}{{ form.name() }}
+        {% for error in form.name.errors %}<small>{{ error }}</small>{% endfor %}
+      </label>
+      <label>{{ form.email.label }}{{ form.email() }}
+        {% for error in form.email.errors %}<small>{{ error }}</small>{% endfor %}
+      </label>
+    </div>
+    <label>{{ form.message.label }}{{ form.message(rows=6) }}
+      {% for error in form.message.errors %}<small>{{ error }}</small>{% endfor %}
+    </label>
+    <button class="btn btn-ink" type="submit">Envoyer</button>
+  </form>
+</section>
+{% endblock %}

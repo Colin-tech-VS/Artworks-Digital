@@ -1,15 +1,18 @@
 from functools import wraps
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
 from markupsafe import Markup
 from sqlalchemy import func
 
 from artworks.admin_auth import admin_logout, require_admin, try_admin_login
 from artworks.analytics import breakdown, kpis, series, sparkline_svg, top_paths
 from artworks.extensions import db
-from artworks.forms import AdminLoginForm, ComposeForm, OfferForm
-from artworks.mailer import mail_configured, send_email
-from artworks.models import Artist, MailMessage, Offer, PageView, SubscriptionEvent, Work
+from artworks.forms import AdminLoginForm, ComposeForm, OfferForm, SocialPublishForm
+from artworks.mailer import fetch_inbox, mail_configured, send_email
+from artworks.mistral import mistral_ready
+from artworks.models import Artist, MailMessage, Offer, PageView, SocialPost, SubscriptionEvent, Work
+from artworks.seo import absolute_media, canonical_url
+from artworks.social import DeviantArt, Pinterest, delete_token, platform_status, publish as publish_social
 from artworks.plans import all_offers, get_offer
 from artworks.stripe_billing import apply_plan, stripe_ready, sync_offers_to_stripe
 
@@ -87,6 +90,8 @@ def overview():
         total_works=Work.query.count(),
         mail_ok=mail_configured(),
         stripe_ok=stripe_ready(),
+        mistral_ok=mistral_ready(),
+        social=platform_status(),
         plan_counts=plan_counts,
         offers=catalog,
         mrr_label=f"{mrr_cents / 100:.2f}".replace(".", ",") + " €",
@@ -116,6 +121,10 @@ def analytics():
 @admin_bp.route("/emails")
 @admin_required
 def emails():
+    try:
+        fetch_inbox()
+    except Exception:
+        db.session.rollback()
     folder = request.args.get("folder", "in")
     query = MailMessage.query.order_by(MailMessage.created_at.desc())
     if folder == "out":
@@ -314,3 +323,112 @@ def assign_plan(artist_id: int):
     apply_plan(artist, offer.key, status="active", note="Assigné par admin")
     flash(f"{artist.display_name} est désormais sur {offer.name}.", "ok")
     return redirect(url_for("admin.subscriptions"))
+
+
+@admin_bp.route("/social", methods=["GET", "POST"])
+@admin_required
+def social():
+    form = SocialPublishForm()
+    works = (
+        Work.query.join(Artist)
+        .filter(Work.visible.is_(True), Artist.published.is_(True))
+        .order_by(Work.updated_at.desc())
+        .limit(80)
+        .all()
+    )
+    if form.validate_on_submit():
+        work = db.session.get(Work, form.work_id.data) if form.work_id.data else None
+        image_url = (form.image_url.data or "").strip()
+        link = (form.link.data or "").strip()
+        title = (form.title.data or "").strip()
+        if work:
+            image_url = image_url or absolute_media(work.image_path)
+            link = link or canonical_url(url_for("public.artwork", slug=work.artist.slug, work_id=work.id))
+            title = title or work.title
+        platforms = [name for name, on in (
+            ("facebook", form.facebook.data),
+            ("instagram", form.instagram.data),
+            ("pinterest", form.pinterest.data),
+            ("deviantart", form.deviantart.data),
+        ) if on]
+        if not platforms:
+            flash("Choisissez au moins un réseau.", "info")
+        else:
+            results = publish_social(platforms, title=title, message=form.message.data.strip(), image_url=image_url, link=link)
+            for item in results:
+                db.session.add(
+                    SocialPost(
+                        platform=item["platform"],
+                        work_id=work.id if work else None,
+                        title=title,
+                        body=form.message.data.strip(),
+                        image_url=image_url,
+                        remote_id=item.get("id") or "",
+                        remote_url=item.get("url") or "",
+                        status="ok" if item.get("ok") else "error",
+                        error=item.get("error") or "",
+                    )
+                )
+            db.session.commit()
+            ok = sum(1 for item in results if item.get("ok"))
+            flash(f"{ok}/{len(results)} publication(s) réussie(s).", "ok" if ok else "info")
+            for item in results:
+                if not item.get("ok"):
+                    flash(f"{item['platform']} : {item.get('error')}", "info")
+            return redirect(url_for("admin.social"))
+    return render_template(
+        "admin/social.html",
+        form=form,
+        works=works,
+        status=platform_status(),
+        logs=SocialPost.query.order_by(SocialPost.created_at.desc()).limit(20).all(),
+        boards=Pinterest.boards() if Pinterest.status().get("connected") else [],
+    )
+
+
+@admin_bp.route("/social/oauth/<platform>")
+@admin_required
+def social_oauth_start(platform: str):
+    if platform == "deviantart":
+        url, state, verifier = DeviantArt.authorize_url()
+        session["oauth_platform"] = "deviantart"
+        session["oauth_state"] = state
+        session["oauth_verifier"] = verifier
+        return redirect(url)
+    if platform == "pinterest":
+        url, state = Pinterest.authorize_url()
+        session["oauth_platform"] = "pinterest"
+        session["oauth_state"] = state
+        return redirect(url)
+    abort(404)
+
+
+@admin_bp.route("/social/oauth/<platform>/callback")
+@admin_required
+def social_oauth_callback(platform: str):
+    if session.get("oauth_platform") != platform or session.get("oauth_state") != request.args.get("state"):
+        flash("OAuth interrompu. Recommencez la connexion.", "info")
+        return redirect(url_for("admin.social"))
+    code = request.args.get("code") or ""
+    try:
+        if platform == "deviantart":
+            DeviantArt.exchange(code, session.get("oauth_verifier") or "")
+        elif platform == "pinterest":
+            Pinterest.exchange(code)
+        else:
+            abort(404)
+        flash(f"{platform} connecté.", "ok")
+    except Exception as exc:
+        flash(str(exc), "info")
+    session.pop("oauth_platform", None)
+    session.pop("oauth_state", None)
+    session.pop("oauth_verifier", None)
+    return redirect(url_for("admin.social"))
+
+
+@admin_bp.route("/social/disconnect/<platform>", methods=["POST"])
+@admin_required
+def social_disconnect(platform: str):
+    delete_token(platform)
+    flash(f"{platform} déconnecté.", "ok")
+    return redirect(url_for("admin.social"))

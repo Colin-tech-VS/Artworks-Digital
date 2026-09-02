@@ -105,6 +105,18 @@ class ContactForm(FlaskForm):
     message = TextAreaField("Message", validators=[DataRequired(), Length(min=8, max=4000)])
 
 
+class SocialPublishForm(FlaskForm):
+    work_id = IntegerField("Œuvre", validators=[Optional()])
+    title = StringField("Titre", validators=[Optional(), Length(max=120)])
+    message = TextAreaField("Texte", validators=[DataRequired(), Length(min=4, max=2000)])
+    link = StringField("Lien", validators=[Optional(), Length(max=400)])
+    image_url = StringField("Image (URL)", validators=[Optional(), Length(max=400)])
+    facebook = BooleanField("Facebook", default=True)
+    instagram = BooleanField("Instagram", default=True)
+    pinterest = BooleanField("Pinterest")
+    deviantart = BooleanField("DeviantArt")
+
+
 class ComposeForm(FlaskForm):
     to_email = StringField(
         "Destinataire",

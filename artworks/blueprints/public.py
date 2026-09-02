@@ -4,7 +4,7 @@ from sqlalchemy import case
 from artworks.extensions import db
 from artworks.forms import ContactForm
 from artworks.gate import site_is_open, try_unlock
-from artworks.mailer import send_email
+from artworks.mailer import contact_inbox, send_email
 from artworks.models import Artist, MailMessage, Work, utcnow
 from artworks.seo import canonical_url
 
@@ -52,6 +52,38 @@ def offers():
 
     g.track_title = "Offres Artworksdigital"
     return render_template("public/offers.html", offers=active_offers())
+
+
+@public_bp.route("/contact", methods=["GET", "POST"])
+def contact():
+    form = ContactForm()
+    sent = False
+    if form.validate_on_submit():
+        body = form.message.data.strip()
+        inbox = contact_inbox()
+        message = MailMessage(
+            direction="in",
+            kind="site",
+            status="inbox",
+            from_name=form.name.data.strip(),
+            from_email=form.email.data.strip().lower(),
+            to_name="Artworksdigital",
+            to_email=inbox,
+            subject=f"Contact — {form.name.data.strip()}",
+            body=body,
+            is_read=False,
+        )
+        db.session.add(message)
+        notice = (
+            f"Message depuis /contact\n"
+            f"De : {message.from_name} <{message.from_email}>\n\n{body}"
+        )
+        send_email(inbox, message.subject, notice, reply_to=message.from_email)
+        db.session.commit()
+        sent = True
+        form = ContactForm()
+    g.track_title = "Contact"
+    return render_template("public/contact.html", form=form, sent=sent)
 
 
 @public_bp.route("/galerie/<slug>", methods=["GET", "POST"])
@@ -135,6 +167,7 @@ def sitemap():
         {"loc": canonical_url("/"), "changefreq": "weekly", "priority": "1.0", "lastmod": utcnow()},
         {"loc": canonical_url("/galeries"), "changefreq": "daily", "priority": "0.9", "lastmod": utcnow()},
         {"loc": canonical_url("/offres"), "changefreq": "weekly", "priority": "0.8", "lastmod": utcnow()},
+        {"loc": canonical_url("/contact"), "changefreq": "monthly", "priority": "0.5", "lastmod": utcnow()},
     ]
     for artist in Artist.query.filter_by(published=True).all():
         lastmod = artist.updated_at or artist.created_at

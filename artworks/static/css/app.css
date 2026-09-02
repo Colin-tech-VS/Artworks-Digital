@@ -218,7 +218,7 @@ h1, h2 {
 }
 .auth-card h1, .atelier-head h1 { font-size: 2.8rem; }
 form label { display: block; margin: 1.15rem 0; font-size: 0.86rem; letter-spacing: 0.04em; }
-form input, form textarea {
+form input, form textarea, form select {
   width: 100%;
   margin-top: 0.4rem;
   border: 0;

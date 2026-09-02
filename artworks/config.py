@@ -30,14 +30,32 @@ class Config:
     ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "")
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
     MAIL_SERVER = os.environ.get("MAIL_SERVER", "")
-    MAIL_PORT = int(os.environ.get("MAIL_PORT", "587"))
+    MAIL_PORT = int(os.environ.get("MAIL_PORT") or "465")
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "")
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "")
-    MAIL_FROM = os.environ.get("MAIL_FROM", "Artworksdigital <hello@artworksdigital.fr>")
-    MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "1") != "0"
+    MAIL_FROM = os.environ.get("MAIL_FROM", "Artworksdigital <contact@artworksdigital.fr>")
+    MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "0") == "1"
+    MAIL_USE_SSL = os.environ.get("MAIL_USE_SSL", "1") != "0"
+    MAIL_IMAP_HOST = os.environ.get("MAIL_IMAP_HOST", "")
+    MAIL_IMAP_PORT = int(os.environ.get("MAIL_IMAP_PORT") or "993")
+    SITE_CONTACT_EMAIL = os.environ.get("SITE_CONTACT_EMAIL", "contact@artworksdigital.fr")
     STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
     STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
     STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+    FACEBOOK_PAGE_ACCESS_TOKEN = os.environ.get("FACEBOOK_PAGE_ACCESS_TOKEN", "")
+    FACEBOOK_PAGE_ID = os.environ.get("FACEBOOK_PAGE_ID", "")
+    INSTAGRAM_ACCESS_TOKEN = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
+    INSTAGRAM_USER_ID = os.environ.get("INSTAGRAM_USER_ID", "")
+    DEVIANTART_CLIENT_ID = os.environ.get("DEVIANTART_CLIENT_ID", "")
+    DEVIANTART_CLIENT_SECRET = os.environ.get("DEVIANTART_CLIENT_SECRET", "")
+    DEVIANTART_REDIRECT_URI = os.environ.get("DEVIANTART_REDIRECT_URI", "")
+    PINTEREST_CLIENT_ID = os.environ.get("PINTEREST_CLIENT_ID", "")
+    PINTEREST_CLIENT_SECRET = os.environ.get("PINTEREST_CLIENT_SECRET", "")
+    PINTEREST_REDIRECT_URI = os.environ.get("PINTEREST_REDIRECT_URI", "")
+    PINTEREST_DEFAULT_BOARD_ID = os.environ.get("PINTEREST_DEFAULT_BOARD_ID", "")
+    MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY", "")
+    MISTRAL_MODEL = os.environ.get("MISTRAL_MODEL", "mistral-small-latest")
+    MISTRAL_MODEL_HEAVY = os.environ.get("MISTRAL_MODEL_HEAVY", "mistral-large-latest")
 
 
 def _add_column(table: str, column: str, ddl: str) -> None:
@@ -78,6 +96,7 @@ def ensure_schema() -> None:
     _add_column("artist", "stripe_subscription_id", "VARCHAR(80) DEFAULT ''")
     _add_column("artist", "plan_period_end", dt_type)
     _add_column("work", "collection_name", "VARCHAR(120) DEFAULT ''")
+    _add_column("mail_message", "external_id", "VARCHAR(200) DEFAULT ''")
     try:
         db.session.execute(text("UPDATE artist SET updated_at = created_at WHERE updated_at IS NULL"))
         db.session.execute(text("UPDATE work SET updated_at = created_at WHERE updated_at IS NULL"))

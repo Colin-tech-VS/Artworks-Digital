@@ -241,6 +241,31 @@ class SubscriptionEvent(db.Model):
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
 
 
+class SocialToken(db.Model):
+    platform = db.Column(db.String(32), primary_key=True)
+    access_token = db.Column(db.Text, nullable=False)
+    refresh_token = db.Column(db.Text, default="")
+    token_expires_at = db.Column(db.DateTime, nullable=True)
+    account_username = db.Column(db.String(120), default="")
+    account_id = db.Column(db.String(80), default="")
+    scopes = db.Column(db.String(255), default="")
+    updated_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+
+class SocialPost(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    platform = db.Column(db.String(32), nullable=False, index=True)
+    work_id = db.Column(db.Integer, db.ForeignKey("work.id"), nullable=True)
+    title = db.Column(db.String(180), default="")
+    body = db.Column(db.Text, default="")
+    image_url = db.Column(db.String(400), default="")
+    remote_id = db.Column(db.String(120), default="")
+    remote_url = db.Column(db.String(400), default="")
+    status = db.Column(db.String(20), default="ok")
+    error = db.Column(db.Text, default="")
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
+
+
 class MailMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     artist_id = db.Column(db.Integer, db.ForeignKey("artist.id"), nullable=True, index=True)
@@ -254,6 +279,7 @@ class MailMessage(db.Model):
     subject = db.Column(db.String(200), nullable=False)
     body = db.Column(db.Text, default="")
     is_read = db.Column(db.Boolean, default=False, nullable=False)
+    external_id = db.Column(db.String(200), default="", index=True)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
 
 
