@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{% if work %}{{ work.title }}{% else %}Nouvelle œuvre{% endif %} — Atelier{% endblock %}
+{% block body_class %}atelier{% endblock %}
+
+{% block content %}
+<section class="atelier-head">
+  <div>
+    <p class="eyebrow">Accrochage</p>
+    <h1>{% if work %}{{ work.title }}{% else %}Nouvelle œuvre{% endif %}</h1>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('atelier.studio') }}">Retour</a>
+</section>
+
+<div class="work-edit">
+  {% if work %}
+    <figure class="preview">
+      <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}">
+    </figure>
+  {% endif %}
+
+  <form class="sheet" method="post" enctype="multipart/form-data" novalidate>
+    {{ form.hidden_tag() }}
+    <label>
+      {{ form.title.label }}
+      {{ form.title() }}
+      {% for error in form.title.errors %}<small>{{ error }}</small>{% endfor %}
+    </label>
+    <div class="split">
+      <label>
+        {{ form.year.label }}
+        {{ form.year() }}
+      </label>
+      <label>
+        {{ form.dimensions.label }}
+        {{ form.dimensions(placeholder="80 × 60 cm") }}
+      </label>
+    </div>
+    <label>
+      {{ form.medium.label }}
+      {{ form.medium(placeholder="Huile sur toile") }}
+    </label>
+    <label>
+      {{ form.note.label }}
+      {{ form.note(rows=5) }}
+    </label>
+    <label>
+      {{ form.image.label }}
+      {{ form.image() }}
+      {% for error in form.image.errors %}<small>{{ error }}</small>{% endfor %}
+    </label>
+    <label class="check">
+      {{ form.visible() }}
+      <span>Accrocher dans la galerie publique</span>
+    </label>
+    <button class="btn btn-ink" type="submit">{% if work %}Mettre à jour{% else %}Accrocher{% endif %}</button>
+  </form>
+</div>
+
+{% if work %}
+  <form class="danger" method="post" action="{{ url_for('atelier.delete_work', work_id=work.id) }}" onsubmit="return confirm('Retirer cette œuvre ?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit">Retirer de l’accrochage</button>
+  </form>
+{% endif %}
+{% endblock %}

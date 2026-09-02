@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block body_class %}home{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">Pour les artistes</p>
+  <h1>Votre salle.<br>Vos œuvres.<br>Rien d’autre.</h1>
+  <p class="lead">
+    Artworks Digital n’est pas une vitrine collective, ni une boutique.
+    C’est un atelier pour composer <em>votre</em> galerie — une adresse, un accrochage, une note d’intention.
+  </p>
+  <div class="hero-actions">
+    <a class="btn btn-ink" href="{{ url_for('auth.register') }}">Ouvrir mon atelier</a>
+    <a class="btn btn-ghost" href="#comment">Comment ça tient</a>
+  </div>
+</section>
+
+<section class="strip" id="comment">
+  <article>
+    <span>01</span>
+    <h2>L’atelier</h2>
+    <p>Un espace privé pour préparer la salle : nom, discipline, note, image de fond.</p>
+  </article>
+  <article>
+    <span>02</span>
+    <h2>L’accrochage</h2>
+    <p>Chaque œuvre a son cartel — titre, année, technique, dimensions — et son visuel.</p>
+  </article>
+  <article>
+    <span>03</span>
+    <h2>La galerie</h2>
+    <p>Vous publiez. Les visiteurs entrent dans <em>votre</em> salle, pas dans un catalogue.</p>
+  </article>
+</section>
+
+{% if rooms %}
+<section class="rooms">
+  <header>
+    <p class="eyebrow">Salles ouvertes</p>
+    <h2>Galeries publiées</h2>
+  </header>
+  <ul class="room-list">
+    {% for artist in rooms %}
+      <li>
+        <a href="{{ url_for('public.gallery', slug=artist.slug) }}">
+          <span class="room-name">{{ artist.display_name }}</span>
+          <span class="room-meta">
+            {{ artist.discipline or "Artiste" }}
+            {% if artist.location %} · {{ artist.location }}{% endif %}
+          </span>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

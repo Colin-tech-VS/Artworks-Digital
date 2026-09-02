@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Ouvrir un atelier — Artworks Digital{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+  <p class="eyebrow">Inscription</p>
+  <h1>Ouvrir un atelier</h1>
+  <p class="lead-sm">Un compte, une salle. Pas de boutique, pas de vitrine partagée.</p>
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    <label>
+      {{ form.display_name.label }}
+      {{ form.display_name() }}
+      {% for error in form.display_name.errors %}<small>{{ error }}</small>{% endfor %}
+    </label>
+    <label>
+      {{ form.email.label }}
+      {{ form.email() }}
+      {% for error in form.email.errors %}<small>{{ error }}</small>{% endfor %}
+    </label>
+    <label>
+      {{ form.password.label }}
+      {{ form.password() }}
+      {% for error in form.password.errors %}<small>{{ error }}</small>{% endfor %}
+    </label>
+    <label>
+      {{ form.confirm.label }}
+      {{ form.confirm() }}
+      {% for error in form.confirm.errors %}<small>{{ error }}</small>{% endfor %}
+    </label>
+    <button class="btn btn-ink" type="submit">Créer l’atelier</button>
+  </form>
+  <p class="auth-switch">Déjà un atelier ? <a href="{{ url_for('auth.login') }}">Connexion</a></p>
+</section>
+{% endblock %}

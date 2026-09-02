@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}{{ work.title }} — {{ artist.display_name }}{% endblock %}
+{% block body_class %}work-view{% endblock %}
+
+{% block content %}
+<nav class="crumb">
+  <a href="{{ url_for('public.gallery', slug=artist.slug) }}">← {{ artist.display_name }}</a>
+</nav>
+
+<article class="solo">
+  <figure class="solo-frame">
+    <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}">
+  </figure>
+  <aside class="cartel">
+    <p class="eyebrow">{{ artist.display_name }}</p>
+    <h1>{{ work.title }}</h1>
+    {% if work.cartel %}<p class="meta">{{ work.cartel }}</p>{% endif %}
+    {% if work.note %}<p class="note">{{ work.note }}</p>{% endif %}
+    <p class="walk">
+      {% if prev_work %}
+        <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=prev_work.id) }}">Précédente</a>
+      {% endif %}
+      {% if next_work %}
+        <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=next_work.id) }}">Suivante</a>
+      {% endif %}
+    </p>
+  </aside>
+</article>
+{% endblock %}

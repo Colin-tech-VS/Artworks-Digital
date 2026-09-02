@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Connexion — Artworks Digital{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+  <p class="eyebrow">Atelier</p>
+  <h1>Connexion</h1>
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    <label>
+      {{ form.email.label }}
+      {{ form.email() }}
+      {% for error in form.email.errors %}<small>{{ error }}</small>{% endfor %}
+    </label>
+    <label>
+      {{ form.password.label }}
+      {{ form.password() }}
+      {% for error in form.password.errors %}<small>{{ error }}</small>{% endfor %}
+    </label>
+    <button class="btn btn-ink" type="submit">Entrer</button>
+  </form>
+  <p class="auth-switch">Pas encore d’atelier ? <a href="{{ url_for('auth.register') }}">Ouvrir le sien</a></p>
+</section>
+{% endblock %}

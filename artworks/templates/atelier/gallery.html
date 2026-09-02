@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}La salle — Artworks Digital{% endblock %}
+{% block body_class %}atelier{% endblock %}
+
+{% block content %}
+<section class="atelier-head">
+  <div>
+    <p class="eyebrow">Atelier</p>
+    <h1>La salle</h1>
+    <p class="lead-sm">Ce que les visiteurs lisent en entrant.</p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('atelier.studio') }}">Retour à l’accrochage</a>
+</section>
+
+<form class="sheet" method="post" enctype="multipart/form-data" novalidate>
+  {{ form.hidden_tag() }}
+  <label>
+    {{ form.display_name.label }}
+    {{ form.display_name() }}
+    {% for error in form.display_name.errors %}<small>{{ error }}</small>{% endfor %}
+  </label>
+  <label>
+    {{ form.slug.label }}
+    <span class="hint">Adresse : /galerie/{{ current_user.slug }}</span>
+    {{ form.slug() }}
+    {% for error in form.slug.errors %}<small>{{ error }}</small>{% endfor %}
+  </label>
+  <div class="split">
+    <label>
+      {{ form.discipline.label }}
+      {{ form.discipline(placeholder="Peinture, photo, sculpture…") }}
+    </label>
+    <label>
+      {{ form.location.label }}
+      {{ form.location(placeholder="Paris") }}
+    </label>
+  </div>
+  <label>
+    {{ form.contact_email.label }}
+    {{ form.contact_email() }}
+    {% for error in form.contact_email.errors %}<small>{{ error }}</small>{% endfor %}
+  </label>
+  <label>
+    {{ form.statement.label }}
+    {{ form.statement(rows=7) }}
+  </label>
+  <label>
+    {{ form.cover.label }}
+    {{ form.cover() }}
+    {% for error in form.cover.errors %}<small>{{ error }}</small>{% endfor %}
+  </label>
+  <label class="check">
+    {{ form.published() }}
+    <span>Publier la galerie — la rendre visible à son adresse.</span>
+  </label>
+  <button class="btn btn-ink" type="submit">Enregistrer la salle</button>
+</form>
+{% endblock %}
