@@ -173,6 +173,7 @@ def seed_examples() -> None:
                 published=True,
                 is_example=True,
                 is_admin=False,
+                plan_key="studio",
             )
             artist.set_password(token_urlsafe(24))
             db.session.add(artist)
@@ -197,6 +198,13 @@ def seed_examples() -> None:
                     )
                 )
             created = True
+        if created:
+            db.session.commit()
+        for artist in Artist.query.filter_by(is_example=True).all():
+            if artist.plan_key != "studio":
+                artist.plan_key = "studio"
+                artist.plan_status = "active"
+                created = True
         if created:
             db.session.commit()
     except Exception:

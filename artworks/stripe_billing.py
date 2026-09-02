@@ -1,0 +1,221 @@
+from datetime import datetime, timezone
+
+import stripe
+from flask import current_app, url_for
+
+from artworks.extensions import db
+from artworks.models import Artist, Offer, SubscriptionEvent
+from artworks.plans import all_offers, get_offer
+
+
+def stripe_ready() -> bool:
+    return bool(current_app.config.get("STRIPE_SECRET_KEY"))
+
+
+def _api():
+    stripe.api_key = current_app.config["STRIPE_SECRET_KEY"]
+    return stripe
+
+
+def sync_offers_to_stripe() -> tuple[bool, str]:
+    if not stripe_ready():
+        return False, "Clés Stripe absentes."
+    api = _api()
+    try:
+        for offer in all_offers():
+            if offer.price_cents <= 0:
+                continue
+            if not offer.stripe_product_id:
+                product = api.Product.create(
+                    name=f"Artworksdigital {offer.name}",
+                    description=offer.audience or offer.name,
+                    metadata={"plan_key": offer.key},
+                )
+                offer.stripe_product_id = product.id
+            price_ok = False
+            if offer.stripe_price_id:
+                try:
+                    price = api.Price.retrieve(offer.stripe_price_id)
+                    price_ok = (
+                        price.get("unit_amount") == offer.price_cents
+                        and price.get("active")
+                        and price.get("recurring", {}).get("interval") == "month"
+                    )
+                except Exception:
+                    price_ok = False
+            if not price_ok:
+                price = api.Price.create(
+                    product=offer.stripe_product_id,
+                    unit_amount=offer.price_cents,
+                    currency="eur",
+                    recurring={"interval": "month"},
+                    metadata={"plan_key": offer.key},
+                )
+                offer.stripe_price_id = price.id
+        db.session.commit()
+        return True, "Offres synchronisées avec Stripe."
+    except Exception as exc:
+        db.session.rollback()
+        return False, str(exc)
+
+
+def _customer_for(artist: Artist) -> str:
+    api = _api()
+    if artist.stripe_customer_id:
+        return artist.stripe_customer_id
+    customer = api.Customer.create(
+        email=artist.email,
+        name=artist.display_name,
+        metadata={"artist_id": str(artist.id)},
+    )
+    artist.stripe_customer_id = customer.id
+    db.session.commit()
+    return customer.id
+
+
+def checkout_url(artist: Artist, offer: Offer) -> str:
+    if not stripe_ready() or not offer.stripe_price_id:
+        raise RuntimeError("Stripe n’est pas encore branché pour cette offre.")
+    api = _api()
+    customer = _customer_for(artist)
+    session = api.checkout.Session.create(
+        mode="subscription",
+        customer=customer,
+        line_items=[{"price": offer.stripe_price_id, "quantity": 1}],
+        success_url=url_for("atelier.billing_return", _external=True) + "?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url=url_for("atelier.billing", _external=True),
+        allow_promotion_codes=True,
+        metadata={"artist_id": str(artist.id), "plan_key": offer.key},
+        subscription_data={"metadata": {"artist_id": str(artist.id), "plan_key": offer.key}},
+    )
+    return session.url
+
+
+def portal_url(artist: Artist) -> str:
+    if not stripe_ready() or not artist.stripe_customer_id:
+        raise RuntimeError("Aucun client Stripe.")
+    api = _api()
+    session = api.billing_portal.Session.create(
+        customer=artist.stripe_customer_id,
+        return_url=url_for("atelier.billing", _external=True),
+    )
+    return session.url
+
+
+def apply_plan(artist: Artist, plan_key: str, status: str = "active", subscription_id: str = "", note: str = "") -> None:
+    offer = get_offer(plan_key)
+    artist.plan_key = offer.key if offer else "decouverte"
+    artist.plan_status = status
+    if subscription_id:
+        artist.stripe_subscription_id = subscription_id
+    if status in {"canceled", "unpaid", "incomplete_expired"} and not artist.plan_override:
+        artist.plan_key = "decouverte"
+    db.session.add(
+        SubscriptionEvent(
+            artist_id=artist.id,
+            plan_key=artist.plan_key,
+            status=status,
+            stripe_id=subscription_id,
+            note=note[:240],
+        )
+    )
+    db.session.commit()
+
+
+def cancel_to_free(artist: Artist) -> tuple[bool, str]:
+    if artist.stripe_subscription_id and stripe_ready():
+        try:
+            _api().Subscription.cancel(artist.stripe_subscription_id)
+        except Exception as exc:
+            return False, str(exc)
+    artist.stripe_subscription_id = ""
+    artist.plan_override = False
+    apply_plan(artist, "decouverte", status="canceled", note="Retour offre Découverte")
+    return True, "Offre Découverte activée."
+
+
+def handle_webhook(payload: bytes, signature: str) -> None:
+    secret = current_app.config.get("STRIPE_WEBHOOK_SECRET") or ""
+    api = _api()
+    if secret:
+        event = api.Webhook.construct_event(payload, signature, secret)
+    else:
+        event = api.Event.construct_from(
+            __import__("json").loads(payload.decode("utf-8")),
+            api.api_key,
+        )
+    kind = event["type"]
+    data = event["data"]["object"]
+    if kind == "checkout.session.completed":
+        artist = _artist_from_meta(data.get("metadata") or {}, data.get("customer"))
+        if artist:
+            apply_plan(
+                artist,
+                (data.get("metadata") or {}).get("plan_key") or artist.plan_key,
+                status="active",
+                subscription_id=data.get("subscription") or "",
+                note="Checkout Stripe",
+            )
+            artist.plan_override = False
+            db.session.commit()
+    elif kind in {"customer.subscription.updated", "customer.subscription.created"}:
+        artist = _artist_from_subscription(data)
+        if artist and not artist.plan_override:
+            plan_key = (data.get("metadata") or {}).get("plan_key") or _plan_from_price(data)
+            period_end = data.get("current_period_end")
+            if period_end:
+                artist.plan_period_end = datetime.fromtimestamp(int(period_end), tz=timezone.utc)
+            apply_plan(
+                artist,
+                plan_key or artist.plan_key,
+                status=data.get("status") or "active",
+                subscription_id=data.get("id") or "",
+                note=kind,
+            )
+    elif kind == "customer.subscription.deleted":
+        artist = _artist_from_subscription(data)
+        if artist and not artist.plan_override:
+            apply_plan(artist, "decouverte", status="canceled", note="Abonnement annulé")
+            artist.stripe_subscription_id = ""
+            db.session.commit()
+    elif kind == "invoice.payment_failed":
+        artist = _artist_from_customer(data.get("customer"))
+        if artist:
+            artist.plan_status = "past_due"
+            db.session.commit()
+
+
+def _artist_from_meta(meta: dict, customer_id: str | None) -> Artist | None:
+    artist_id = meta.get("artist_id")
+    if artist_id:
+        artist = db.session.get(Artist, int(artist_id))
+        if artist:
+            return artist
+    return _artist_from_customer(customer_id)
+
+
+def _artist_from_customer(customer_id: str | None) -> Artist | None:
+    if not customer_id:
+        return None
+    return Artist.query.filter_by(stripe_customer_id=customer_id).first()
+
+
+def _artist_from_subscription(data: dict) -> Artist | None:
+    artist = _artist_from_meta(data.get("metadata") or {}, data.get("customer"))
+    if artist:
+        return artist
+    sub_id = data.get("id")
+    if sub_id:
+        return Artist.query.filter_by(stripe_subscription_id=sub_id).first()
+    return None
+
+
+def _plan_from_price(data: dict) -> str:
+    items = ((data.get("items") or {}).get("data") or [])
+    if not items:
+        return ""
+    price_id = ((items[0] or {}).get("price") or {}).get("id")
+    if not price_id:
+        return ""
+    offer = Offer.query.filter_by(stripe_price_id=price_id).first()
+    return offer.key if offer else ""

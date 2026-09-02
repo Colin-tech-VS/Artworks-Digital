@@ -6,7 +6,7 @@
   <div>
     <p class="eyebrow">Pilotage</p>
     <h1>Tableau de bord</h1>
-    <p class="lead-sm">{{ total_artists }} ateliers · {{ rooms }} salles ouvertes · {{ total_works }} œuvres</p>
+    <p class="lead-sm">{{ total_artists }} ateliers · {{ rooms }} salles ouvertes · {{ total_works }} œuvres · MRR {{ mrr_label }}{% if not stripe_ok %} · Stripe non branché{% endif %}</p>
   </div>
   <div class="range-tabs">
     <a href="?days=7" class="{% if days == 7 %}is-on{% endif %}">7 jours</a>
@@ -34,6 +34,20 @@
     <span>{{ metrics.pages_per_session }}</span>
     <em>Pages / session</em>
   </li>
+  <li>
+    <span>{{ mrr_label }}</span>
+    <em>MRR (hors exemples)</em>
+    <small>{{ paying }} payants</small>
+  </li>
+</ul>
+
+<ul class="stat-row">
+  {% for offer in offers %}
+    <li>
+      <span>{{ plan_counts.get(offer.key, 0) }}</span>
+      <em>{{ offer.badge }} {{ offer.name }}</em>
+    </li>
+  {% endfor %}
 </ul>
 
 <section class="panel chart-panel">
@@ -70,7 +84,7 @@
   <section class="panel">
     <header class="panel-head">
       <h2>Ateliers récents</h2>
-      <a href="{{ url_for('admin.artists') }}">Tous</a>
+      <a href="{{ url_for('admin.subscriptions') }}">Abonnements</a>
     </header>
     <ul class="mini-table">
       {% for artist in artists %}

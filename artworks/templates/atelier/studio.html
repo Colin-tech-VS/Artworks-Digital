@@ -6,11 +6,15 @@
   <div>
     <p class="eyebrow">Accrochage</p>
     <h1>Les œuvres</h1>
-    <p class="lead-sm">{{ hung }} accrochées · {{ reserve }} en réserve · glissez pour réordonner</p>
+    <p class="lead-sm">{{ hung }} accrochées · {{ reserve }} en réserve · {{ offer.works_label }} · glissez pour réordonner</p>
   </div>
   <div class="atelier-actions">
     <input class="studio-filter" type="search" id="studio-filter" placeholder="Filtrer une œuvre" autocomplete="off">
-    <a class="btn btn-ink" href="{{ url_for('atelier.new_work') }}">Accrocher une œuvre</a>
+    {% if can_add %}
+      <a class="btn btn-ink" href="{{ url_for('atelier.new_work') }}">Accrocher une œuvre</a>
+    {% else %}
+      <a class="btn btn-ghost" href="{{ url_for('atelier.billing') }}">Plafond atteint</a>
+    {% endif %}
   </div>
 </section>
 

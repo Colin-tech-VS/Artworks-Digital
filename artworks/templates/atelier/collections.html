@@ -1,0 +1,41 @@
+{% extends "atelier/shell.html" %}
+{% block title %}Collections — Atelier{% endblock %}
+
+{% block atelier %}
+<section class="atelier-head">
+  <div>
+    <p class="eyebrow">{{ offer.name }}</p>
+    <h1>Collections</h1>
+    <p class="lead-sm">Regroupez les œuvres par série. Le nom se saisit sur chaque cartel.</p>
+  </div>
+  <a class="btn btn-ink" href="{{ url_for('atelier.new_work') }}">Accrocher une œuvre</a>
+</section>
+
+{% if groups %}
+  {% for name, works in groups.items() %}
+    <section class="panel">
+      <header class="panel-head">
+        <h2>{{ name }}</h2>
+        <span>{{ works|length }}</span>
+      </header>
+      <ul class="studio-grid compact">
+        {% for work in works %}
+          <li class="{% if not work.visible %}dim{% endif %}">
+            <a href="{{ url_for('atelier.edit_work', work_id=work.id) }}">
+              <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}" loading="lazy">
+              <div>
+                <strong>{{ work.title }}</strong>
+                <span>{{ work.cartel or "Sans cartel" }}</span>
+              </div>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endfor %}
+{% else %}
+  <div class="empty-card">
+    <p>Aucune œuvre dans une collection pour l’instant.</p>
+  </div>
+{% endif %}
+{% endblock %}

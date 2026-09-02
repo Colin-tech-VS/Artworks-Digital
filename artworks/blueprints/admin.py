@@ -2,13 +2,16 @@ from functools import wraps
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from markupsafe import Markup
+from sqlalchemy import func
 
 from artworks.admin_auth import admin_logout, require_admin, try_admin_login
 from artworks.analytics import breakdown, kpis, series, sparkline_svg, top_paths
 from artworks.extensions import db
-from artworks.forms import AdminLoginForm, ComposeForm
+from artworks.forms import AdminLoginForm, ComposeForm, OfferForm
 from artworks.mailer import mail_configured, send_email
-from artworks.models import Artist, MailMessage, PageView, Work
+from artworks.models import Artist, MailMessage, Offer, PageView, SubscriptionEvent, Work
+from artworks.plans import all_offers, get_offer
+from artworks.stripe_billing import apply_plan, stripe_ready, sync_offers_to_stripe
 
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -62,6 +65,14 @@ def overview():
     recent_mail = MailMessage.query.order_by(MailMessage.created_at.desc()).limit(6).all()
     artists = Artist.query.order_by(Artist.created_at.desc()).limit(8).all()
     unread = MailMessage.query.filter_by(direction="in", is_read=False).count()
+    plan_counts = dict(
+        db.session.query(Artist.plan_key, func.count(Artist.id))
+        .filter(Artist.is_example.is_(False))
+        .group_by(Artist.plan_key)
+        .all()
+    )
+    catalog = all_offers()
+    mrr_cents = sum((plan_counts.get(offer.key, 0) * (offer.price_cents or 0)) for offer in catalog)
     return render_template(
         "admin/overview.html",
         days=days,
@@ -75,6 +86,11 @@ def overview():
         total_artists=Artist.query.count(),
         total_works=Work.query.count(),
         mail_ok=mail_configured(),
+        stripe_ok=stripe_ready(),
+        plan_counts=plan_counts,
+        offers=catalog,
+        mrr_label=f"{mrr_cents / 100:.2f}".replace(".", ",") + " €",
+        paying=sum(plan_counts.get(offer.key, 0) for offer in catalog if offer.price_cents),
     )
 
 
@@ -204,3 +220,97 @@ def artist_action(artist_id: int):
         flash("Salle ouverte." if artist.published else "Salle fermée.", "ok")
     db.session.commit()
     return redirect(url_for("admin.artists"))
+
+
+def _offer_form(offer: Offer) -> OfferForm:
+    return OfferForm(
+        name=offer.name,
+        badge=offer.badge,
+        audience=offer.audience,
+        features_text=offer.features_text,
+        price_cents=offer.price_cents,
+        max_works=offer.max_works,
+        active=offer.active,
+        allow_stats=offer.allow_stats,
+        allow_customize=offer.allow_customize,
+        allow_share=offer.allow_share,
+        allow_advanced_stats=offer.allow_advanced_stats,
+        allow_featured=offer.allow_featured,
+        allow_ai=offer.allow_ai,
+        allow_priority=offer.allow_priority,
+        allow_collections=offer.allow_collections,
+    )
+
+
+@admin_bp.route("/offres")
+@admin_required
+def offers():
+    return render_template(
+        "admin/offers.html",
+        offers=all_offers(),
+        stripe_ok=stripe_ready(),
+    )
+
+
+@admin_bp.route("/offres/sync", methods=["POST"])
+@admin_required
+def offers_sync():
+    ok, message = sync_offers_to_stripe()
+    flash(message, "ok" if ok else "info")
+    return redirect(url_for("admin.offers"))
+
+
+@admin_bp.route("/offres/<key>", methods=["GET", "POST"])
+@admin_required
+def offer_edit(key: str):
+    offer = db.session.get(Offer, key) or abort(404)
+    form = _offer_form(offer)
+    if request.method == "POST":
+        form = OfferForm()
+        if form.validate_on_submit():
+            offer.name = form.name.data.strip()
+            offer.badge = (form.badge.data or "").strip()
+            offer.audience = (form.audience.data or "").strip()
+            offer.features_text = (form.features_text.data or "").strip()
+            offer.price_cents = form.price_cents.data or 0
+            offer.max_works = form.max_works.data
+            offer.active = bool(form.active.data)
+            offer.allow_stats = bool(form.allow_stats.data)
+            offer.allow_customize = bool(form.allow_customize.data)
+            offer.allow_share = bool(form.allow_share.data)
+            offer.allow_advanced_stats = bool(form.allow_advanced_stats.data)
+            offer.allow_featured = bool(form.allow_featured.data)
+            offer.allow_ai = bool(form.allow_ai.data)
+            offer.allow_priority = bool(form.allow_priority.data)
+            offer.allow_collections = bool(form.allow_collections.data)
+            db.session.commit()
+            flash("Offre mise à jour.", "ok")
+            return redirect(url_for("admin.offers"))
+    return render_template("admin/offer.html", form=form, offer=offer, stripe_ok=stripe_ready())
+
+
+@admin_bp.route("/abonnements")
+@admin_required
+def subscriptions():
+    catalog = all_offers()
+    return render_template(
+        "admin/subscriptions.html",
+        artists=Artist.query.order_by(Artist.created_at.desc()).all(),
+        offers=catalog,
+        events=SubscriptionEvent.query.order_by(SubscriptionEvent.created_at.desc()).limit(24).all(),
+        stripe_ok=stripe_ready(),
+    )
+
+
+@admin_bp.route("/abonnements/<int:artist_id>", methods=["POST"])
+@admin_required
+def assign_plan(artist_id: int):
+    artist = db.session.get(Artist, artist_id) or abort(404)
+    offer = get_offer(request.form.get("plan_key") or "")
+    if offer is None:
+        flash("Offre inconnue.", "info")
+        return redirect(url_for("admin.subscriptions"))
+    artist.plan_override = True
+    apply_plan(artist, offer.key, status="active", note="Assigné par admin")
+    flash(f"{artist.display_name} est désormais sur {offer.name}.", "ok")
+    return redirect(url_for("admin.subscriptions"))

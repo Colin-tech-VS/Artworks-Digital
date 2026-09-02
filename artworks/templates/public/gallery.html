@@ -30,7 +30,7 @@
   {% endif %}
   <div class="room-intro">
     <p class="eyebrow">{{ artist.discipline or "Galerie" }}</p>
-    <h1>{{ artist.display_name }}</h1>
+    <h1>{{ artist.display_name }}{% if artist.has_feature('featured') %} <em class="tag">mise en avant</em>{% endif %}</h1>
     {% if artist.location %}<p class="where">{{ artist.location }}</p>{% endif %}
     {% if artist.statement %}
       <p class="statement">{{ artist.statement }}</p>
@@ -38,7 +38,28 @@
   </div>
 </article>
 
-{% if works %}
+{% if groups %}
+  {% for name, items in groups.items() %}
+    <section class="collection-block">
+      <h2>{{ name }}</h2>
+      <ul class="hang">
+        {% for work in items %}
+          <li>
+            <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=work.id) }}">
+              <figure>
+                <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}{% if work.year %}, {{ work.year }}{% endif %}" loading="lazy">
+                <figcaption>
+                  <strong>{{ work.title }}</strong>
+                  {% if work.cartel %}<span>{{ work.cartel }}</span>{% endif %}
+                </figcaption>
+              </figure>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endfor %}
+{% elif works %}
   <ul class="hang">
     {% for work in works %}
       <li>

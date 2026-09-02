@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileAllowed, FileField, FileRequired
-from wtforms import BooleanField, PasswordField, StringField, TextAreaField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
+from wtforms import BooleanField, IntegerField, PasswordField, SelectField, StringField, TextAreaField
+from wtforms.validators import DataRequired, Email, EqualTo, Length, NumberRange, Optional
 
 
 class RegisterForm(FlaskForm):
@@ -52,6 +52,7 @@ class WorkForm(FlaskForm):
     dimensions = StringField("Dimensions", validators=[Optional(), Length(max=120)])
     note = TextAreaField("Note", validators=[Optional(), Length(max=2000)])
     image = FileField("Visuel")
+    collection_name = StringField("Collection", validators=[Optional(), Length(max=120)])
     visible = BooleanField("Accrocher dans la galerie", default=True)
 
     def require_image(self) -> None:
@@ -66,6 +67,28 @@ class AccountForm(FlaskForm):
         "E-mail de connexion",
         validators=[DataRequired(), Email(message="Adresse e-mail invalide."), Length(max=180)],
     )
+
+
+class OfferForm(FlaskForm):
+    name = StringField("Nom", validators=[DataRequired(), Length(max=80)])
+    badge = StringField("Badge", validators=[Optional(), Length(max=16)])
+    audience = StringField("Pour qui", validators=[Optional(), Length(max=180)])
+    features_text = TextAreaField("Contenu", validators=[Optional(), Length(max=2000)])
+    price_cents = IntegerField("Prix (centimes)", validators=[DataRequired(), NumberRange(min=0)])
+    max_works = IntegerField("Plafond d’œuvres (vide = illimité)", validators=[Optional(), NumberRange(min=1)])
+    active = BooleanField("Offre active")
+    allow_stats = BooleanField("Statistiques")
+    allow_customize = BooleanField("Personnalisation")
+    allow_share = BooleanField("Partage")
+    allow_advanced_stats = BooleanField("Statistiques avancées")
+    allow_featured = BooleanField("Mise en avant")
+    allow_ai = BooleanField("IA")
+    allow_priority = BooleanField("Visibilité prioritaire")
+    allow_collections = BooleanField("Collections / multi-profils")
+
+
+class AssignPlanForm(FlaskForm):
+    plan_key = SelectField("Offre", validators=[DataRequired()])
 
 
 class AdminLoginForm(FlaskForm):

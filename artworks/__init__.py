@@ -31,12 +31,14 @@ def create_app(config_class=Config) -> Flask:
     from artworks.blueprints.admin import admin_bp
     from artworks.blueprints.atelier import atelier_bp
     from artworks.blueprints.auth import auth_bp
+    from artworks.blueprints.billing import billing_bp
     from artworks.blueprints.public import public_bp
 
     app.register_blueprint(public_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(atelier_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(billing_bp)
 
     from artworks.gate import enforce_gate
 

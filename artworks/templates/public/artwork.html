@@ -50,6 +50,12 @@
     <h1>{{ work.title }}</h1>
     {% if work.cartel %}<p class="meta">{{ work.cartel }}</p>{% endif %}
     {% if work.note %}<p class="note">{{ work.note }}</p>{% endif %}
+    {% if artist.has_feature('share') %}
+      <p class="share-row">
+        <a href="https://www.facebook.com/sharer/sharer.php?u={{ canonical_url() | urlencode }}" target="_blank" rel="noopener">Partager</a>
+        <a href="https://twitter.com/intent/tweet?url={{ canonical_url() | urlencode }}&text={{ work.title | urlencode }}" target="_blank" rel="noopener">X</a>
+      </p>
+    {% endif %}
     <p class="walk">
       {% if prev_work %}
         <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=prev_work.id) }}" rel="prev">Précédente</a>

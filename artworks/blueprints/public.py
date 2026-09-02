@@ -1,4 +1,5 @@
 from flask import Blueprint, abort, g, redirect, render_template, request, url_for
+from sqlalchemy import case
 
 from artworks.extensions import db
 from artworks.forms import ContactForm
@@ -12,9 +13,15 @@ public_bp = Blueprint("public", __name__)
 
 
 def _open_rooms():
+    rank = case(
+        (Artist.plan_key == "studio", 4),
+        (Artist.plan_key == "pro", 3),
+        (Artist.plan_key == "artiste", 2),
+        else_=1,
+    )
     return (
         Artist.query.filter_by(published=True)
-        .order_by(Artist.updated_at.desc(), Artist.created_at.desc())
+        .order_by(rank.desc(), Artist.updated_at.desc(), Artist.created_at.desc())
         .all()
     )
 
@@ -39,12 +46,25 @@ def galleries():
     return render_template("public/galleries.html", rooms=rooms)
 
 
+@public_bp.route("/offres")
+def offers():
+    from artworks.plans import active_offers
+
+    g.track_title = "Offres Artworksdigital"
+    return render_template("public/offers.html", offers=active_offers())
+
+
 @public_bp.route("/galerie/<slug>", methods=["GET", "POST"])
 def gallery(slug: str):
     artist = Artist.query.filter_by(slug=slug, published=True).first()
     if artist is None:
         abort(404)
-    works = artist.hung_works
+    works = artist.public_works()
+    groups = None
+    if artist.has_feature("collections"):
+        groups = {}
+        for work in works:
+            groups.setdefault(work.collection_name or "Accrochage", []).append(work)
     g.track_artist_id = artist.id
     g.track_title = artist.display_name
     form = ContactForm()
@@ -75,6 +95,7 @@ def gallery(slug: str):
         "public/gallery.html",
         artist=artist,
         works=works,
+        groups=groups,
         form=form,
         sent=request.args.get("sent") == "1",
     )
@@ -93,7 +114,9 @@ def artwork(slug: str, work_id: int):
     g.track_artist_id = artist.id
     g.track_work_id = work.id
     g.track_title = f"{work.title} — {artist.display_name}"
-    hung = artist.hung_works
+    hung = artist.public_works()
+    if not any(item.id == work.id for item in hung):
+        abort(404)
     index = next((i for i, item in enumerate(hung) if item.id == work.id), 0)
     prev_work = hung[index - 1] if index > 0 else None
     next_work = hung[index + 1] if index + 1 < len(hung) else None
@@ -111,6 +134,7 @@ def sitemap():
     pages = [
         {"loc": canonical_url("/"), "changefreq": "weekly", "priority": "1.0", "lastmod": utcnow()},
         {"loc": canonical_url("/galeries"), "changefreq": "daily", "priority": "0.9", "lastmod": utcnow()},
+        {"loc": canonical_url("/offres"), "changefreq": "weekly", "priority": "0.8", "lastmod": utcnow()},
     ]
     for artist in Artist.query.filter_by(published=True).all():
         lastmod = artist.updated_at or artist.created_at
@@ -120,7 +144,7 @@ def sitemap():
             "priority": "0.8",
             "lastmod": lastmod,
         })
-        for work in artist.hung_works:
+        for work in artist.public_works():
             pages.append({
                 "loc": canonical_url(url_for("public.artwork", slug=artist.slug, work_id=work.id)),
                 "changefreq": "monthly",

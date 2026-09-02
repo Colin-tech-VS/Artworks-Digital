@@ -33,11 +33,11 @@
             <img src="{{ url_for('media', filename=artist.cover_path) }}" alt="" loading="lazy">
           {% endif %}
           <div>
-            <span class="room-name">{{ artist.display_name }}</span>
+            <span class="room-name">{{ artist.display_name }}{% if artist.has_feature('featured') %} <em class="tag">mise en avant</em>{% endif %}{% if artist.has_feature('priority') %} <em class="tag">prioritaire</em>{% endif %}</span>
             <span class="room-meta">
               {{ artist.discipline or "Artiste" }}
               {% if artist.location %} · {{ artist.location }}{% endif %}
-              · {{ artist.hung_count }} œuvres
+              · {{ artist.public_works()|length }} œuvres
             </span>
           </div>
         </a>

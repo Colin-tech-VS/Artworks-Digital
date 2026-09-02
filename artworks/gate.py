@@ -15,6 +15,8 @@ OPEN_ENDPOINTS = {
     "public.galleries",
     "public.sitemap",
     "public.robots",
+    "public.offers",
+    "billing.stripe_webhook",
 }
 
 

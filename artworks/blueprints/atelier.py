@@ -8,7 +8,9 @@ from artworks.forms import AccountForm, ComposeForm, GalleryForm, PasswordForm, 
 from artworks.images import remove_image, save_image
 from artworks.mailer import send_email
 from artworks.models import Artist, MailMessage, Work
+from artworks.plans import active_offers, get_offer
 from artworks.slugs import unique_slug
+from artworks.stripe_billing import cancel_to_free, checkout_url, portal_url, stripe_ready
 
 atelier_bp = Blueprint("atelier", __name__, url_prefix="/atelier")
 
@@ -21,6 +23,8 @@ def _work_stats():
         "reserve": current_user.reserve_count,
         "views": current_user.views_total,
         "unread": current_user.unread_count,
+        "offer": current_user.offer,
+        "can_add": current_user.can_add_work(),
     }
 
 
@@ -56,6 +60,117 @@ def toggle_publish():
     return redirect(request.referrer or url_for("atelier.overview"))
 
 
+@atelier_bp.route("/offre")
+@login_required
+def billing():
+    return render_template(
+        "atelier/billing.html",
+        offers=active_offers(),
+        current=current_user.offer,
+        stripe_ok=stripe_ready(),
+        unread=current_user.unread_count,
+    )
+
+
+@atelier_bp.route("/offre/prendre/<plan_key>", methods=["POST"])
+@login_required
+def billing_take(plan_key: str):
+    offer = get_offer(plan_key)
+    if offer is None or not offer.active:
+        flash("Cette offre n’est plus proposée.", "info")
+        return redirect(url_for("atelier.billing"))
+    if offer.price_cents <= 0:
+        ok, message = cancel_to_free(current_user)
+        flash(message, "ok" if ok else "info")
+        return redirect(url_for("atelier.billing"))
+    if not stripe_ready() or not offer.stripe_price_id:
+        flash("Le paiement Stripe n’est pas encore ouvert. Un admin peut activer l’offre à la main.", "info")
+        return redirect(url_for("atelier.billing"))
+    try:
+        return redirect(checkout_url(current_user, offer))
+    except Exception as exc:
+        flash(str(exc), "info")
+        return redirect(url_for("atelier.billing"))
+
+
+@atelier_bp.route("/offre/portail", methods=["POST"])
+@login_required
+def billing_portal():
+    try:
+        return redirect(portal_url(current_user))
+    except Exception as exc:
+        flash(str(exc), "info")
+        return redirect(url_for("atelier.billing"))
+
+
+@atelier_bp.route("/offre/retour")
+@login_required
+def billing_return():
+    flash("Paiement reçu. L’offre se met à jour dès la confirmation Stripe.", "ok")
+    return redirect(url_for("atelier.billing"))
+
+
+@atelier_bp.route("/stats")
+@login_required
+def stats():
+    if not current_user.has_feature("stats"):
+        flash("Les statistiques sont incluses à partir de l’offre Artiste.", "info")
+        return redirect(url_for("atelier.billing"))
+    trend = artist_series(current_user.id, 28 if current_user.has_feature("advanced_stats") else 14)
+    return render_template(
+        "atelier/stats.html",
+        spark=Markup(sparkline_svg(trend, 520, 120)),
+        trend=trend,
+        trend_total=sum(trend),
+        advanced=current_user.has_feature("advanced_stats"),
+        unread=current_user.unread_count,
+        offer=current_user.offer,
+        views=current_user.views_total,
+        hung=current_user.hung_count,
+    )
+
+
+@atelier_bp.route("/ia")
+@login_required
+def ai_tools():
+    if not current_user.has_feature("ai"):
+        flash("L’IA est incluse dans Pro et Studio.", "info")
+        return redirect(url_for("atelier.billing"))
+    works = current_user.works.order_by(Work.position.asc()).limit(8).all()
+    draft = ""
+    if works:
+        titles = ", ".join(work.title for work in works[:4])
+        draft = (
+            f"{current_user.display_name} compose une salle autour de {titles}. "
+            "L’accrochage cherche une tension minimale : matière, lumière, silence."
+        )
+    return render_template(
+        "atelier/ai.html",
+        unread=current_user.unread_count,
+        offer=current_user.offer,
+        advanced=current_user.has_feature("priority"),
+        draft=draft,
+        works=works,
+    )
+
+
+@atelier_bp.route("/collections")
+@login_required
+def collections():
+    if not current_user.has_feature("collections"):
+        flash("Les collections sont réservées à l’offre Studio.", "info")
+        return redirect(url_for("atelier.billing"))
+    groups = {}
+    for work in current_user.works.order_by(Work.position.asc()):
+        groups.setdefault(work.collection_name or "Sans collection", []).append(work)
+    return render_template(
+        "atelier/collections.html",
+        groups=groups,
+        unread=current_user.unread_count,
+        offer=current_user.offer,
+    )
+
+
 @atelier_bp.route("/galerie", methods=["GET", "POST"])
 @login_required
 def gallery():
@@ -70,6 +185,9 @@ def gallery():
         current_user.published = bool(form.published.data)
         current_user.touch()
         if form.cover.data:
+            if not current_user.has_feature("customize"):
+                form.cover.errors.append("La personnalisation de la salle est incluse à partir de l’offre Artiste.")
+                return render_template("atelier/gallery.html", form=form, unread=current_user.unread_count)
             try:
                 remove_image(current_user.cover_path)
                 current_user.cover_path = save_image(form.cover.data, max_side=2800)
@@ -187,6 +305,9 @@ def message_detail(message_id: int):
 @atelier_bp.route("/oeuvres/nouvelle", methods=["GET", "POST"])
 @login_required
 def new_work():
+    if not current_user.can_add_work():
+        flash(f"Plafond atteint ({current_user.offer.works_label}). Passez à une offre supérieure.", "info")
+        return redirect(url_for("atelier.billing"))
     form = WorkForm()
     form.require_image()
     if form.validate_on_submit():
@@ -206,6 +327,7 @@ def new_work():
             note=(form.note.data or "").strip(),
             image_path=path,
             visible=bool(form.visible.data),
+            collection_name=(form.collection_name.data or "").strip() if current_user.has_feature("collections") else "",
             position=(last.position + 1) if last else 0,
         )
         current_user.touch()
@@ -228,6 +350,8 @@ def edit_work(work_id: int):
         work.dimensions = (form.dimensions.data or "").strip()
         work.note = (form.note.data or "").strip()
         work.visible = bool(form.visible.data)
+        if current_user.has_feature("collections"):
+            work.collection_name = (form.collection_name.data or "").strip()
         work.touch()
         current_user.touch()
         if form.image.data:

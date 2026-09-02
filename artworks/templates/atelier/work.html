@@ -42,6 +42,12 @@
       {{ form.note.label }}
       {{ form.note(rows=5) }}
     </label>
+    {% if current_user.has_feature('collections') %}
+      <label>
+        {{ form.collection_name.label }}
+        {{ form.collection_name(placeholder="Série, ensemble, collection…") }}
+      </label>
+    {% endif %}
     <label>
       {{ form.image.label }}
       {{ form.image() }}

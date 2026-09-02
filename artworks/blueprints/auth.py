@@ -25,12 +25,13 @@ def register():
                 display_name=form.display_name.data.strip(),
                 slug=unique_slug(form.display_name.data),
                 contact_email=email,
+                plan_key="decouverte",
             )
             artist.set_password(form.password.data)
             db.session.add(artist)
             db.session.commit()
             login_user(artist)
-            flash("Atelier ouvert. Préparez la salle, puis publiez.", "ok")
+            flash("Atelier ouvert sur l’offre Découverte. Préparez la salle, puis publiez.", "ok")
             return redirect(url_for("atelier.gallery"))
     return render_template("auth/register.html", form=form)
 

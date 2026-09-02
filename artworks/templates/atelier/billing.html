@@ -1,0 +1,53 @@
+{% extends "atelier/shell.html" %}
+{% block title %}Offre — Atelier{% endblock %}
+
+{% block atelier %}
+<section class="atelier-head">
+  <div>
+    <p class="eyebrow">Abonnement</p>
+    <h1>Votre offre</h1>
+    <p class="lead-sm">
+      Actuellement : <strong>{{ current.name }}</strong> — {{ current.price_label }}.
+      {{ current.works_label }}.
+      {% if current_user.plan_status != 'active' %}Statut : {{ current_user.plan_status }}.{% endif %}
+    </p>
+  </div>
+  {% if current_user.stripe_customer_id and stripe_ok %}
+    <form method="post" action="{{ url_for('atelier.billing_portal') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-ghost" type="submit">Gérer la facturation</button>
+    </form>
+  {% endif %}
+</section>
+
+{% if not stripe_ok %}
+  <p class="hint">Le paiement en ligne n’est pas encore ouvert. Un administrateur peut activer une offre à la main.</p>
+{% endif %}
+
+<div class="offers-grid atelier-offers">
+  {% for offer in offers %}
+    <article class="offer-card {% if offer.key == current.key %}is-current{% endif %} {% if offer.key == 'pro' %}is-featured{% endif %}">
+      <p class="offer-badge">{{ offer.badge }} {{ offer.name }}</p>
+      <p class="offer-audience">{{ offer.audience }}</p>
+      <p class="offer-price">{{ offer.price_label }}</p>
+      <ul>
+        {% for line in offer.feature_lines %}
+          <li>{{ line }}</li>
+        {% endfor %}
+      </ul>
+      {% if offer.key == current.key %}
+        <p class="hint">Offre actuelle</p>
+      {% else %}
+        <form method="post" action="{{ url_for('atelier.billing_take', plan_key=offer.key) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn {% if offer.price_cents %}btn-ink{% else %}btn-ghost{% endif %}" type="submit">
+            {% if offer.price_cents > current.price_cents %}Passer à {{ offer.name }}
+            {% elif offer.price_cents == 0 %}Revenir à Découverte
+            {% else %}Choisir {{ offer.name }}{% endif %}
+          </button>
+        </form>
+      {% endif %}
+    </article>
+  {% endfor %}
+</div>
+{% endblock %}

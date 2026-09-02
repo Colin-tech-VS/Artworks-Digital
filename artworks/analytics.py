@@ -59,7 +59,7 @@ def should_track(req: Request) -> bool:
     if req.method != "GET":
         return False
     endpoint = req.endpoint or ""
-    if endpoint in ("static", "media", "public.sitemap", "public.robots") or endpoint.startswith("atelier.") or endpoint.startswith("admin."):
+    if endpoint in ("static", "media", "public.sitemap", "public.robots") or endpoint.startswith("atelier.") or endpoint.startswith("admin.") or endpoint.startswith("billing."):
         return False
     if req.path.startswith("/static") or req.path.startswith("/media"):
         return False

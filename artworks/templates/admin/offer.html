@@ -1,0 +1,39 @@
+{% extends "admin/shell.html" %}
+{% block title %}{{ offer.name }} — Offres{% endblock %}
+
+{% block admin %}
+<section class="atelier-head">
+  <div>
+    <p class="eyebrow">Offre {{ offer.key }}</p>
+    <h1>{{ offer.badge }} {{ offer.name }}</h1>
+    <p class="lead-sm">Un changement de prix créera un nouveau Price Stripe au prochain sync.</p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('admin.offers') }}">Retour</a>
+</section>
+
+<form class="sheet" method="post" novalidate>
+  {{ form.hidden_tag() }}
+  <div class="split">
+    <label>{{ form.name.label }}{{ form.name() }}</label>
+    <label>{{ form.badge.label }}{{ form.badge() }}</label>
+  </div>
+  <label>{{ form.audience.label }}{{ form.audience() }}</label>
+  <label>{{ form.features_text.label }}{{ form.features_text(rows=6) }}</label>
+  <div class="split">
+    <label>{{ form.price_cents.label }}{{ form.price_cents() }}</label>
+    <label>{{ form.max_works.label }}{{ form.max_works() }}</label>
+  </div>
+  <label class="check">{{ form.active() }}<span>Offre active</span></label>
+  <div class="flag-grid">
+    <label class="check">{{ form.allow_stats() }}<span>Statistiques</span></label>
+    <label class="check">{{ form.allow_customize() }}<span>Personnalisation</span></label>
+    <label class="check">{{ form.allow_share() }}<span>Partage</span></label>
+    <label class="check">{{ form.allow_advanced_stats() }}<span>Stats avancées</span></label>
+    <label class="check">{{ form.allow_featured() }}<span>Mise en avant</span></label>
+    <label class="check">{{ form.allow_ai() }}<span>IA</span></label>
+    <label class="check">{{ form.allow_priority() }}<span>Visibilité prioritaire</span></label>
+    <label class="check">{{ form.allow_collections() }}<span>Collections</span></label>
+  </div>
+  <button class="btn btn-ink" type="submit">Enregistrer</button>
+</form>
+{% endblock %}

@@ -9,3 +9,4 @@ Pillow==11.3.0
 gunicorn==23.0.0
 psycopg2-binary==2.9.10
 python-dotenv==1.1.1
+stripe==12.5.1

@@ -1,0 +1,72 @@
+{% extends "admin/shell.html" %}
+{% block title %}Abonnements — Admin{% endblock %}
+
+{% block admin %}
+<section class="atelier-head">
+  <div>
+    <p class="eyebrow">Facturation</p>
+    <h1>Abonnements</h1>
+    <p class="lead-sm">
+      Attribuez une offre à la main. {% if stripe_ok %}Stripe est branché.{% else %}Sans clés Stripe, seule l’attribution manuelle s’applique.{% endif %}
+    </p>
+  </div>
+</section>
+
+<div class="table-wrap">
+  <table class="data">
+    <thead>
+      <tr>
+        <th>Artiste</th>
+        <th>Offre</th>
+        <th>Statut</th>
+        <th>Stripe</th>
+        <th>Attribuer</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for artist in artists %}
+        <tr>
+          <td>
+            <strong>{{ artist.display_name }}</strong>
+            {% if artist.is_example %}<em class="tag">exemple</em>{% endif %}
+            <div class="quiet">{{ artist.email }}</div>
+          </td>
+          <td>{{ artist.offer.badge }} {{ artist.offer.name }}</td>
+          <td>
+            {{ artist.plan_status }}
+            {% if artist.plan_override %}<em class="tag">manuel</em>{% endif %}
+          </td>
+          <td class="quiet">{{ artist.stripe_subscription_id or "—" }}</td>
+          <td>
+            <form class="inline-assign" method="post" action="{{ url_for('admin.assign_plan', artist_id=artist.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <select name="plan_key">
+                {% for offer in offers %}
+                  <option value="{{ offer.key }}" {% if offer.key == artist.plan_key %}selected{% endif %}>{{ offer.name }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit">Appliquer</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if events %}
+  <section class="panel">
+    <header class="panel-head">
+      <h2>Historique récent</h2>
+    </header>
+    <ul class="mini-table">
+      {% for event in events %}
+        <li>
+          <strong>{{ event.plan_key }} · {{ event.status }}</strong>
+          <span>{{ event.note }} · {{ event.created_at.strftime('%d/%m/%Y %H:%M') if event.created_at else '' }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endif %}
+{% endblock %}

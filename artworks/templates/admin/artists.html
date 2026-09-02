@@ -15,6 +15,7 @@
       <tr>
         <th>Artiste</th>
         <th>E-mail</th>
+        <th>Offre</th>
         <th>Salle</th>
         <th>Œuvres</th>
         <th></th>
@@ -28,6 +29,7 @@
             {% if artist.is_example %}<em class="tag">exemple</em>{% endif %}
           </td>
           <td>{{ artist.email }}</td>
+          <td>{{ artist.offer.name }}{% if artist.plan_override %} <em class="tag">manuel</em>{% endif %}</td>
           <td>
             {% if artist.published %}
               <a href="{{ url_for('public.gallery', slug=artist.slug) }}">/galerie/{{ artist.slug }}</a>

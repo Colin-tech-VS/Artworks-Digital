@@ -7,6 +7,7 @@
     <p class="eyebrow">Vue d’ensemble</p>
     <h1>{{ current_user.display_name }}</h1>
     <p class="lead-sm">
+      Offre {{ offer.name }} · {{ offer.works_label }}.
       {% if current_user.published %}
         Visible à <a href="{{ url_for('public.gallery', slug=current_user.slug) }}">/galerie/{{ current_user.slug }}</a>
       {% else %}
@@ -15,8 +16,12 @@
     </p>
   </div>
   <div class="atelier-actions">
-    <a class="btn btn-ghost" href="{{ url_for('atelier.gallery') }}">Éditer la salle</a>
-    <a class="btn btn-ink" href="{{ url_for('atelier.new_work') }}">Accrocher une œuvre</a>
+    <a class="btn btn-ghost" href="{{ url_for('atelier.billing') }}">Changer d’offre</a>
+    {% if can_add %}
+      <a class="btn btn-ink" href="{{ url_for('atelier.new_work') }}">Accrocher une œuvre</a>
+    {% else %}
+      <a class="btn btn-ink" href="{{ url_for('atelier.billing') }}">Plafond atteint</a>
+    {% endif %}
   </div>
 </section>
 

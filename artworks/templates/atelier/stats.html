@@ -1,0 +1,41 @@
+{% extends "atelier/shell.html" %}
+{% block title %}Statistiques — Atelier{% endblock %}
+
+{% block atelier %}
+<section class="atelier-head">
+  <div>
+    <p class="eyebrow">{{ offer.name }}</p>
+    <h1>Statistiques</h1>
+    <p class="lead-sm">{% if advanced %}Lecture avancée sur 28 jours.{% else %}Visites des 14 derniers jours.{% endif %}</p>
+  </div>
+</section>
+
+<ul class="stat-row kpi">
+  <li>
+    <span>{{ views }}</span>
+    <em>Vues d’œuvres</em>
+  </li>
+  <li>
+    <span>{{ hung }}</span>
+    <em>Accrochées</em>
+  </li>
+  <li class="stat-chart">
+    <span>{{ trend_total }}</span>
+    <em>Visites période</em>
+    {{ spark|safe }}
+  </li>
+</ul>
+
+{% if advanced %}
+  <section class="panel">
+    <header class="panel-head">
+      <h2>Jour par jour</h2>
+    </header>
+    <ul class="bars">
+      {% for value in trend %}
+        <li><strong>{{ value }}</strong><small>jour {{ loop.index }}</small></li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "atelier/shell.html" %}
+{% block title %}IA — Atelier{% endblock %}
+
+{% block atelier %}
+<section class="atelier-head">
+  <div>
+    <p class="eyebrow">{{ offer.name }}</p>
+    <h1>Outils de présentation</h1>
+    <p class="lead-sm">
+      {% if advanced %}
+        Brouillons enrichis à partir de votre accrochage.
+      {% else %}
+        Une première note à partir des œuvres déjà accrochées.
+      {% endif %}
+    </p>
+  </div>
+</section>
+
+<section class="panel">
+  <header class="panel-head">
+    <h2>Note d’intention suggérée</h2>
+  </header>
+  {% if draft %}
+    <p class="mail-body">{{ draft }}</p>
+  {% else %}
+    <p class="empty-room">Accrochez quelques œuvres pour générer une note.</p>
+  {% endif %}
+</section>
+
+{% if works %}
+  <section class="panel">
+    <header class="panel-head">
+      <h2>Œuvres prises en compte</h2>
+    </header>
+    <ul class="mini-table">
+      {% for work in works %}
+        <li>
+          <strong>{{ work.title }}</strong>
+          <span>{{ work.cartel or "Sans cartel" }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endif %}
+{% endblock %}

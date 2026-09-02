@@ -44,6 +44,9 @@
   </label>
   <label>
     {{ form.cover.label }}
+    {% if not current_user.has_feature('customize') %}
+      <span class="hint">Image de salle à partir de l’offre Artiste.</span>
+    {% endif %}
     {{ form.cover() }}
     {% for error in form.cover.errors %}<small>{{ error }}</small>{% endfor %}
   </label>

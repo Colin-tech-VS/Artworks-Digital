@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Offres — Artworksdigital{% endblock %}
+{% block description %}Quatre offres pour composer votre galerie : Découverte, Artiste, Pro et Studio. À partir de 0 €/mois.{% endblock %}
+{% block body_class %}offers-page{% endblock %}
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "OfferCatalog",
+  "name": "Offres Artworksdigital",
+  "url": {{ canonical_url() | tojson }},
+  "itemListElement": [
+    {% for offer in offers %}
+    {
+      "@type": "Offer",
+      "name": {{ offer.name | tojson }},
+      "description": {{ offer.audience | tojson }},
+      "price": {{ (offer.price_cents / 100) | tojson }},
+      "priceCurrency": "EUR"
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="room-head">
+  <p class="eyebrow">Tarifs</p>
+  <h1>Choisir son offre</h1>
+  <p class="lead">Un atelier privé, une galerie publique. Vous commencez gratuitement.</p>
+</section>
+
+<div class="offers-grid">
+  {% for offer in offers %}
+    <article class="offer-card {% if offer.key == 'pro' %}is-featured{% endif %}">
+      <p class="offer-badge">{{ offer.badge }} {{ offer.name }}</p>
+      <p class="offer-audience">{{ offer.audience }}</p>
+      <p class="offer-price">{{ offer.price_label }}</p>
+      <ul>
+        {% for line in offer.feature_lines %}
+          <li>{{ line }}</li>
+        {% endfor %}
+      </ul>
+      {% if current_user.is_authenticated %}
+        <a class="btn {% if offer.key == 'pro' %}btn-ink{% else %}btn-ghost{% endif %}" href="{{ url_for('atelier.billing') }}">Gérer mon offre</a>
+      {% else %}
+        <a class="btn {% if offer.key == 'pro' %}btn-ink{% else %}btn-ghost{% endif %}" href="{{ url_for('auth.register') }}">
+          {% if offer.price_cents %}Choisir {{ offer.name }}{% else %}Commencer{% endif %}
+        </a>
+      {% endif %}
+    </article>
+  {% endfor %}
+</div>
+{% endblock %}

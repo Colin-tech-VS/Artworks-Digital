@@ -24,6 +24,12 @@ class Artist(UserMixin, db.Model):
     published = db.Column(db.Boolean, default=False, nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
     is_example = db.Column(db.Boolean, default=False, nullable=False)
+    plan_key = db.Column(db.String(40), default="decouverte", nullable=False, index=True)
+    plan_status = db.Column(db.String(30), default="active", nullable=False)
+    plan_override = db.Column(db.Boolean, default=False, nullable=False)
+    stripe_customer_id = db.Column(db.String(80), default="")
+    stripe_subscription_id = db.Column(db.String(80), default="")
+    plan_period_end = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=utcnow, nullable=False)
 
@@ -90,6 +96,38 @@ class Artist(UserMixin, db.Model):
     def unread_count(self) -> int:
         return self.messages.filter_by(is_read=False, direction="in").count()
 
+    @property
+    def offer(self):
+        from artworks.plans import get_offer
+
+        return get_offer(self.plan_key)
+
+    def has_feature(self, name: str) -> bool:
+        offer = self.offer
+        return bool(offer and offer.allows(name))
+
+    def work_limit(self) -> int | None:
+        offer = self.offer
+        return None if offer is None else offer.max_works
+
+    def can_add_work(self) -> bool:
+        limit = self.work_limit()
+        if not limit:
+            return True
+        return self.works.count() < limit
+
+    def public_works(self):
+        works = self.hung_works
+        limit = self.work_limit()
+        if limit:
+            return works[:limit]
+        return works
+
+    @property
+    def plan_rank(self) -> int:
+        offer = self.offer
+        return offer.sort if offer else 0
+
 
 class Work(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -103,6 +141,7 @@ class Work(db.Model):
     visible = db.Column(db.Boolean, default=True, nullable=False)
     position = db.Column(db.Integer, default=0, nullable=False)
     view_count = db.Column(db.Integer, default=0, nullable=False)
+    collection_name = db.Column(db.String(120), default="")
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=utcnow, nullable=False)
 
@@ -146,6 +185,59 @@ class PageView(db.Model):
     artist_id = db.Column(db.Integer, db.ForeignKey("artist.id"), nullable=True, index=True)
     work_id = db.Column(db.Integer, db.ForeignKey("work.id"), nullable=True, index=True)
     is_bot = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
+
+
+class Offer(db.Model):
+    key = db.Column(db.String(40), primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    badge = db.Column(db.String(16), default="")
+    audience = db.Column(db.String(180), default="")
+    features_text = db.Column(db.Text, default="")
+    price_cents = db.Column(db.Integer, default=0, nullable=False)
+    max_works = db.Column(db.Integer, nullable=True)
+    sort = db.Column(db.Integer, default=0, nullable=False)
+    active = db.Column(db.Boolean, default=True, nullable=False)
+    allow_stats = db.Column(db.Boolean, default=False, nullable=False)
+    allow_customize = db.Column(db.Boolean, default=False, nullable=False)
+    allow_share = db.Column(db.Boolean, default=False, nullable=False)
+    allow_advanced_stats = db.Column(db.Boolean, default=False, nullable=False)
+    allow_featured = db.Column(db.Boolean, default=False, nullable=False)
+    allow_ai = db.Column(db.Boolean, default=False, nullable=False)
+    allow_priority = db.Column(db.Boolean, default=False, nullable=False)
+    allow_collections = db.Column(db.Boolean, default=False, nullable=False)
+    stripe_product_id = db.Column(db.String(80), default="")
+    stripe_price_id = db.Column(db.String(80), default="")
+
+    def allows(self, name: str) -> bool:
+        return bool(getattr(self, f"allow_{name}", False))
+
+    @property
+    def price_label(self) -> str:
+        if not self.price_cents:
+            return "0 €/mois"
+        euros = self.price_cents / 100
+        text = f"{euros:.2f}".replace(".", ",")
+        return f"{text} €/mois"
+
+    @property
+    def works_label(self) -> str:
+        if not self.max_works:
+            return "Œuvres illimitées"
+        return f"Jusqu’à {self.max_works} œuvres"
+
+    @property
+    def feature_lines(self) -> list[str]:
+        return [line.strip() for line in (self.features_text or "").splitlines() if line.strip()]
+
+
+class SubscriptionEvent(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    artist_id = db.Column(db.Integer, db.ForeignKey("artist.id"), nullable=True, index=True)
+    plan_key = db.Column(db.String(40), default="")
+    status = db.Column(db.String(40), default="")
+    stripe_id = db.Column(db.String(80), default="")
+    note = db.Column(db.String(240), default="")
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
 
 

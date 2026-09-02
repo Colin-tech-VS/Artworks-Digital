@@ -48,6 +48,7 @@
     <a class="mark" href="{{ url_for('public.home') }}">Artworks <em>Digital</em></a>
     <nav>
       <a href="{{ url_for('public.galleries') }}">Galeries</a>
+      <a href="{{ url_for('public.offers') }}">Offres</a>
       {% if current_user.is_authenticated %}
         <a href="{{ url_for('atelier.overview') }}">Atelier</a>
         {% if current_user.published %}
@@ -77,7 +78,7 @@
 
   {% block footer %}
   <footer class="site-foot">
-    <p>Artworksdigital — la galerie appartient à l’artiste.</p>
+    <p>Artworksdigital — la galerie appartient à l’artiste. · <a href="{{ url_for('public.offers') }}">Offres</a></p>
   </footer>
   {% endblock %}
 </body>

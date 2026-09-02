@@ -35,6 +35,9 @@ class Config:
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "")
     MAIL_FROM = os.environ.get("MAIL_FROM", "Artworksdigital <hello@artworksdigital.fr>")
     MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "1") != "0"
+    STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+    STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
+    STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
 
 def _add_column(table: str, column: str, ddl: str) -> None:
@@ -68,16 +71,26 @@ def ensure_schema() -> None:
     _add_column("artist", "is_admin", bool_false)
     _add_column("artist", "is_example", bool_false)
     _add_column("artist", "updated_at", dt_type)
+    _add_column("artist", "plan_key", "VARCHAR(40) DEFAULT 'decouverte'")
+    _add_column("artist", "plan_status", "VARCHAR(30) DEFAULT 'active'")
+    _add_column("artist", "plan_override", bool_false)
+    _add_column("artist", "stripe_customer_id", "VARCHAR(80) DEFAULT ''")
+    _add_column("artist", "stripe_subscription_id", "VARCHAR(80) DEFAULT ''")
+    _add_column("artist", "plan_period_end", dt_type)
+    _add_column("work", "collection_name", "VARCHAR(120) DEFAULT ''")
     try:
         db.session.execute(text("UPDATE artist SET updated_at = created_at WHERE updated_at IS NULL"))
         db.session.execute(text("UPDATE work SET updated_at = created_at WHERE updated_at IS NULL"))
+        db.session.execute(text("UPDATE artist SET plan_key = 'decouverte' WHERE plan_key IS NULL OR plan_key = ''"))
         db.session.commit()
     except Exception:
         db.session.rollback()
 
+    from artworks.plans import seed_offers
     from artworks.seed import seed_examples
 
     try:
+        seed_offers()
         seed_examples()
     except SQLAlchemyError:
         db.session.rollback()

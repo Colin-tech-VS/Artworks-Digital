@@ -14,6 +14,7 @@
         <p class="side-name">{{ current_user.display_name }}</p>
         <p class="side-status {% if current_user.published %}is-open{% endif %}">
           {% if current_user.published %}Salle ouverte{% else %}Salle fermée{% endif %}
+          · {{ current_user.offer.name }}
         </p>
       </div>
     </div>
@@ -30,6 +31,18 @@
       <a href="{{ url_for('atelier.messages') }}" class="{% if request.endpoint in ['atelier.messages', 'atelier.message_detail'] %}is-on{% endif %}">
         <span>Messages</span>
         {% if unread %}<em class="badge">{{ unread }}</em>{% endif %}
+      </a>
+      <a href="{{ url_for('atelier.billing') }}" class="{% if request.endpoint in ['atelier.billing', 'atelier.billing_return'] %}is-on{% endif %}">
+        <span>Offre</span>
+      </a>
+      <a href="{{ url_for('atelier.stats') }}" class="{% if request.endpoint == 'atelier.stats' %}is-on{% endif %}">
+        <span>Statistiques</span>
+      </a>
+      <a href="{{ url_for('atelier.ai_tools') }}" class="{% if request.endpoint == 'atelier.ai_tools' %}is-on{% endif %}">
+        <span>IA</span>
+      </a>
+      <a href="{{ url_for('atelier.collections') }}" class="{% if request.endpoint == 'atelier.collections' %}is-on{% endif %}">
+        <span>Collections</span>
       </a>
       <a href="{{ url_for('atelier.account') }}" class="{% if request.endpoint == 'atelier.account' %}is-on{% endif %}">
         <span>Compte</span>
