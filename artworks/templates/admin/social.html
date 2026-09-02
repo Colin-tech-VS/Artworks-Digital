@@ -57,7 +57,7 @@
       brouillon et un visuel, mais sans rédaction par l’IA.
     </p>
   {% endif %}
-  <form class="sheet" method="post" novalidate>
+  <form class="sheet" method="post" novalidate data-busy="Composition du visuel…">
     {{ compose_form.hidden_tag() }}
     <input type="hidden" name="action" value="generate">
     <label>
@@ -115,40 +115,66 @@
   <header class="panel-head">
     <h2>2 · Relire et publier</h2>
   </header>
-  <form class="sheet" method="post" novalidate>
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="action" value="publish">
-    {{ form.image_name(type="hidden") }}
-    {{ form.alt_text(type="hidden") }}
-    {{ form.prompt(type="hidden", id="publish_prompt") }}
-    {{ form.design_json(type="hidden") }}
-    <label>
-      Œuvre publiée
-      <select name="work_id">
-        <option value="">— sans œuvre —</option>
-        {% for work in works %}
-          <option value="{{ work.id }}" {% if form.work_id.data and form.work_id.data|int == work.id %}selected{% endif %}>{{ work.artist.display_name }} — {{ work.title }}</option>
-        {% endfor %}
-      </select>
-    </label>
-    <label>{{ form.title.label }}{{ form.title() }}</label>
-    <label>{{ form.message.label }}{{ form.message(rows=7) }}
-      {% for error in form.message.errors %}<small>{{ error }}</small>{% endfor %}
-    </label>
-    <div class="split">
-      <label>{{ form.link.label }}{{ form.link(placeholder="https://www.artworksdigital.fr/…") }}</label>
-      <label>{{ form.image_url.label }}{{ form.image_url() }}</label>
-    </div>
-    <p class="quiet">Instagram exige une image accessible en HTTPS : le visuel généré en fournit une.</p>
-    <div class="flag-grid">
-      <label class="check">{{ form.facebook() }}<span>Facebook</span></label>
-      <label class="check">{{ form.instagram() }}<span>Instagram</span></label>
-      <label class="check">{{ form.pinterest() }}<span>Pinterest</span></label>
-      <label class="check">{{ form.deviantart() }}<span>DeviantArt</span></label>
-    </div>
-    <button class="btn btn-ink" type="submit">Publier maintenant</button>
-  </form>
+  <div class="draft-split publish-split">
+    <form class="sheet" method="post" novalidate data-busy="Publication en cours…">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="publish">
+      {{ form.image_name(type="hidden") }}
+      {{ form.alt_text(type="hidden") }}
+      {{ form.prompt(type="hidden", id="publish_prompt") }}
+      {{ form.design_json(type="hidden") }}
+      <label>
+        Œuvre publiée
+        <select name="work_id">
+          <option value="">— sans œuvre —</option>
+          {% for work in works %}
+            <option value="{{ work.id }}" {% if form.work_id.data and form.work_id.data|int == work.id %}selected{% endif %}>{{ work.artist.display_name }} — {{ work.title }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>{{ form.title.label }}{{ form.title() }}</label>
+      <label>{{ form.message.label }}{{ form.message(rows=7) }}
+        {% for error in form.message.errors %}<small>{{ error }}</small>{% endfor %}
+      </label>
+      <div class="split">
+        <label>{{ form.link.label }}{{ form.link(placeholder="https://www.artworksdigital.fr/…") }}</label>
+        <label>{{ form.image_url.label }}{{ form.image_url() }}</label>
+      </div>
+      <p class="quiet">Instagram exige une image accessible en HTTPS : le visuel généré en fournit une.</p>
+      <div class="flag-grid">
+        <label class="check">{{ form.facebook() }}<span>Facebook</span></label>
+        <label class="check">{{ form.instagram() }}<span>Instagram</span></label>
+        <label class="check">{{ form.pinterest() }}<span>Pinterest</span></label>
+        <label class="check">{{ form.deviantart() }}<span>DeviantArt</span></label>
+      </div>
+      <button class="btn btn-ink" type="submit">Publier maintenant</button>
+    </form>
+    <aside class="post-preview" id="post-preview">
+      <p class="eyebrow">Aperçu</p>
+      <article class="phone">
+        <header>
+          <span class="phone-dot" aria-hidden="true"></span>
+          <strong>{{ status.instagram.name or status.facebook.name or "Artworksdigital" }}</strong>
+        </header>
+        <figure>
+          {% set preview_src = url_for('media', filename=form.image_name.data) if form.image_name.data else (form.image_url.data or '') %}
+          <img id="preview-image" src="{{ preview_src }}" alt="" {% if not preview_src %}hidden{% endif %}>
+          <p class="phone-blank" id="preview-blank" {% if preview_src %}hidden{% endif %}>Le visuel apparaîtra ici.</p>
+        </figure>
+        <p class="phone-caption" id="preview-caption">{{ form.message.data or "La légende se compose ici, comme sur le réseau." }}</p>
+      </article>
+    </aside>
+  </div>
 </section>
+
+{% if feed %}
+  <section class="panel">
+    <header class="panel-head"><h2>Déjà en ligne</h2></header>
+    {% with posts=feed %}
+      {% include "admin/_post_feed.html" %}
+    {% endwith %}
+  </section>
+{% endif %}
 
 {% if logs %}
   <section class="panel">

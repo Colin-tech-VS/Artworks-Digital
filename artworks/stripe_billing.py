@@ -17,43 +17,65 @@ def _api():
     return stripe
 
 
+_BILLING_PATHS = {
+    "atelier.billing": "/atelier/offre",
+    "atelier.billing_return": "/atelier/offre/retour",
+}
+
+
+def _public_url(endpoint: str) -> str:
+    from artworks.seo import canonical_url
+
+    return canonical_url(_BILLING_PATHS.get(endpoint) or url_for(endpoint))
+
+
+def ensure_offer_priced(offer: Offer) -> None:
+    """Crée le Product/Price Stripe s’il manque, pour qu’un checkout parte vraiment."""
+    if not stripe_ready() or offer.price_cents <= 0:
+        return
+    api = _api()
+    if not offer.stripe_product_id:
+        product = api.Product.create(
+            name=f"Artworksdigital {offer.name}",
+            description=offer.audience or offer.name,
+            metadata={"plan_key": offer.key},
+        )
+        offer.stripe_product_id = product.id
+    price_ok = False
+    if offer.stripe_price_id:
+        try:
+            price = api.Price.retrieve(offer.stripe_price_id)
+            price_ok = (
+                price.get("unit_amount") == offer.price_cents
+                and price.get("active")
+                and (price.get("recurring") or {}).get("interval") == "month"
+            )
+        except Exception:
+            price_ok = False
+    if not price_ok:
+        price = api.Price.create(
+            product=offer.stripe_product_id,
+            unit_amount=offer.price_cents,
+            currency="eur",
+            recurring={"interval": "month"},
+            metadata={"plan_key": offer.key},
+        )
+        offer.stripe_price_id = price.id
+    db.session.commit()
+
+
 def sync_offers_to_stripe() -> tuple[bool, str]:
     if not stripe_ready():
         return False, "Clés Stripe absentes."
-    api = _api()
     try:
+        priced = 0
         for offer in all_offers():
             if offer.price_cents <= 0:
                 continue
-            if not offer.stripe_product_id:
-                product = api.Product.create(
-                    name=f"Artworksdigital {offer.name}",
-                    description=offer.audience or offer.name,
-                    metadata={"plan_key": offer.key},
-                )
-                offer.stripe_product_id = product.id
-            price_ok = False
+            ensure_offer_priced(offer)
             if offer.stripe_price_id:
-                try:
-                    price = api.Price.retrieve(offer.stripe_price_id)
-                    price_ok = (
-                        price.get("unit_amount") == offer.price_cents
-                        and price.get("active")
-                        and price.get("recurring", {}).get("interval") == "month"
-                    )
-                except Exception:
-                    price_ok = False
-            if not price_ok:
-                price = api.Price.create(
-                    product=offer.stripe_product_id,
-                    unit_amount=offer.price_cents,
-                    currency="eur",
-                    recurring={"interval": "month"},
-                    metadata={"plan_key": offer.key},
-                )
-                offer.stripe_price_id = price.id
-        db.session.commit()
-        return True, "Offres synchronisées avec Stripe."
+                priced += 1
+        return True, f"{priced} offre(s) payante(s) synchronisée(s) avec Stripe."
     except Exception as exc:
         db.session.rollback()
         return False, str(exc)
@@ -74,20 +96,25 @@ def _customer_for(artist: Artist) -> str:
 
 
 def checkout_url(artist: Artist, offer: Offer) -> str:
-    if not stripe_ready() or not offer.stripe_price_id:
+    if not stripe_ready():
         raise RuntimeError("Stripe n’est pas encore branché pour cette offre.")
+    ensure_offer_priced(offer)
+    if not offer.stripe_price_id:
+        raise RuntimeError("Cette offre n’a pas encore de tarif Stripe.")
     api = _api()
     customer = _customer_for(artist)
     session = api.checkout.Session.create(
         mode="subscription",
         customer=customer,
         line_items=[{"price": offer.stripe_price_id, "quantity": 1}],
-        success_url=url_for("atelier.billing_return", _external=True) + "?session_id={CHECKOUT_SESSION_ID}",
-        cancel_url=url_for("atelier.billing", _external=True),
+        success_url=_public_url("atelier.billing_return") + "?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url=_public_url("atelier.billing"),
         allow_promotion_codes=True,
         metadata={"artist_id": str(artist.id), "plan_key": offer.key},
         subscription_data={"metadata": {"artist_id": str(artist.id), "plan_key": offer.key}},
     )
+    if not session.url:
+        raise RuntimeError("Stripe n’a pas renvoyé d’adresse de paiement.")
     return session.url
 
 
@@ -97,7 +124,7 @@ def portal_url(artist: Artist) -> str:
     api = _api()
     session = api.billing_portal.Session.create(
         customer=artist.stripe_customer_id,
-        return_url=url_for("atelier.billing", _external=True),
+        return_url=_public_url("atelier.billing"),
     )
     return session.url
 
@@ -126,7 +153,42 @@ def apply_plan(artist: Artist, plan_key: str, status: str = "active", subscripti
     if artist.plan_key != previous_key and status not in {"incomplete", "past_due"}:
         final = get_offer(artist.plan_key)
         if final is not None:
-            send_plan_changed(artist, final.name, final.price_label)
+            try:
+                send_plan_changed(artist, final.name, final.price_label)
+            except Exception:
+                current_app.logger.exception("Impossible d’envoyer l’e-mail de changement d’offre")
+
+
+def confirm_checkout(artist: Artist, session_id: str) -> tuple[bool, str]:
+    """Applique l’offre au retour de Checkout, même si le webhook tarde."""
+    if not stripe_ready() or not (session_id or "").strip():
+        return False, "Session Stripe manquante."
+    try:
+        session = _api().checkout.Session.retrieve(session_id)
+    except Exception as exc:
+        return False, str(exc)[:180]
+    meta = session.get("metadata") or {}
+    meta_id = str(meta.get("artist_id") or "")
+    if meta_id and meta_id != str(artist.id):
+        return False, "Ce paiement n’appartient pas à cet atelier."
+    customer = session.get("customer")
+    if customer and artist.stripe_customer_id and customer != artist.stripe_customer_id:
+        return False, "Ce paiement n’appartient pas à cet atelier."
+    paid = session.get("payment_status")
+    status = session.get("status")
+    if status != "complete" and paid not in {"paid", "no_payment_required"}:
+        return False, "Le paiement n’est pas encore confirmé."
+    plan_key = meta.get("plan_key") or artist.plan_key
+    sub_id = session.get("subscription") or ""
+    if isinstance(sub_id, dict):
+        sub_id = sub_id.get("id") or ""
+    apply_plan(artist, plan_key, status="active", subscription_id=str(sub_id), note="Retour checkout")
+    artist.plan_override = False
+    if customer and not artist.stripe_customer_id:
+        artist.stripe_customer_id = str(customer)
+    db.session.commit()
+    offer = get_offer(artist.plan_key)
+    return True, f"Offre {offer.name} activée." if offer else "Offre mise à jour."
 
 
 def cancel_to_free(artist: Artist) -> tuple[bool, str]:
@@ -192,7 +254,10 @@ def handle_webhook(payload: bytes, signature: str) -> None:
         if artist:
             artist.plan_status = "past_due"
             db.session.commit()
-            send_payment_failed(artist)
+            try:
+                send_payment_failed(artist)
+            except Exception:
+                current_app.logger.exception("Impossible d’envoyer l’e-mail de paiement refusé")
 
 
 def _artist_from_meta(meta: dict, customer_id: str | None) -> Artist | None:

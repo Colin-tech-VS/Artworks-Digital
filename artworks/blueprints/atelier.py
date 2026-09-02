@@ -16,7 +16,7 @@ from artworks.models import Artist, MailMessage, Work
 from artworks.plans import active_offers, get_offer
 from artworks.slugs import unique_slug
 from artworks.mistral import mistral_ready
-from artworks.stripe_billing import cancel_to_free, checkout_url, portal_url, stripe_ready
+from artworks.stripe_billing import cancel_to_free, checkout_url, confirm_checkout, portal_url, stripe_ready
 
 atelier_bp = Blueprint("atelier", __name__, url_prefix="/atelier")
 
@@ -91,7 +91,7 @@ def billing_take(plan_key: str):
         ok, message = cancel_to_free(current_user)
         flash(message, "ok" if ok else "info")
         return redirect(url_for("atelier.billing"))
-    if not stripe_ready() or not offer.stripe_price_id:
+    if not stripe_ready():
         flash("Le paiement Stripe n’est pas encore ouvert. Un admin peut activer l’offre à la main.", "info")
         return redirect(url_for("atelier.billing"))
     try:
@@ -114,7 +114,12 @@ def billing_portal():
 @atelier_bp.route("/offre/retour")
 @login_required
 def billing_return():
-    flash("Paiement reçu. L’offre se met à jour dès la confirmation Stripe.", "ok")
+    session_id = (request.args.get("session_id") or "").strip()
+    if session_id:
+        ok, message = confirm_checkout(current_user, session_id)
+        flash(message, "ok" if ok else "info")
+    else:
+        flash("Paiement reçu. L’offre se met à jour dès la confirmation Stripe.", "ok")
     return redirect(url_for("atelier.billing"))
 
 

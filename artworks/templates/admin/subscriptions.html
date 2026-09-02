@@ -7,52 +7,41 @@
     <p class="eyebrow">Facturation</p>
     <h1>Abonnements</h1>
     <p class="lead-sm">
-      Attribuez une offre à la main. {% if stripe_ok %}Stripe est branché.{% else %}Sans clés Stripe, seule l’attribution manuelle s’applique.{% endif %}
+      {% if stripe_ok %}Stripe est branché : l’attribution manuelle reste possible, et elle prime sur le webhook.{% else %}Sans clés Stripe, seule l’attribution manuelle s’applique.{% endif %}
     </p>
   </div>
 </section>
 
-<div class="table-wrap">
-  <table class="data">
-    <thead>
-      <tr>
-        <th>Artiste</th>
-        <th>Offre</th>
-        <th>Statut</th>
-        <th>Stripe</th>
-        <th>Attribuer</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for artist in artists %}
-        <tr>
-          <td>
-            <strong>{{ artist.display_name }}</strong>
-            {% if artist.is_example %}<em class="tag">exemple</em>{% endif %}
-            <div class="quiet">{{ artist.email }}</div>
-          </td>
-          <td>{{ artist.offer.badge }} {{ artist.offer.name }}</td>
-          <td>
+{% if artists %}
+  <ul class="admin-dossiers">
+    {% for artist in artists %}
+      <li class="admin-dossier" data-offre="{{ artist.plan_key }}">
+        <div class="admin-dossier-main">
+          <p class="eyebrow">
             {{ artist.plan_status }}
-            {% if artist.plan_override %}<em class="tag">manuel</em>{% endif %}
-          </td>
-          <td class="quiet">{{ artist.stripe_subscription_id or "—" }}</td>
-          <td>
-            <form class="inline-assign" method="post" action="{{ url_for('admin.assign_plan', artist_id=artist.id) }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <select name="plan_key">
-                {% for offer in offers %}
-                  <option value="{{ offer.key }}" {% if offer.key == artist.plan_key %}selected{% endif %}>{{ offer.name }}</option>
-                {% endfor %}
-              </select>
-              <button type="submit">Appliquer</button>
-            </form>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+            {% if artist.plan_override %} · manuel{% endif %}
+            {% if artist.stripe_subscription_id %} · Stripe{% endif %}
+            {% if artist.is_example %} · exemple{% endif %}
+          </p>
+          <h3>{{ artist.display_name }}</h3>
+          <p class="quiet">{{ artist.email }}</p>
+          <p class="admin-dossier-meta">{{ artist.offer.name if artist.offer else artist.plan_key }} · {{ artist.offer.price_label if artist.offer else '' }}</p>
+        </div>
+        <form class="inline-assign" method="post" action="{{ url_for('admin.assign_plan', artist_id=artist.id) }}" data-busy="Attribution de l’offre…">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <select name="plan_key" aria-label="Offre pour {{ artist.display_name }}">
+            {% for offer in offers %}
+              <option value="{{ offer.key }}" {% if offer.key == artist.plan_key %}selected{% endif %}>{{ offer.name }}</option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-ghost" type="submit">Appliquer</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="empty-room">Aucun atelier à facturer.</p>
+{% endif %}
 
 {% if events %}
   <section class="panel">

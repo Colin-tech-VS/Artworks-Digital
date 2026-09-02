@@ -82,14 +82,53 @@ if (gateDot && gate) {
   });
 }
 
-const flashes = document.querySelectorAll(".flash");
-flashes.forEach((el) => {
-  window.setTimeout(() => {
-    el.style.opacity = "0";
-    el.style.transform = "translateY(-8px)";
-    window.setTimeout(() => el.remove(), 400);
-  }, 4200);
-});
+(function () {
+  const LIFE = 4200;
+  const FADE = 400;
+
+  function host() {
+    let tray = document.querySelector(".flashes");
+    if (tray) return tray;
+    tray = document.createElement("ul");
+    tray.className = "flashes";
+    tray.setAttribute("aria-live", "polite");
+    document.body.appendChild(tray);
+    return tray;
+  }
+
+  function collect() {
+    document.querySelectorAll(".flash").forEach((el) => {
+      if (el.closest(".flashes")) return;
+      const item = document.createElement("li");
+      item.className = el.className;
+      item.setAttribute("role", el.classList.contains("flash-error") ? "alert" : "status");
+      item.textContent = el.textContent;
+      el.remove();
+      host().appendChild(item);
+    });
+  }
+
+  function arm(el) {
+    let timer;
+    const hide = () => {
+      el.classList.add("is-out");
+      window.setTimeout(() => {
+        const tray = el.closest(".flashes");
+        el.remove();
+        if (tray && !tray.querySelector(".flash")) tray.remove();
+      }, FADE);
+    };
+    const start = () => {
+      timer = window.setTimeout(hide, LIFE);
+    };
+    el.addEventListener("mouseenter", () => window.clearTimeout(timer));
+    el.addEventListener("mouseleave", start);
+    start();
+  }
+
+  collect();
+  document.querySelectorAll(".flash").forEach(arm);
+})();
 
 const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
 
@@ -398,4 +437,65 @@ document.querySelectorAll(".link-copy").forEach((button) => {
       bubble("kael", payload.error);
     }
   });
+})();
+
+document.querySelectorAll("form[data-busy]").forEach((form) => {
+  form.addEventListener("submit", (event) => {
+    if (form.classList.contains("is-busy")) {
+      event.preventDefault();
+      return;
+    }
+    form.classList.add("is-busy");
+    const submitter = event.submitter;
+    if (submitter && submitter.name) {
+      const carry = document.createElement("input");
+      carry.type = "hidden";
+      carry.name = submitter.name;
+      carry.value = submitter.value;
+      form.appendChild(carry);
+    }
+    const label = (submitter && submitter.dataset.busy) || form.dataset.busy || "Chargement…";
+    form.querySelectorAll("button[type=submit], input[type=submit]").forEach((el) => {
+      el.disabled = true;
+    });
+    const veil = document.createElement("div");
+    veil.className = "busy-veil";
+    veil.setAttribute("role", "status");
+    veil.innerHTML = `<div class="busy-card"><span class="busy-spin" aria-hidden="true"></span><p></p></div>`;
+    veil.querySelector("p").textContent = label;
+    document.body.appendChild(veil);
+    document.body.classList.add("is-busy");
+  });
+});
+
+(function () {
+  const caption = document.getElementById("preview-caption");
+  const image = document.getElementById("preview-image");
+  const blank = document.getElementById("preview-blank");
+  if (!caption || !image) return;
+  const message = document.getElementById("message");
+  const imageUrl = document.getElementById("image_url");
+  const imageName = document.getElementById("image_name");
+
+  const showImage = (src) => {
+    if (src) {
+      image.src = src;
+      image.hidden = false;
+      if (blank) blank.hidden = true;
+    } else {
+      image.removeAttribute("src");
+      image.hidden = true;
+      if (blank) blank.hidden = false;
+    }
+  };
+
+  const refresh = () => {
+    caption.textContent = (message?.value || "").trim() || "La légende se compose ici, comme sur le réseau.";
+    const name = (imageName?.value || "").trim();
+    const url = (imageUrl?.value || "").trim();
+    showImage(name ? `/media/${encodeURIComponent(name)}` : url);
+  };
+
+  message?.addEventListener("input", refresh);
+  imageUrl?.addEventListener("input", refresh);
 })();

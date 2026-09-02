@@ -6,7 +6,7 @@
   <div>
     <p class="eyebrow">Pilotage</p>
     <h1>Tableau de bord</h1>
-    <p class="lead-sm">{{ total_artists }} ateliers · {{ rooms }} salles ouvertes · {{ total_works }} œuvres · MRR {{ mrr_label }} · {% if stripe_ok %}Stripe{% else %}Stripe off{% endif %} · {% if mail_ok %}SMTP{% else %}SMTP off{% endif %} · {% if mistral_ok %}Mistral{% else %}Mistral off{% endif %}</p>
+    <p class="lead-sm">{{ total_artists }} ateliers · {{ rooms }} salles ouvertes · {{ total_works }} œuvres · {{ paying }} payant{{ 's' if paying != 1 }}</p>
   </div>
   <div class="range-tabs">
     <a href="?days=7" class="{% if days == 7 %}is-on{% endif %}">7 jours</a>
@@ -14,6 +14,25 @@
     <a href="?days=90" class="{% if days == 90 %}is-on{% endif %}">90 jours</a>
   </div>
 </section>
+
+<ul class="sys-strip">
+  <li class="{% if stripe_ok %}is-up{% else %}is-down{% endif %}">
+    <em>Stripe</em>
+    <span>{% if stripe_ok %}prêt{% else %}off{% endif %}</span>
+  </li>
+  <li class="{% if mail_ok %}is-up{% else %}is-down{% endif %}">
+    <em>SMTP</em>
+    <span>{% if mail_ok %}prêt{% else %}off{% endif %}</span>
+  </li>
+  <li class="{% if mistral_ok %}is-up{% else %}is-down{% endif %}">
+    <em>Mistral</em>
+    <span>{% if mistral_ok %}prêt{% else %}off{% endif %}</span>
+  </li>
+  <li class="{% if social.instagram.connected %}is-up{% elif social.instagram.configured %}is-down{% endif %}">
+    <em>Instagram</em>
+    <span>{% if social.instagram.connected %}{{ social.instagram.name }}{% elif social.instagram.configured %}à relier{% else %}absent{% endif %}</span>
+  </li>
+</ul>
 
 <ul class="stat-row kpi">
   <li>
@@ -36,19 +55,33 @@
   </li>
   <li>
     <span>{{ mrr_label }}</span>
-    <em>MRR (hors exemples)</em>
-    <small>{{ paying }} payants</small>
+    <em>MRR</em>
+    <small>{{ paying }} payant{{ 's' if paying != 1 }}</small>
   </li>
 </ul>
 
-<ul class="stat-row">
-  {% for offer in offers %}
-    <li>
-      <span>{{ plan_counts.get(offer.key, 0) }}</span>
-      <em>{{ offer.badge }} {{ offer.name }}</em>
-    </li>
-  {% endfor %}
-</ul>
+<section class="panel">
+  <header class="panel-head">
+    <h2>Offres</h2>
+    <a href="{{ url_for('admin.offers') }}">Gérer le catalogue</a>
+  </header>
+  <ul class="admin-offer-row">
+    {% for offer in offers %}
+      <li class="admin-offer" data-offre="{{ offer.key }}">
+        <p class="eyebrow">{{ offer.works_label }}</p>
+        <h3>{{ offer.name }}</h3>
+        <p class="admin-offer-price">{{ offer.price_label }}</p>
+        <p class="admin-offer-count">{{ plan_counts.get(offer.key, 0) }} atelier{{ 's' if plan_counts.get(offer.key, 0) != 1 }}</p>
+        <p class="quiet">
+          {% if not offer.active %}inactive
+          {% elif not offer.price_cents %}gratuit
+          {% elif offer.stripe_price_id %}Stripe prêt
+          {% else %}à synchroniser{% endif %}
+        </p>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
 
 <section class="panel chart-panel">
   <header class="panel-head">
@@ -56,6 +89,38 @@
     <a href="{{ url_for('admin.analytics', days=days) }}">Analytics</a>
   </header>
   {{ spark|safe }}
+</section>
+
+<section class="panel">
+  <header class="panel-head">
+    <h2>Posts en ligne</h2>
+    <a href="{{ url_for('admin.social') }}">Composer</a>
+  </header>
+  {% if feed %}
+    {% with posts=feed %}
+      {% include "admin/_post_feed.html" %}
+    {% endwith %}
+  {% elif posts %}
+    <ul class="post-feed">
+      {% for item in posts %}
+        <li>
+          {% if item.remote_url %}<a href="{{ item.remote_url }}" target="_blank" rel="noopener">{% endif %}
+            {% if item.image_name %}
+              <img src="{{ url_for('media', filename=item.image_name) }}" alt="" loading="lazy">
+            {% elif item.image_url %}
+              <img src="{{ item.image_url }}" alt="" loading="lazy">
+            {% else %}
+              <div class="post-feed-empty">Pas de visuel</div>
+            {% endif %}
+          {% if item.remote_url %}</a>{% endif %}
+          <p class="post-feed-meta">{{ item.platform }} · {{ item.status }}</p>
+          <p class="post-feed-caption">{{ item.title or item.body[:120] }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty-room">Aucun post publié pour l’instant.</p>
+  {% endif %}
 </section>
 
 <div class="admin-grid">
@@ -90,7 +155,7 @@
       {% for artist in artists %}
         <li>
           <strong>{{ artist.display_name }}</strong>
-          <span>{{ artist.email }}{% if artist.is_example %} · exemple{% endif %}{% if artist.published %} · ouverte{% endif %}</span>
+          <span>{{ artist.offer.name if artist.offer else artist.plan_key }}{% if artist.published %} · ouverte{% endif %}{% if artist.is_example %} · exemple{% endif %}</span>
         </li>
       {% endfor %}
     </ul>

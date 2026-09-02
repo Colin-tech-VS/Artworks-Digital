@@ -23,7 +23,7 @@
       </div>
       <div class="preview-actions">
         <a class="btn btn-ghost" href="{{ url_for('admin.email_preview', kind=kind) }}" target="_blank" rel="noopener">Plein écran</a>
-        <form method="post" action="{{ url_for('admin.email_preview_send', kind=kind) }}">
+        <form method="post" action="{{ url_for('admin.email_preview_send', kind=kind) }}" data-busy="Envoi de l’aperçu…">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="email" name="to" placeholder="adresse de test" aria-label="Adresse de test">
           <button class="btn btn-ink" type="submit">Envoyer un test</button>

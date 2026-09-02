@@ -18,7 +18,7 @@
   <header class="panel-head">
     <h2>Votre consigne</h2>
   </header>
-  <form class="sheet" method="post" novalidate>
+  <form class="sheet" method="post" novalidate data-busy="Composition en cours…">
     {{ form.hidden_tag() }}
     <label>
       {{ form.prompt.label }}
@@ -33,8 +33,8 @@
     </div>
     <label>{{ form.layout.label }}{{ form.layout() }}</label>
     <div class="atelier-actions">
-      <button class="btn btn-ink" type="submit" name="action" value="visuel">Composer un visuel</button>
-      <button class="btn btn-ghost" type="submit" name="action" value="note">Écrire une note d’intention</button>
+      <button class="btn btn-ink" type="submit" name="action" value="visuel" data-busy="Composition du visuel…">Composer un visuel</button>
+      <button class="btn btn-ghost" type="submit" name="action" value="note" data-busy="Rédaction de la note…">Écrire une note d’intention</button>
     </div>
   </form>
 </section>

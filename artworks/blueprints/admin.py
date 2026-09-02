@@ -21,12 +21,29 @@ from artworks.mailer import contact_inbox, fetch_inbox, mail_configured
 from artworks.mistral import mistral_ready
 from artworks.models import Artist, MailMessage, Offer, PageView, SocialPost, SubscriptionEvent, Work
 from artworks.seo import absolute_media, canonical_url
-from artworks.social import DeviantArt, Pinterest, delete_token, platform_status, publish as publish_social
+from artworks.social import DeviantArt, Pinterest, delete_token, live_feed, platform_status, publish as publish_social
 from artworks.plans import all_offers, get_offer
-from artworks.stripe_billing import apply_plan, stripe_ready, sync_offers_to_stripe
+from artworks.stripe_billing import apply_plan, ensure_offer_priced, stripe_ready, sync_offers_to_stripe
 
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+
+@admin_bp.context_processor
+def _admin_chrome():
+    unread = 0
+    try:
+        unread = MailMessage.query.filter_by(direction="in", is_read=False).count()
+    except Exception:
+        db.session.rollback()
+    return {
+        "admin_systems": {
+            "stripe": stripe_ready(),
+            "mail": mail_configured(),
+            "mistral": mistral_ready(),
+        },
+        "admin_unread": unread,
+    }
 
 
 def admin_required(fn):
@@ -119,6 +136,8 @@ def overview():
         offers=catalog,
         mrr_label=f"{mrr_cents / 100:.2f}".replace(".", ",") + " €",
         paying=sum(plan_counts.get(offer.key, 0) for offer in catalog if offer.price_cents),
+        feed=live_feed(8),
+        posts=SocialPost.query.order_by(SocialPost.created_at.desc()).limit(8).all(),
     )
 
 
@@ -290,7 +309,10 @@ def email_preview_send(kind: str):
 @admin_required
 def artists():
     rows = Artist.query.order_by(Artist.created_at.desc()).all()
-    return render_template("admin/artists.html", artists=rows)
+    work_counts = dict(
+        db.session.query(Work.artist_id, func.count(Work.id)).group_by(Work.artist_id).all()
+    )
+    return render_template("admin/artists.html", artists=rows, work_counts=work_counts)
 
 
 @admin_bp.route("/artistes/<int:artist_id>", methods=["POST"])
@@ -367,6 +389,12 @@ def offer_edit(key: str):
             offer.allow_priority = bool(form.allow_priority.data)
             offer.allow_collections = bool(form.allow_collections.data)
             db.session.commit()
+            if stripe_ready() and offer.price_cents:
+                try:
+                    ensure_offer_priced(offer)
+                except Exception as exc:
+                    flash(f"Offre enregistrée, Stripe n’a pas suivi : {exc}", "info")
+                    return redirect(url_for("admin.offers"))
             flash("Offre mise à jour.", "ok")
             return redirect(url_for("admin.offers"))
     return render_template("admin/offer.html", form=form, offer=offer, stripe_ok=stripe_ready())
@@ -546,6 +574,9 @@ def social():
     elif action != "generate" and publish_form.validate_on_submit():
         work = db.session.get(Work, publish_form.work_id.data) if publish_form.work_id.data else None
         image_url = (publish_form.image_url.data or "").strip()
+        image_name = (publish_form.image_name.data or "").strip()
+        if not image_url and image_name:
+            image_url = absolute_media(image_name)
         link = (publish_form.link.data or "").strip()
         title = (publish_form.title.data or "").strip()
         if work:
@@ -590,6 +621,7 @@ def social():
         mistral_ok=mistral_ready(),
         status=platform_status(),
         logs=SocialPost.query.order_by(SocialPost.created_at.desc()).limit(20).all(),
+        feed=live_feed(8),
         boards=Pinterest.boards() if Pinterest.status().get("connected") else [],
     )
 

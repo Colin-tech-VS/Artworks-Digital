@@ -7,49 +7,30 @@
     <p class="eyebrow">Catalogue</p>
     <h1>Offres</h1>
     <p class="lead-sm">
-      {% if stripe_ok %}Stripe est branché.{% else %}Stripe n’a pas encore de clés : les paiements restent fermés, les attributions manuelles fonctionnent.{% endif %}
-      Webhook : <code>https://www.artworksdigital.fr/stripe/webhook</code>
+      {% if stripe_ok %}Stripe est branché : un sync crée les tarifs manquants.{% else %}Sans clés Stripe, les paiements restent fermés. L’attribution manuelle fonctionne.{% endif %}
     </p>
   </div>
-  <form method="post" action="{{ url_for('admin.offers_sync') }}">
+  <form method="post" action="{{ url_for('admin.offers_sync') }}" data-busy="Synchronisation Stripe…">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button class="btn btn-ink" type="submit">Synchroniser Stripe</button>
+    <button class="btn btn-ink" type="submit"{% if not stripe_ok %} disabled{% endif %}>Synchroniser Stripe</button>
   </form>
 </section>
 
-<div class="table-wrap">
-  <table class="data">
-    <thead>
-      <tr>
-        <th>Offre</th>
-        <th>Prix</th>
-        <th>Pour qui</th>
-        <th>Œuvres</th>
-        <th>Stripe</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for offer in offers %}
-        <tr>
-          <td>
-            <strong>{{ offer.badge }} {{ offer.name }}</strong>
-            {% if not offer.active %}<em class="tag">inactive</em>{% endif %}
-          </td>
-          <td>{{ offer.price_label }}</td>
-          <td>{{ offer.audience }}</td>
-          <td>{{ offer.works_label }}</td>
-          <td class="quiet">
-            {% if offer.price_cents %}
-              {{ offer.stripe_price_id or "non sync" }}
-            {% else %}
-              gratuit
-            {% endif %}
-          </td>
-          <td><a href="{{ url_for('admin.offer_edit', key=offer.key) }}">Éditer</a></td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+<ul class="admin-offer-row is-edit">
+  {% for offer in offers %}
+    <li class="admin-offer" data-offre="{{ offer.key }}">
+      <p class="eyebrow">{{ offer.key }}{% if not offer.active %} · inactive{% endif %}</p>
+      <h3>{{ offer.name }}</h3>
+      <p class="admin-offer-price">{{ offer.price_label }}</p>
+      <p class="quiet">{{ offer.audience }}</p>
+      <p class="admin-offer-count">{{ offer.works_label }}</p>
+      <p class="quiet">
+        {% if not offer.price_cents %}gratuit
+        {% elif offer.stripe_price_id %}Stripe prêt
+        {% else %}à synchroniser{% endif %}
+      </p>
+      <a class="btn btn-ghost" href="{{ url_for('admin.offer_edit', key=offer.key) }}">Éditer</a>
+    </li>
+  {% endfor %}
+</ul>
 {% endblock %}

@@ -28,6 +28,7 @@ class Config:
     CANONICAL_HOST = os.environ.get("CANONICAL_HOST", "www.artworksdigital.fr")
     CANONICAL_REDIRECT = os.environ.get("CANONICAL_REDIRECT", "1") != "0"
     CANONICAL_SCHEME = os.environ.get("CANONICAL_SCHEME", "https")
+    PREFERRED_URL_SCHEME = os.environ.get("PREFERRED_URL_SCHEME", "https")
     ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "").strip().lower()
     ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "")
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")

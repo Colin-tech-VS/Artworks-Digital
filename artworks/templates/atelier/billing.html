@@ -13,7 +13,7 @@
     </p>
   </div>
   {% if current_user.stripe_customer_id and stripe_ok %}
-    <form method="post" action="{{ url_for('atelier.billing_portal') }}">
+    <form method="post" action="{{ url_for('atelier.billing_portal') }}" data-busy="Ouverture du portail…">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="btn btn-ghost" type="submit">Gérer la facturation</button>
     </form>
@@ -38,7 +38,7 @@
       {% if offer.key == current.key %}
         <p class="hint">Offre actuelle</p>
       {% else %}
-        <form method="post" action="{{ url_for('atelier.billing_take', plan_key=offer.key) }}">
+        <form method="post" action="{{ url_for('atelier.billing_take', plan_key=offer.key) }}" data-busy="Ouverture du paiement…">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="btn {% if offer.price_cents %}btn-ink{% else %}btn-ghost{% endif %}" type="submit">
             {% if offer.price_cents > current.price_cents %}Passer à {{ offer.name }}

@@ -5,17 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Admin login — Artworksdigital</title>
   <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Outfit:wght@300;400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
 </head>
 <body class="auth-page admin-login">
   <main id="main">
-    <section class="auth-card">
-      <p class="eyebrow">Console</p>
+    <section class="auth-card admin-letter">
+      <p class="eyebrow">Salle de commande</p>
       <h1>Admin</h1>
+      <p class="lead-sm">L’atelier public reste de l’autre côté de la porte.</p>
       {% if login_error %}
         <p class="flash flash-info">Identifiant ou mot de passe incorrect.</p>
       {% endif %}
-      <form id="login" name="login" method="post" action="{{ url_for('admin.login') }}" autocomplete="on">
+      <form id="login" name="login" method="post" action="{{ url_for('admin.login') }}" autocomplete="on" data-busy="Ouverture…">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label for="username">Identifiant</label>
         <input type="text" name="username" id="username" autocomplete="username" required maxlength="80" value="{{ form.username.data or '' }}">

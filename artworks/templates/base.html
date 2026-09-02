@@ -9,6 +9,7 @@
   <title>{% block title %}Artworksdigital{% endblock %}</title>
   <meta name="description" content="{% block description %}Artworksdigital — un atelier pour composer votre galerie. Une adresse, un accrochage, une note d’intention.{% endblock %}">
   <meta name="robots" content="{% block robots %}index, follow, max-image-preview:large{% endblock %}">
+  <meta name="google-site-verification" content="Usy-kI0kuCwbbEphmFS_o3AZxK5DXDNBS-vwwdpPSVk">
   {#- Le bloc est rendu dans l’attribut : le déclarer à côté écrirait sa
       valeur en texte nu, au-dessus de la barre. #}
   {%- if self.author() | trim %}
@@ -100,9 +101,9 @@
   <main id="main">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <ul class="flashes">
+        <ul class="flashes" aria-live="polite" aria-relevant="additions">
           {% for category, message in messages %}
-            <li class="flash flash-{{ category }}">{{ message }}</li>
+            <li class="flash flash-{{ category }}" role="{{ 'alert' if category == 'error' else 'status' }}">{{ message }}</li>
           {% endfor %}
         </ul>
       {% endif %}

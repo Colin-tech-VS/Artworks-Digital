@@ -6,12 +6,17 @@
   <div>
     <p class="eyebrow">Offre {{ offer.key }}</p>
     <h1>{{ offer.badge }} {{ offer.name }}</h1>
-    <p class="lead-sm">Un changement de prix créera un nouveau Price Stripe au prochain sync.</p>
+    <p class="lead-sm">
+      {% if not offer.price_cents %}Offre gratuite — aucun tarif Stripe.
+      {% elif offer.stripe_price_id %}Tarif Stripe déjà lié. Un nouveau prix crée un nouveau tarif à l’enregistrement.
+      {% elif stripe_ok %}Aucun tarif Stripe : l’enregistrement en créera un.
+      {% else %}Sans clés Stripe, seul le catalogue local change.{% endif %}
+    </p>
   </div>
   <a class="btn btn-ghost" href="{{ url_for('admin.offers') }}">Retour</a>
 </section>
 
-<form class="sheet" method="post" novalidate>
+<form class="sheet" method="post" novalidate data-busy="Enregistrement de l’offre…">
   {{ form.hidden_tag() }}
   <div class="split">
     <label>{{ form.name.label }}{{ form.name() }}</label>

@@ -11,7 +11,7 @@
   <a class="btn btn-ghost" href="{{ url_for('admin.emails') }}">Boîte</a>
 </section>
 <article class="mail-body">{{ message.body }}</article>
-<form class="sheet" method="post" novalidate>
+<form class="sheet" method="post" novalidate data-busy="Envoi de la réponse…">
   {{ form.hidden_tag() }}
   <p class="eyebrow">Répondre</p>
   {% if not mail_ok %}<p class="hint">Sans SMTP, la réponse reste dans l’admin.</p>{% endif %}

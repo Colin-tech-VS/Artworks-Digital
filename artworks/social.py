@@ -2,6 +2,7 @@ import base64
 import hashlib
 import json
 import secrets
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -13,7 +14,7 @@ from artworks.extensions import db
 from artworks.models import SocialToken, utcnow
 
 
-GRAPH = "https://graph.facebook.com/v19.0"
+GRAPH = "https://graph.facebook.com/v21.0"
 
 
 def _cfg(name: str) -> str:
@@ -24,10 +25,30 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _get_json(url: str, headers: dict | None = None) -> dict:
+def _graph_error(payload) -> str:
+    if not isinstance(payload, dict):
+        return str(payload)[:300] if payload else ""
+    err = payload.get("error")
+    if isinstance(err, dict):
+        return (err.get("error_user_msg") or err.get("message") or str(err))[:300]
+    if err:
+        return str(err)[:300]
+    return ""
+
+
+def _get_json(url: str, headers: dict | None = None, timeout: int = 25) -> dict:
     req = urllib.request.Request(url, headers=headers or {})
-    with urllib.request.urlopen(req, timeout=25) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        raw = exc.read().decode("utf-8", errors="replace")
+        try:
+            return json.loads(raw)
+        except Exception:
+            return {"error": raw[:400]}
+    except urllib.error.URLError as exc:
+        return {"error": str(getattr(exc, "reason", None) or exc)[:300]}
 
 
 def _post_form(url: str, params: dict, headers: dict | None = None) -> dict:
@@ -100,13 +121,12 @@ class Facebook:
     def status(cls) -> dict:
         if not cls.configured():
             return {"configured": False, "connected": False}
-        try:
-            data = _get_json(
-                f"{GRAPH}/{_cfg('FACEBOOK_PAGE_ID')}?fields=name,fan_count&access_token={_cfg('FACEBOOK_PAGE_ACCESS_TOKEN')}"
-            )
-            return {"configured": True, "connected": True, "name": data.get("name"), "fans": data.get("fan_count")}
-        except Exception as exc:
-            return {"configured": True, "connected": False, "error": str(exc)[:180]}
+        data = _get_json(
+            f"{GRAPH}/{_cfg('FACEBOOK_PAGE_ID')}?fields=name,fan_count&access_token={_cfg('FACEBOOK_PAGE_ACCESS_TOKEN')}"
+        )
+        if _graph_error(data):
+            return {"configured": True, "connected": False, "error": _graph_error(data)}
+        return {"configured": True, "connected": True, "name": data.get("name"), "fans": data.get("fan_count")}
 
     @classmethod
     def publish(cls, message: str, image_url: str = "", link: str = "") -> dict:
@@ -121,9 +141,37 @@ class Facebook:
             if link:
                 params["link"] = link
             res = _post_form(f"{GRAPH}/{page}/feed", params)
-        if res.get("error"):
-            return {"ok": False, "error": str(res.get("error"))[:300]}
-        return {"ok": True, "id": str(res.get("post_id") or res.get("id") or ""), "url": ""}
+        err = _graph_error(res)
+        if err:
+            return {"ok": False, "error": err}
+        post_id = str(res.get("post_id") or res.get("id") or "")
+        url = f"https://www.facebook.com/{post_id}" if post_id else ""
+        return {"ok": True, "id": post_id, "url": url}
+
+    @classmethod
+    def recent(cls, limit: int = 6) -> list[dict]:
+        if not cls.configured():
+            return []
+        data = _get_json(
+            f"{GRAPH}/{_cfg('FACEBOOK_PAGE_ID')}/published_posts"
+            f"?fields=id,message,full_picture,permalink_url,created_time&limit={limit}"
+            f"&access_token={_cfg('FACEBOOK_PAGE_ACCESS_TOKEN')}",
+            timeout=8,
+        )
+        if _graph_error(data):
+            return []
+        posts = []
+        for item in data.get("data") or []:
+            posts.append({
+                "id": item.get("id") or "",
+                "platform": "facebook",
+                "caption": (item.get("message") or "")[:280],
+                "image": item.get("full_picture") or "",
+                "url": item.get("permalink_url") or "",
+                "when": item.get("created_time") or "",
+                "type": "IMAGE",
+            })
+        return posts
 
 
 class Instagram:
@@ -139,13 +187,35 @@ class Instagram:
     def status(cls) -> dict:
         if not cls.configured():
             return {"configured": False, "connected": False}
-        try:
-            data = _get_json(
-                f"{GRAPH}/{_cfg('INSTAGRAM_USER_ID')}?fields=username,name,followers_count&access_token={cls.token()}"
+        data = _get_json(
+            f"{GRAPH}/{_cfg('INSTAGRAM_USER_ID')}?fields=username,name,followers_count&access_token={cls.token()}"
+        )
+        if _graph_error(data):
+            return {"configured": True, "connected": False, "error": _graph_error(data)}
+        return {"configured": True, "connected": True, "name": data.get("username") or data.get("name")}
+
+    @classmethod
+    def _wait_container(cls, creation_id: str) -> str:
+        """Instagram prépare le visuel avant de l’accepter : publier trop tôt
+        renvoie un succès vide, ou une erreur, et le post n’apparaît jamais."""
+        last = ""
+        for _ in range(12):
+            state = _get_json(
+                f"{GRAPH}/{creation_id}?fields=status_code,status&access_token={cls.token()}"
             )
-            return {"configured": True, "connected": True, "name": data.get("username") or data.get("name")}
-        except Exception as exc:
-            return {"configured": True, "connected": False, "error": str(exc)[:180]}
+            err = _graph_error(state)
+            if err:
+                last = err
+                time.sleep(1.5)
+                continue
+            code = str(state.get("status_code") or "").upper()
+            last = str(state.get("status") or code)
+            if code == "FINISHED":
+                return ""
+            if code in {"ERROR", "EXPIRED"}:
+                return last or code
+            time.sleep(1.5)
+        return last or "Instagram n’a pas fini de préparer le visuel."
 
     @classmethod
     def publish(cls, message: str, image_url: str = "", link: str = "") -> dict:
@@ -160,16 +230,60 @@ class Instagram:
             f"{GRAPH}/{_cfg('INSTAGRAM_USER_ID')}/media",
             {"image_url": image_url, "caption": caption, "access_token": cls.token()},
         )
+        if _graph_error(created):
+            return {"ok": False, "error": _graph_error(created)}
         creation_id = created.get("id")
         if not creation_id:
-            return {"ok": False, "error": str(created.get("error") or created)[:300]}
-        published = _post_form(
-            f"{GRAPH}/{_cfg('INSTAGRAM_USER_ID')}/media_publish",
-            {"creation_id": creation_id, "access_token": cls.token()},
+            return {"ok": False, "error": "Instagram n’a pas créé le contenant du visuel."}
+        ready = cls._wait_container(creation_id)
+        if ready:
+            return {"ok": False, "error": ready}
+        published = {}
+        last_err = ""
+        for _ in range(5):
+            published = _post_form(
+                f"{GRAPH}/{_cfg('INSTAGRAM_USER_ID')}/media_publish",
+                {"creation_id": creation_id, "access_token": cls.token()},
+            )
+            last_err = _graph_error(published)
+            if published.get("id") and not last_err:
+                break
+            if last_err and not any(token in last_err.lower() for token in ("process", "not available", "in progress")):
+                return {"ok": False, "error": last_err}
+            time.sleep(2)
+        if last_err or not published.get("id"):
+            return {"ok": False, "error": last_err or "Instagram n’a pas publié le visuel."}
+        media_id = str(published.get("id") or "")
+        url = ""
+        if media_id:
+            info = _get_json(f"{GRAPH}/{media_id}?fields=permalink,shortcode&access_token={cls.token()}")
+            url = info.get("permalink") or ""
+        return {"ok": True, "id": media_id, "url": url}
+
+    @classmethod
+    def recent(cls, limit: int = 8) -> list[dict]:
+        if not cls.configured():
+            return []
+        data = _get_json(
+            f"{GRAPH}/{_cfg('INSTAGRAM_USER_ID')}/media"
+            f"?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp"
+            f"&limit={limit}&access_token={cls.token()}",
+            timeout=8,
         )
-        if published.get("error"):
-            return {"ok": False, "error": str(published.get("error"))[:300]}
-        return {"ok": True, "id": str(published.get("id") or ""), "url": ""}
+        if _graph_error(data):
+            return []
+        posts = []
+        for item in data.get("data") or []:
+            posts.append({
+                "id": item.get("id") or "",
+                "platform": "instagram",
+                "caption": (item.get("caption") or "")[:280],
+                "image": item.get("thumbnail_url") or item.get("media_url") or "",
+                "url": item.get("permalink") or "",
+                "when": item.get("timestamp") or "",
+                "type": item.get("media_type") or "IMAGE",
+            })
+        return posts
 
 
 def _pkce() -> tuple[str, str]:
@@ -410,8 +524,8 @@ class Pinterest:
             },
             headers={"Authorization": f"Bearer {token}"},
         )
-        if res.get("error"):
-            return {"ok": False, "error": str(res.get("error"))[:300]}
+        if _graph_error(res):
+            return {"ok": False, "error": _graph_error(res)}
         return {"ok": True, "id": str(res.get("id") or ""), "url": res.get("link") or ""}
 
 
@@ -425,6 +539,26 @@ PLATFORMS = {
 
 def platform_status() -> dict:
     return {key: cls.status() for key, cls in PLATFORMS.items()}
+
+
+def live_feed(limit: int = 8) -> list[dict]:
+    """Les vrais posts déjà en ligne, Instagram d’abord."""
+    try:
+        posts = Instagram.recent(limit)
+    except Exception:
+        posts = []
+    if len(posts) < limit:
+        seen = {item["id"] for item in posts}
+        try:
+            extra = Facebook.recent(limit)
+        except Exception:
+            extra = []
+        for item in extra:
+            if item["id"] not in seen:
+                posts.append(item)
+            if len(posts) >= limit:
+                break
+    return posts[:limit]
 
 
 def publish(platforms: list[str], *, title: str, message: str, image_url: str = "", link: str = "") -> list[dict]:

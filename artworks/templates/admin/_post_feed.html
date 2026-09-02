@@ -1,0 +1,19 @@
+{% if posts %}
+<ul class="post-feed">
+  {% for item in posts %}
+    <li>
+      {% if item.url %}<a href="{{ item.url }}" target="_blank" rel="noopener">{% endif %}
+        {% if item.image %}
+          <img src="{{ item.image }}" alt="" loading="lazy">
+        {% else %}
+          <div class="post-feed-empty">Pas de visuel</div>
+        {% endif %}
+      {% if item.url %}</a>{% endif %}
+      <p class="post-feed-meta">{{ item.platform }}{% if item.type and item.type != 'IMAGE' %} · {{ item.type|lower }}{% endif %}</p>
+      {% if item.caption %}<p class="post-feed-caption">{{ item.caption }}</p>{% endif %}
+    </li>
+  {% endfor %}
+</ul>
+{% else %}
+  <p class="empty-room">Aucun post en ligne pour l’instant.</p>
+{% endif %}

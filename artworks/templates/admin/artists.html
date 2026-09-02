@@ -4,48 +4,42 @@
 {% block admin %}
 <section class="atelier-head">
   <div>
-    <p class="eyebrow">Comptes</p>
+    <p class="eyebrow">Maison</p>
     <h1>Ateliers</h1>
-    <p class="lead-sm">Les exemples restent publiés. Votre compte n’est pas modifié.</p>
+    <p class="lead-sm">{{ artists | length }} dossier{{ 's' if artists | length != 1 }}. Les exemples restent publiés.</p>
   </div>
 </section>
-<div class="table-wrap">
-  <table class="data">
-    <thead>
-      <tr>
-        <th>Artiste</th>
-        <th>E-mail</th>
-        <th>Offre</th>
-        <th>Salle</th>
-        <th>Œuvres</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for artist in artists %}
-        <tr>
-          <td>
-            <strong>{{ artist.display_name }}</strong>
-            {% if artist.is_example %}<em class="tag">exemple</em>{% endif %}
-          </td>
-          <td>{{ artist.email }}</td>
-          <td>{{ artist.offer.name }}{% if artist.plan_override %} <em class="tag">manuel</em>{% endif %}</td>
-          <td>
+
+{% if artists %}
+  <ul class="admin-dossiers">
+    {% for artist in artists %}
+      <li class="admin-dossier" data-offre="{{ artist.plan_key }}">
+        <div class="admin-dossier-main">
+          <p class="eyebrow">
+            {{ artist.offer.name if artist.offer else artist.plan_key }}
+            {% if artist.is_example %} · exemple{% endif %}
+            {% if artist.plan_override %} · manuel{% endif %}
+          </p>
+          <h3>{{ artist.display_name }}</h3>
+          <p class="quiet">{{ artist.email }}</p>
+          <p class="admin-dossier-meta">
             {% if artist.published %}
               <a href="{{ url_for('public.gallery', slug=artist.slug) }}">/galerie/{{ artist.slug }}</a>
-            {% else %}fermée{% endif %}
-          </td>
-          <td>{{ artist.works.count() }}</td>
-          <td class="row-actions">
-            <form method="post" action="{{ url_for('admin.artist_action', artist_id=artist.id) }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <input type="hidden" name="action" value="publish">
-              <button type="submit">{% if artist.published %}Fermer{% else %}Ouvrir{% endif %}</button>
-            </form>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+            {% else %}
+              salle fermée
+            {% endif %}
+            · {{ work_counts.get(artist.id, 0) }} œuvre{{ 's' if work_counts.get(artist.id, 0) != 1 }}
+          </p>
+        </div>
+        <form method="post" action="{{ url_for('admin.artist_action', artist_id=artist.id) }}" data-busy="Mise à jour de la salle…">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="publish">
+          <button class="btn btn-ghost" type="submit">{% if artist.published %}Fermer{% else %}Ouvrir{% endif %}</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="empty-room">Aucun atelier pour l’instant.</p>
+{% endif %}
 {% endblock %}

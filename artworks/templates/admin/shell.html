@@ -11,17 +11,28 @@
 <div class="admin-shell">
   <aside class="admin-side" id="shell-nav">
     <a class="side-brand" href="{{ url_for('admin.overview') }}">Artworks <em>Admin</em></a>
+    <p class="side-kicker">Salle de commande</p>
     <nav class="side-nav">
+      <p class="nav-label">Pilotage</p>
       <a href="{{ url_for('admin.overview') }}" class="{% if request.endpoint == 'admin.overview' %}is-on{% endif %}">Vue d’ensemble</a>
       <a href="{{ url_for('admin.analytics') }}" class="{% if request.endpoint == 'admin.analytics' %}is-on{% endif %}">Analytics</a>
-      <a href="{{ url_for('admin.emails') }}" class="{% if request.endpoint in ['admin.emails', 'admin.email_detail', 'admin.compose'] %}is-on{% endif %}">Emails</a>
-      <a href="{{ url_for('admin.email_previews') }}" class="{% if request.endpoint in ['admin.email_previews', 'admin.email_preview'] %}is-on{% endif %}">Modèles d’e-mail</a>
+      <a href="{{ url_for('admin.kael') }}" class="{% if request.endpoint == 'admin.kael' %}is-on{% endif %}">K.A.E.L.</a>
+      <p class="nav-label">Maison</p>
       <a href="{{ url_for('admin.artists') }}" class="{% if request.endpoint == 'admin.artists' %}is-on{% endif %}">Ateliers</a>
       <a href="{{ url_for('admin.offers') }}" class="{% if request.endpoint in ['admin.offers', 'admin.offer_edit'] %}is-on{% endif %}">Offres</a>
       <a href="{{ url_for('admin.subscriptions') }}" class="{% if request.endpoint == 'admin.subscriptions' %}is-on{% endif %}">Abonnements</a>
+      <p class="nav-label">Diffusion</p>
+      <a href="{{ url_for('admin.emails') }}" class="{% if request.endpoint in ['admin.emails', 'admin.email_detail', 'admin.compose'] %}is-on{% endif %}">
+        Emails{% if admin_unread %} <em class="badge">{{ admin_unread }}</em>{% endif %}
+      </a>
+      <a href="{{ url_for('admin.email_previews') }}" class="{% if request.endpoint in ['admin.email_previews', 'admin.email_preview'] %}is-on{% endif %}">Modèles</a>
       <a href="{{ url_for('admin.social') }}" class="{% if request.endpoint == 'admin.social' %}is-on{% endif %}">Réseaux</a>
-      <a href="{{ url_for('admin.kael') }}" class="{% if request.endpoint in ['admin.kael'] %}is-on{% endif %}">K.A.E.L.</a>
     </nav>
+    <ul class="sys-lamps">
+      <li class="{% if admin_systems.stripe %}is-up{% endif %}">Stripe</li>
+      <li class="{% if admin_systems.mail %}is-up{% endif %}">SMTP</li>
+      <li class="{% if admin_systems.mistral %}is-up{% endif %}">Mistral</li>
+    </ul>
     <div class="side-foot">
       <a href="{{ url_for('public.home') }}">Site public</a>
       <a href="{{ url_for('admin.logout') }}">Quitter</a>

@@ -10,7 +10,7 @@
   <a class="btn btn-ghost" href="{{ url_for('admin.emails') }}">Boîte</a>
 </section>
 {% if not mail_ok %}<p class="hint">Sans SMTP, le message sera enregistré ici mais pas livré.</p>{% endif %}
-<form class="sheet" method="post" novalidate>
+<form class="sheet" method="post" novalidate data-busy="Envoi du message…">
   {{ form.hidden_tag() }}
   <label>{{ form.to_email.label }}{{ form.to_email() }}
     {% for error in form.to_email.errors %}<small>{{ error }}</small>{% endfor %}
