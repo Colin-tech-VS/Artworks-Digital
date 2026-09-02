@@ -6,6 +6,11 @@
   <title>{% block title %}Artworksdigital{% endblock %}</title>
   <meta name="description" content="{% block description %}Artworksdigital — un atelier pour composer votre galerie. Une adresse, un accrochage, une note d’intention.{% endblock %}">
   <meta name="robots" content="{% block robots %}index, follow, max-image-preview:large{% endblock %}">
+  {%- set page_author = self.author() | trim %}
+  {%- if page_author %}
+  <meta name="author" content="{{ page_author }}">
+  {%- endif %}
+  {%- block author %}{% endblock %}
   <link rel="canonical" href="{% block canonical %}{{ canonical_url() }}{% endblock %}">
   <meta property="og:type" content="{% block og_type %}website{% endblock %}">
   <meta property="og:site_name" content="Artworksdigital">

@@ -10,6 +10,19 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def meta_trim(text: str, limit: int = 158) -> str:
+    """Coupe une description au dernier mot entier : les moteurs n’affichent
+    qu’environ 160 signes, autant choisir où la phrase s’arrête."""
+    text = " ".join((text or "").split())
+    if len(text) <= limit:
+        return text
+    cut = text[: limit - 1]
+    space = cut.rfind(" ")
+    if space > limit * 0.6:
+        cut = cut[:space]
+    return cut.rstrip(" ,;:–—-") + "…"
+
+
 class Artist(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(180), unique=True, nullable=False, index=True)
@@ -89,8 +102,8 @@ class Artist(UserMixin, db.Model):
             bits.append(self.location)
         text = (self.statement or "").strip()
         if text:
-            return f"{' — '.join(bits)}. {text[:180]}"
-        return f"{' — '.join(bits)} sur Artworksdigital."
+            return meta_trim(f"{' — '.join(bits)}. {text}")
+        return meta_trim(f"{' — '.join(bits)} sur Artworksdigital.")
 
     @property
     def unread_count(self) -> int:
@@ -163,8 +176,8 @@ class Work(db.Model):
         note = (self.note or "").strip()
         base = " — ".join(parts)
         if note:
-            return f"{base}. {note[:160]}"
-        return f"{base}. Œuvre présentée dans la galerie Artworksdigital."
+            return meta_trim(f"{base}. {note}")
+        return meta_trim(f"{base}. Œuvre présentée dans la galerie Artworksdigital.")
 
 
 class Asset(db.Model):

@@ -3,6 +3,7 @@
 {% block description %}{{ artist.seo_description }}{% endblock %}
 {% block og_type %}profile{% endblock %}
 {% block og_image %}{% if artist.cover_path %}{{ absolute_media(artist.cover_path) }}{% elif works %}{{ absolute_media(works[0].image_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
+{% block author %}{{ artist.display_name }}{% endblock %}
 {% block body_class %}room{% endblock %}
 {% block og_image_alt %}Galerie de {{ artist.display_name }}{% endblock %}
 {% block jsonld %}

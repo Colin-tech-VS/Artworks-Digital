@@ -2,6 +2,7 @@
 {% block title %}{{ work.title }} — {{ artist.display_name }}{% endblock %}
 {% block description %}{{ work.seo_description }}{% endblock %}
 {% block og_image %}{{ absolute_media(work.image_path) }}{% endblock %}
+{% block author %}{{ artist.display_name }}{% endblock %}
 {% block body_class %}work-view{% endblock %}
 {% block og_type %}article{% endblock %}
 {% block og_image_alt %}{{ work.title }}, œuvre de {{ artist.display_name }}{% endblock %}
