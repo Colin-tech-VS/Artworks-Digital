@@ -31,6 +31,12 @@ def save_bytes(payload: bytes, mime: str = "image/jpeg") -> str:
 
 
 def save_image(file: FileStorage, max_side: int = 2400) -> str:
+    return save_image_sized(file, max_side=max_side)[0]
+
+
+def save_image_sized(file: FileStorage, max_side: int = 2400) -> tuple[str, int, int]:
+    """Comme ``save_image``, mais rend aussi les dimensions finales : les gabarits
+    peuvent réserver la place de l’image et éviter le saut de mise en page."""
     filename = secure_filename(file.filename or "")
     suffix = Path(filename).suffix.lower()
     if suffix not in current_app.config["UPLOAD_EXTENSIONS"]:
@@ -54,7 +60,7 @@ def save_image(file: FileStorage, max_side: int = 2400) -> str:
         existing.mime = "image/jpeg"
     else:
         db.session.add(Asset(id=name, mime="image/jpeg", data=payload))
-    return name
+    return name, image.width, image.height
 
 
 def remove_image(name: str | None) -> None:

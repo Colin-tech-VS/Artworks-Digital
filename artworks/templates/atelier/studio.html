@@ -23,7 +23,7 @@
     {% for work in works %}
       <li class="{% if not work.visible %}dim{% endif %}" data-id="{{ work.id }}" data-title="{{ work.title|lower }}">
         <a href="{{ url_for('atelier.edit_work', work_id=work.id) }}">
-          <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}" loading="lazy">
+          <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}" loading="lazy" decoding="async"{% if work.image_w %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
           <div>
             <strong>{{ work.title }}</strong>
             <span>{{ work.cartel or "Sans cartel" }}{% if not work.visible %} · en réserve{% endif %} · {{ work.view_count }} vues</span>

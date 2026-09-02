@@ -1,5 +1,47 @@
 document.documentElement.classList.add("js");
 
+// Menu mobile — la barre se replie sous 860px, ce bouton la rouvre.
+const navToggle = document.querySelector(".nav-toggle");
+const siteNav = document.getElementById("site-nav");
+if (navToggle && siteNav) {
+  const closeNav = () => {
+    siteNav.classList.remove("is-open");
+    navToggle.setAttribute("aria-expanded", "false");
+    navToggle.setAttribute("aria-label", "Ouvrir le menu");
+  };
+  navToggle.addEventListener("click", () => {
+    const open = siteNav.classList.toggle("is-open");
+    navToggle.setAttribute("aria-expanded", String(open));
+    navToggle.setAttribute("aria-label", open ? "Fermer le menu" : "Ouvrir le menu");
+    if (open) siteNav.querySelector("a")?.focus();
+  });
+  siteNav.addEventListener("click", (event) => {
+    if (event.target.tagName === "A") closeNav();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeNav();
+  });
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 860) closeNav();
+  });
+}
+
+// Barre latérale de l’atelier et de l’admin : même repli sur petit écran.
+const shellToggle = document.querySelector(".shell-toggle");
+const shellSide = document.querySelector(".atelier-side, .admin-side");
+if (shellToggle && shellSide) {
+  shellToggle.addEventListener("click", () => {
+    const open = shellSide.classList.toggle("is-open");
+    shellToggle.setAttribute("aria-expanded", String(open));
+  });
+  shellSide.addEventListener("click", (event) => {
+    if (event.target.tagName === "A") {
+      shellSide.classList.remove("is-open");
+      shellToggle.setAttribute("aria-expanded", "false");
+    }
+  });
+}
+
 const gateDot = document.getElementById("gate-dot");
 const gate = document.getElementById("gate");
 if (gateDot && gate) {

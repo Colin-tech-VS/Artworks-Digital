@@ -138,6 +138,8 @@ class Work(db.Model):
     dimensions = db.Column(db.String(120), default="")
     note = db.Column(db.Text, default="")
     image_path = db.Column(db.String(255), nullable=False)
+    image_w = db.Column(db.Integer, default=0, nullable=False)
+    image_h = db.Column(db.Integer, default=0, nullable=False)
     visible = db.Column(db.Boolean, default=True, nullable=False)
     position = db.Column(db.Integer, default=0, nullable=False)
     view_count = db.Column(db.Integer, default=0, nullable=False)

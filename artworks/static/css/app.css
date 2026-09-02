@@ -23,7 +23,7 @@ body {
   font-weight: 300;
   letter-spacing: 0.01em;
 }
-img { max-width: 100%; display: block; }
+img { max-width: 100%; height: auto; display: block; }
 a { color: inherit; }
 .skip {
   position: absolute;
@@ -284,18 +284,6 @@ form small { display: block; color: #8a2d2d; margin-top: 0.3rem; }
   font-size: 0.78rem;
 }
 
-@media (max-width: 820px) {
-  .strip, .solo, .work-edit, .split, .account-grid { grid-template-columns: 1fr; }
-  .site-bar { flex-direction: column; align-items: flex-start; }
-  .atelier-head { flex-direction: column; align-items: start; }
-  .hero { padding-top: 4rem; }
-  .hang img { height: 240px; }
-  .atelier-shell { grid-template-columns: 1fr; }
-  .atelier-side { position: static; min-height: 0; padding: 1.4rem 7vw 0; border-right: 0; }
-  .side-nav { flex-direction: row; flex-wrap: wrap; gap: 0.4rem 1rem; }
-  .atelier-canvas { padding: 0 7vw 3rem; }
-}
-
 /* Motion */
 .hero, .strip article, .rooms, .auth-card, .room-intro, .solo {
   animation: rise 0.85s ease both;
@@ -423,10 +411,6 @@ form small { display: block; color: #8a2d2d; margin-top: 0.3rem; }
   align-items: start;
 }
 .studio-grid.compact img { height: 180px; }
-
-@media (max-width: 820px) {
-  .stat-row { grid-template-columns: 1fr 1fr; }
-}
 
 .letter-page {
   min-height: 100vh;
@@ -723,17 +707,288 @@ table.data th, table.data td { text-align: left; padding: 0.8rem 0.5rem; border-
 .collection-block { margin: 2rem 0 3rem; }
 .collection-block h2 { font-size: 1.7rem; margin-bottom: 1rem; }
 
-@media (max-width: 1100px) {
-  .offers-grid { grid-template-columns: 1fr 1fr; }
+/* ------------------------------------------------------------------
+   Composants ajoutés : brouillons réseaux, aperçus d’e-mail, journal
+   ------------------------------------------------------------------ */
+
+.draft-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 2rem;
+  align-items: start;
 }
-@media (max-width: 820px) {
-  .offers-grid, .flag-grid { grid-template-columns: 1fr; }
+.draft-visual { margin: 0; }
+.draft-visual img {
+  width: 100%;
+  height: auto;
+  background: var(--paper);
+  border: 1px solid var(--line);
+}
+.draft-visual figcaption { margin-top: 0.6rem; font-size: 0.85rem; }
+.draft-copy .mail-body { margin-bottom: 1rem; }
+.copy-field textarea {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 0.8rem;
 }
 
-@media (max-width: 820px) {
-  .mail-split, .admin-grid { grid-template-columns: 1fr; }
+.post-log { list-style: none; margin: 0; padding: 0; }
+.post-log li {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.post-log img {
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: cover;
+  background: var(--paper);
+  flex-shrink: 0;
+}
+.post-log div { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.post-log span, .post-log small { color: var(--quiet); font-size: 0.86rem; }
+.post-log a { color: var(--bronze); font-size: 0.84rem; }
+.post-log .down { color: #8a2d2d; }
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+  gap: 1.6rem;
+  padding-bottom: 3rem;
+}
+.preview-card {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.preview-card h2 { font-size: 1.3rem; }
+.preview-frame {
+  border: 1px solid var(--line);
+  background: #fff;
+  height: 20rem;
+  overflow: hidden;
+}
+.preview-frame iframe { width: 100%; height: 100%; border: 0; }
+.preview-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: flex-end; }
+.preview-actions form { display: flex; gap: 0.5rem; align-items: flex-end; margin: 0; flex: 1; }
+.preview-actions input { border: 1px solid var(--line); background: var(--paper); padding: 0.5rem 0.6rem; font: inherit; min-width: 0; }
+
+/* Bouton de menu — présent dans le DOM, montré seulement en petit écran. */
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  background: transparent;
+  cursor: pointer;
+}
+.nav-toggle span {
+  display: block;
+  height: 1px;
+  background: var(--ink);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.nav-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.nav-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.nav-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+.shell-toggle {
+  display: none;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  padding: 0.8rem 7vw;
+  font: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--quiet);
+  cursor: pointer;
+}
+.admin-app .shell-toggle { background: #161412; color: #b9b0a4; border-bottom-color: #2a2622; }
+
+/* ------------------------------------------------------------------
+   Responsive — une seule échelle, du 27 pouces au petit téléphone
+   ------------------------------------------------------------------ */
+
+/* Rien ne doit déborder : les enfants de grille peuvent rétrécir, les
+   longues chaînes (URL, e-mails) se coupent plutôt que d’élargir la page. */
+main, .atelier-canvas, .admin-canvas { min-width: 0; }
+.strip > *, .solo > *, .split > *, .account-grid > *, .mail-split > *,
+.admin-grid > *, .draft-split > *, .offers-grid > * { min-width: 0; }
+.mail-list a, .mini-table li, .post-log div, .stat-row li { overflow-wrap: anywhere; }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.mail-body { overflow-wrap: anywhere; }
+
+@media (max-width: 1180px) {
+  .offers-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 1024px) {
+  .atelier-shell, .admin-shell { grid-template-columns: 200px minmax(0, 1fr); }
+  .solo { grid-template-columns: minmax(0, 1.3fr) minmax(220px, 0.9fr); gap: 2rem; }
+  .draft-split { grid-template-columns: 1fr; }
+}
+
+/* Sous 860px : la barre se replie, les colonnes s’empilent. */
+@media (max-width: 860px) {
+  .site-bar {
+    flex-wrap: wrap;
+    padding: 1rem 6vw;
+    gap: 1rem;
+  }
+  .nav-toggle { display: flex; }
+  .site-bar nav {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    padding-bottom: 0.4rem;
+  }
+  .site-bar nav.is-open { display: flex; }
+  .site-bar nav a {
+    width: 100%;
+    padding: 0.85rem 0;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    border-top: 1px solid var(--line);
+    font-size: 0.92rem;
+  }
+  .nav-cta { color: var(--bronze) !important; }
+
+  main { padding: 0 6vw 3.5rem; }
+  .site-foot { padding: 1.4rem 6vw; }
+
+  .strip, .solo, .work-edit, .split, .account-grid,
+  .mail-split, .admin-grid, .offers-grid, .flag-grid { grid-template-columns: 1fr; }
+  .strip { gap: 2rem; padding: 2.5rem 0 3.5rem; }
+  .atelier-head { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .hero { padding: 3.5rem 0 3rem; }
+  .solo-frame { padding: 1.4rem; min-height: 0; }
+  .solo-frame img { max-height: 60vh; }
+  .room-cover { max-height: 38vh; margin: 1.4rem 0 1.6rem; }
+
+  /* Atelier et admin : la colonne devient un tiroir. */
   .atelier-shell, .admin-shell { grid-template-columns: 1fr; }
-  .atelier-side, .admin-side { position: static; height: auto; }
+  .shell-toggle { display: flex; }
+  .atelier-side, .admin-side {
+    display: none;
+    position: static;
+    height: auto;
+    min-height: 0;
+    padding: 1.2rem 6vw 1.6rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .atelier-side.is-open, .admin-side.is-open { display: flex; }
+  .admin-side { border-bottom-color: #2a2622; }
+  .side-brand, .side-identity { margin-bottom: 1rem; }
+  .side-nav a { min-height: 44px; }
+  .side-foot { flex-direction: row; flex-wrap: wrap; gap: 1.2rem; margin-top: 1.2rem; }
+  .atelier-canvas, .admin-canvas { padding: 0 6vw 3rem; }
+
+  .preview-frame { height: 16rem; }
+  .preview-actions form { flex-basis: 100%; }
+}
+
+@media (max-width: 620px) {
+  .hero h1 { font-size: clamp(2.5rem, 12vw, 3.6rem); }
+  .lead { font-size: 1.05rem; margin: 1.2rem 0 1.8rem; }
+  .auth-card h1, .atelier-head h1 { font-size: clamp(2rem, 9vw, 2.6rem); }
+  .rooms h2, .room-intro h1 { font-size: clamp(1.9rem, 8vw, 2.6rem); }
+  .cartel h1 { font-size: 1.9rem; }
+  .panel-head h2 { font-size: 1.35rem; }
+
+  .hang { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.6rem 1rem; }
+  .hang img { height: 210px; padding: 0.7rem; }
+  .studio-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.1rem; }
+  .studio-grid img, .studio-grid.compact img { height: 165px; }
+
+  /* Une ligne de galerie tient mieux en deux temps qu’en une colonne serrée. */
+  .room-list a { flex-direction: column; gap: 0.2rem; padding: 1rem 0; }
+  .room-name { font-size: 1.3rem; }
+  .room-list.rich a { flex-direction: row; gap: 0.9rem; }
+  .room-list.rich img { width: 5rem; height: 3.6rem; }
+
+  .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; margin-bottom: 1.8rem; }
+  .stat-row li { padding: 0.9rem 0.8rem; }
+  .stat-row span { font-size: 1.5rem; }
+  .stat-row em { font-size: 0.72rem; }
+
+  .btn { padding: 0.8rem 1.1rem; min-height: 44px; }
+  .hero-actions .btn, .atelier-actions .btn { flex: 1 1 auto; text-align: center; }
+  .range-tabs a { min-height: 40px; display: inline-flex; align-items: center; }
+  .row-actions button, .work-tools button, .drag-handle { min-height: 38px; min-width: 38px; }
+  .studio-filter { width: 100%; min-width: 0; }
+
+  .mail-body { padding: 1rem; }
+  .post-log img { width: 3.2rem; height: 3.2rem; }
+  .letter { padding: 3.5rem 6vw 4rem; }
+  table.data { font-size: 0.85rem; }
+}
+
+/* Les plus petits écrans encore vendus (SE, Galaxy A0x). */
+@media (max-width: 420px) {
+  main { padding: 0 5vw 3rem; }
+  .site-bar, .site-foot { padding-left: 5vw; padding-right: 5vw; }
+  .atelier-canvas, .admin-canvas, .atelier-side, .admin-side, .shell-toggle { padding-left: 5vw; padding-right: 5vw; }
+  .mark { font-size: 1.15rem; }
+  .hang { grid-template-columns: 1fr; }
+  .hang img { height: 260px; }
+  .studio-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .studio-grid img, .studio-grid.compact img { height: 130px; }
+  .hero-actions, .atelier-actions { gap: 0.6rem; }
+  .walk { flex-wrap: wrap; }
+  .preview-frame { height: 13rem; }
+}
+
+/* En dessous, deux colonnes de chiffres deviennent illisibles. */
+@media (max-width: 359px) {
+  .stat-row, .studio-grid { grid-template-columns: 1fr; }
+}
+
+/* Encoche et barre gestuelle iOS — uniquement là où la marge est déjà réduite. */
+@media (max-width: 860px) {
+  @supports (padding: max(0px)) {
+    .site-bar, .site-foot, main {
+      padding-left: max(env(safe-area-inset-left), 6vw);
+      padding-right: max(env(safe-area-inset-right), 6vw);
+    }
+    .atelier-canvas, .admin-canvas, .atelier-side, .admin-side, .shell-toggle {
+      padding-left: max(env(safe-area-inset-left), 6vw);
+      padding-right: max(env(safe-area-inset-right), 6vw);
+    }
+    .site-foot { padding-bottom: max(env(safe-area-inset-bottom), 1.4rem); }
+  }
+}
+@media (max-width: 420px) {
+  @supports (padding: max(0px)) {
+    .site-bar, .site-foot, main, .atelier-canvas, .admin-canvas, .atelier-side, .admin-side, .shell-toggle {
+      padding-left: max(env(safe-area-inset-left), 5vw);
+      padding-right: max(env(safe-area-inset-right), 5vw);
+    }
+  }
+}
+
+/* Écrans très larges : le texte ne doit pas s’étirer indéfiniment. */
+@media (min-width: 1800px) {
+  main { padding-left: 12vw; padding-right: 12vw; }
+  .site-bar, .site-foot { padding-left: 12vw; padding-right: 12vw; }
 }
 
 @media (prefers-reduced-motion: reduce) {

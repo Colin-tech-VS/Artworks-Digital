@@ -5,8 +5,11 @@
 {% block footer %}{% endblock %}
 
 {% block content %}
+<button class="shell-toggle" type="button" aria-expanded="false" aria-controls="shell-nav">
+  ☰ Menu Admin
+</button>
 <div class="admin-shell">
-  <aside class="admin-side">
+  <aside class="admin-side" id="shell-nav">
     <a class="side-brand" href="{{ url_for('admin.overview') }}">Artworks <em>Admin</em></a>
     <nav class="side-nav">
       <a href="{{ url_for('admin.overview') }}" class="{% if request.endpoint == 'admin.overview' %}is-on{% endif %}">Vue d’ensemble</a>

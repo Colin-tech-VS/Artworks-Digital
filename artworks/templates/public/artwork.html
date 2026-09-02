@@ -43,7 +43,7 @@
 
 <article class="solo">
   <figure class="solo-frame">
-    <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}{% if work.year %}, {{ work.year }}{% endif %}" fetchpriority="high">
+    <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}{% if work.year %}, {{ work.year }}{% endif %}" fetchpriority="high" decoding="async"{% if work.image_w %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
   </figure>
   <aside class="cartel">
     <p class="eyebrow">{{ artist.display_name }}</p>

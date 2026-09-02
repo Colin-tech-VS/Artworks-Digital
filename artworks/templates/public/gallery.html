@@ -47,7 +47,7 @@
           <li>
             <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=work.id) }}">
               <figure>
-                <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}{% if work.year %}, {{ work.year }}{% endif %}" loading="lazy">
+                <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}{% if work.year %}, {{ work.year }}{% endif %}" loading="lazy" decoding="async"{% if work.image_w %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
                 <figcaption>
                   <strong>{{ work.title }}</strong>
                   {% if work.cartel %}<span>{{ work.cartel }}</span>{% endif %}
@@ -65,7 +65,7 @@
       <li>
         <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=work.id) }}">
           <figure>
-            <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}{% if work.year %}, {{ work.year }}{% endif %}" loading="lazy">
+            <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}{% if work.year %}, {{ work.year }}{% endif %}" loading="lazy" decoding="async"{% if work.image_w %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
             <figcaption>
               <strong>{{ work.title }}</strong>
               {% if work.cartel %}<span>{{ work.cartel }}</span>{% endif %}

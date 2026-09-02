@@ -5,8 +5,11 @@
 {% block footer %}{% endblock %}
 
 {% block content %}
+<button class="shell-toggle" type="button" aria-expanded="false" aria-controls="shell-nav">
+  ☰ Menu Atelier
+</button>
 <div class="atelier-shell">
-  <aside class="atelier-side">
+  <aside class="atelier-side" id="shell-nav">
     <a class="side-brand" href="{{ url_for('public.home') }}">Artworks <em>Digital</em></a>
     <div class="side-identity">
       <span class="avatar">{{ current_user.initial }}</span>

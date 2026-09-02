@@ -11,7 +11,7 @@ from artworks.emails import (
 )
 from artworks.extensions import db
 from artworks.forms import AccountForm, AtelierAIForm, ComposeForm, GalleryForm, PasswordForm, WorkForm
-from artworks.images import remove_image, save_image
+from artworks.images import remove_image, save_image, save_image_sized
 from artworks.models import Artist, MailMessage, Work
 from artworks.plans import active_offers, get_offer
 from artworks.slugs import unique_slug
@@ -393,7 +393,7 @@ def new_work():
     form.require_image()
     if form.validate_on_submit():
         try:
-            path = save_image(form.image.data)
+            path, width, height = save_image_sized(form.image.data)
         except ValueError as exc:
             form.image.errors.append(str(exc))
             return render_template("atelier/work.html", form=form, work=None, unread=current_user.unread_count)
@@ -407,6 +407,8 @@ def new_work():
             dimensions=(form.dimensions.data or "").strip(),
             note=(form.note.data or "").strip(),
             image_path=path,
+            image_w=width,
+            image_h=height,
             visible=bool(form.visible.data),
             collection_name=(form.collection_name.data or "").strip() if current_user.has_feature("collections") else "",
             position=(last.position + 1) if last else 0,
@@ -438,7 +440,7 @@ def edit_work(work_id: int):
         if form.image.data:
             try:
                 remove_image(work.image_path)
-                work.image_path = save_image(form.image.data)
+                work.image_path, work.image_w, work.image_h = save_image_sized(form.image.data)
             except ValueError as exc:
                 form.image.errors.append(str(exc))
                 return render_template("atelier/work.html", form=form, work=work, unread=current_user.unread_count)
