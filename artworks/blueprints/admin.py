@@ -1,12 +1,12 @@
 from functools import wraps
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
-from flask_login import current_user, login_required
 from markupsafe import Markup
 
+from artworks.admin_auth import admin_logout, require_admin, try_admin_login
 from artworks.analytics import breakdown, kpis, series, sparkline_svg, top_paths
 from artworks.extensions import db
-from artworks.forms import ComposeForm
+from artworks.forms import AdminLoginForm, ComposeForm
 from artworks.mailer import mail_configured, send_email
 from artworks.models import Artist, MailMessage, PageView, Work
 
@@ -16,10 +16,10 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 def admin_required(fn):
     @wraps(fn)
-    @login_required
     def wrapped(*args, **kwargs):
-        if not getattr(current_user, "is_admin", False):
-            abort(403)
+        blocked = require_admin()
+        if blocked is not None:
+            return blocked
         return fn(*args, **kwargs)
 
     return wrapped
@@ -31,6 +31,26 @@ def _days() -> int:
     except (TypeError, ValueError):
         value = 28
     return value if value in (7, 28, 90) else 28
+
+
+@admin_bp.route("/login", methods=["GET", "POST"])
+def login():
+    form = AdminLoginForm()
+    error = False
+    if form.validate_on_submit():
+        if try_admin_login(form.username.data or "", form.password.data or ""):
+            nxt = request.args.get("next") or url_for("admin.overview")
+            if not nxt.startswith("/admin"):
+                nxt = url_for("admin.overview")
+            return redirect(nxt)
+        error = True
+    return render_template("admin/login.html", form=form, login_error=error)
+
+
+@admin_bp.route("/logout", methods=["GET", "POST"])
+def logout():
+    admin_logout()
+    return redirect(url_for("admin.login"))
 
 
 @admin_bp.route("/")
@@ -182,8 +202,5 @@ def artist_action(artist_id: int):
     if action == "publish":
         artist.published = not artist.published
         flash("Salle ouverte." if artist.published else "Salle fermée.", "ok")
-    elif action == "admin" and not artist.is_example:
-        artist.is_admin = not artist.is_admin
-        flash("Droits admin mis à jour.", "ok")
     db.session.commit()
     return redirect(url_for("admin.artists"))

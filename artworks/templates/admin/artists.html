@@ -26,7 +26,6 @@
           <td>
             <strong>{{ artist.display_name }}</strong>
             {% if artist.is_example %}<em class="tag">exemple</em>{% endif %}
-            {% if artist.is_admin %}<em class="tag">admin</em>{% endif %}
           </td>
           <td>{{ artist.email }}</td>
           <td>
@@ -41,13 +40,6 @@
               <input type="hidden" name="action" value="publish">
               <button type="submit">{% if artist.published %}Fermer{% else %}Ouvrir{% endif %}</button>
             </form>
-            {% if not artist.is_example %}
-              <form method="post" action="{{ url_for('admin.artist_action', artist_id=artist.id) }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="action" value="admin">
-                <button type="submit">{% if artist.is_admin %}Retirer admin{% else %}Nommer admin{% endif %}</button>
-              </form>
-            {% endif %}
           </td>
         </tr>
       {% endfor %}

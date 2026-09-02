@@ -34,9 +34,6 @@
       <a href="{{ url_for('atelier.account') }}" class="{% if request.endpoint == 'atelier.account' %}is-on{% endif %}">
         <span>Compte</span>
       </a>
-      {% if current_user.is_admin %}
-        <a href="{{ url_for('admin.overview') }}">Admin</a>
-      {% endif %}
     </nav>
     <div class="side-foot">
       {% if current_user.published %}

@@ -27,6 +27,8 @@ class Config:
     CANONICAL_HOST = os.environ.get("CANONICAL_HOST", "www.artworksdigital.fr")
     CANONICAL_SCHEME = os.environ.get("CANONICAL_SCHEME", "https")
     ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "").strip().lower()
+    ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "")
+    ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
     MAIL_SERVER = os.environ.get("MAIL_SERVER", "")
     MAIL_PORT = int(os.environ.get("MAIL_PORT", "587"))
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "")
@@ -73,10 +75,9 @@ def ensure_schema() -> None:
     except Exception:
         db.session.rollback()
 
-    from artworks.seed import promote_admins, seed_examples
+    from artworks.seed import seed_examples
 
     try:
-        promote_admins()
         seed_examples()
     except SQLAlchemyError:
         db.session.rollback()

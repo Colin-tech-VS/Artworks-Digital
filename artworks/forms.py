@@ -68,6 +68,11 @@ class AccountForm(FlaskForm):
     )
 
 
+class AdminLoginForm(FlaskForm):
+    username = StringField("Identifiant", validators=[DataRequired(), Length(max=80)])
+    password = PasswordField("Mot de passe", validators=[DataRequired(), Length(max=128)])
+
+
 class ContactForm(FlaskForm):
     name = StringField("Votre nom", validators=[DataRequired(), Length(max=120)])
     email = StringField(

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin login — Artworksdigital</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body class="auth-page admin-login">
+  <main id="main">
+    <section class="auth-card">
+      <p class="eyebrow">Console</p>
+      <h1>Admin</h1>
+      {% if login_error %}
+        <p class="flash flash-info">Identifiant ou mot de passe incorrect.</p>
+      {% endif %}
+      <form id="login" name="login" method="post" action="{{ url_for('admin.login') }}" autocomplete="on">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="username">Identifiant</label>
+        <input type="text" name="username" id="username" autocomplete="username" required maxlength="80" value="{{ form.username.data or '' }}">
+        <label for="password">Mot de passe</label>
+        <input type="password" name="password" id="password" autocomplete="current-password" required maxlength="128">
+        <button type="submit" name="login" value="1" class="btn btn-ink">Connexion</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
