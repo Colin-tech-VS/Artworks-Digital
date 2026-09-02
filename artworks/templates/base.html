@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <a class="skip" href="#main">Aller au contenu</a>
@@ -16,7 +17,7 @@
     <a class="mark" href="{{ url_for('public.home') }}">Artworks <em>Digital</em></a>
     <nav>
       {% if current_user.is_authenticated %}
-        <a href="{{ url_for('atelier.studio') }}">Atelier</a>
+        <a href="{{ url_for('atelier.overview') }}">Atelier</a>
         {% if current_user.published %}
           <a href="{{ url_for('public.gallery', slug=current_user.slug) }}">Ma galerie</a>
         {% endif %}

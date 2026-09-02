@@ -1,15 +1,13 @@
-{% extends "base.html" %}
+{% extends "atelier/shell.html" %}
 {% block title %}La salle — Artworks Digital{% endblock %}
-{% block body_class %}atelier{% endblock %}
 
-{% block content %}
+{% block atelier %}
 <section class="atelier-head">
   <div>
     <p class="eyebrow">Atelier</p>
     <h1>La salle</h1>
     <p class="lead-sm">Ce que les visiteurs lisent en entrant.</p>
   </div>
-  <a class="btn btn-ghost" href="{{ url_for('atelier.studio') }}">Retour à l’accrochage</a>
 </section>
 
 <form class="sheet" method="post" enctype="multipart/form-data" novalidate>

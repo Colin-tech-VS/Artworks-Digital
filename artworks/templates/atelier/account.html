@@ -1,0 +1,48 @@
+{% extends "atelier/shell.html" %}
+{% block title %}Compte — Artworks Digital{% endblock %}
+
+{% block atelier %}
+<section class="atelier-head">
+  <div>
+    <p class="eyebrow">Atelier</p>
+    <h1>Compte</h1>
+    <p class="lead-sm">Connexion à l’atelier — pas de boutique, pas de facturation ici.</p>
+  </div>
+</section>
+
+<div class="account-grid">
+  <form class="sheet" method="post" novalidate>
+    {{ email_form.hidden_tag() }}
+    <input type="hidden" name="form_name" value="email">
+    <p class="eyebrow">Identifiant</p>
+    <label>
+      {{ email_form.email.label }}
+      {{ email_form.email() }}
+      {% for error in email_form.email.errors %}<small>{{ error }}</small>{% endfor %}
+    </label>
+    <button class="btn btn-ink" type="submit">Enregistrer l’e-mail</button>
+  </form>
+
+  <form class="sheet" method="post" novalidate>
+    {{ password_form.hidden_tag() }}
+    <input type="hidden" name="form_name" value="password">
+    <p class="eyebrow">Sécurité</p>
+    <label>
+      {{ password_form.current.label }}
+      {{ password_form.current() }}
+      {% for error in password_form.current.errors %}<small>{{ error }}</small>{% endfor %}
+    </label>
+    <label>
+      {{ password_form.password.label }}
+      {{ password_form.password() }}
+      {% for error in password_form.password.errors %}<small>{{ error }}</small>{% endfor %}
+    </label>
+    <label>
+      {{ password_form.confirm.label }}
+      {{ password_form.confirm() }}
+      {% for error in password_form.confirm.errors %}<small>{{ error }}</small>{% endfor %}
+    </label>
+    <button class="btn btn-ink" type="submit">Changer le mot de passe</button>
+  </form>
+</div>
+{% endblock %}

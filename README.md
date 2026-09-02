@@ -26,4 +26,6 @@ Ouvrir [http://127.0.0.1:8080](http://127.0.0.1:8080).
 
 ## Déploiement Scalingo
 
-App Python, `Procfile` à la racine. Variables : `SECRET_KEY`, `DATABASE_URL` (Postgres en prod).
+App `new-artworks-digital` — [https://new-artworks-digital.osc-fr1.scalingo.io](https://new-artworks-digital.osc-fr1.scalingo.io)
+
+Variables : `SECRET_KEY`, `DATABASE_URL` (addon **PostgreSQL** Starter 512). Les visuels sont aussi stockés en base : le disque Scalingo est éphémère.

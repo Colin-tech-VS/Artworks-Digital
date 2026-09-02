@@ -1,9 +1,11 @@
+from io import BytesIO
 from pathlib import Path
 
-from flask import Flask, abort, render_template, send_from_directory
+from flask import Flask, abort, render_template, send_file
 
-from artworks.config import Config
+from artworks.config import Config, ensure_schema
 from artworks.extensions import csrf, db, login_manager
+from artworks.images import asset_bytes
 
 
 def create_app(config_class=Config) -> Flask:
@@ -32,16 +34,19 @@ def create_app(config_class=Config) -> Flask:
 
     @app.route("/media/<path:filename>")
     def media(filename: str):
-        uploads = Path(app.instance_path) / "uploads"
-        if ".." in filename:
+        if ".." in filename or "/" in filename or "\\" in filename:
             abort(404)
-        return send_from_directory(uploads, filename)
+        payload = asset_bytes(filename)
+        if payload is None:
+            abort(404)
+        data, mime = payload
+        return send_file(BytesIO(data), mimetype=mime)
 
     @app.errorhandler(404)
     def not_found(_error):
         return render_template("404.html"), 404
 
     with app.app_context():
-        db.create_all()
+        ensure_schema()
 
     return app

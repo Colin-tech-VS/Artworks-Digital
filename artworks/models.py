@@ -42,6 +42,21 @@ class Artist(UserMixin, db.Model):
     def hung_works(self):
         return self.works.filter_by(visible=True).all()
 
+    @property
+    def hung_count(self) -> int:
+        return self.works.filter_by(visible=True).count()
+
+    @property
+    def reserve_count(self) -> int:
+        return self.works.filter_by(visible=False).count()
+
+    @property
+    def views_total(self) -> int:
+        total = db.session.query(db.func.coalesce(db.func.sum(Work.view_count), 0)).filter(
+            Work.artist_id == self.id
+        ).scalar()
+        return int(total or 0)
+
 
 class Work(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -54,12 +69,22 @@ class Work(db.Model):
     image_path = db.Column(db.String(255), nullable=False)
     visible = db.Column(db.Boolean, default=True, nullable=False)
     position = db.Column(db.Integer, default=0, nullable=False)
+    view_count = db.Column(db.Integer, default=0, nullable=False)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
 
     @property
     def cartel(self) -> str:
         parts = [p for p in (self.year, self.medium, self.dimensions) if p]
         return " · ".join(parts)
+
+
+class Asset(db.Model):
+    """Visuels persistés en base — le disque Scalingo est éphémère."""
+
+    id = db.Column(db.String(80), primary_key=True)
+    mime = db.Column(db.String(64), default="image/jpeg", nullable=False)
+    data = db.Column(db.LargeBinary, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
 
 
 @login_manager.user_loader

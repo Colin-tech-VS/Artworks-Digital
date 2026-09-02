@@ -12,7 +12,7 @@ auth_bp = Blueprint("auth", __name__)
 @auth_bp.route("/inscription", methods=["GET", "POST"])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for("atelier.studio"))
+        return redirect(url_for("atelier.overview"))
 
     form = RegisterForm()
     if form.validate_on_submit():
@@ -38,7 +38,7 @@ def register():
 @auth_bp.route("/connexion", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for("atelier.studio"))
+        return redirect(url_for("atelier.overview"))
 
     form = LoginForm()
     if form.validate_on_submit():
@@ -46,7 +46,7 @@ def login():
         if artist and artist.check_password(form.password.data):
             login_user(artist, remember=True)
             nxt = request.args.get("next")
-            return redirect(nxt or url_for("atelier.studio"))
+            return redirect(nxt or url_for("atelier.overview"))
         form.password.errors.append("E-mail ou mot de passe incorrect.")
     return render_template("auth/login.html", form=form)
 

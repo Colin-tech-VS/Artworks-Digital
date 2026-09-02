@@ -1,0 +1,70 @@
+{% extends "atelier/shell.html" %}
+{% block title %}Atelier — {{ current_user.display_name }}{% endblock %}
+
+{% block atelier %}
+<section class="atelier-head">
+  <div>
+    <p class="eyebrow">Vue d’ensemble</p>
+    <h1>{{ current_user.display_name }}</h1>
+    <p class="lead-sm">
+      {% if current_user.published %}
+        Visible à <a href="{{ url_for('public.gallery', slug=current_user.slug) }}">/galerie/{{ current_user.slug }}</a>
+      {% else %}
+        La salle n’est pas encore ouverte au public.
+      {% endif %}
+    </p>
+  </div>
+  <div class="atelier-actions">
+    <form method="post" action="{{ url_for('atelier.toggle_publish') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn {% if current_user.published %}btn-ghost{% else %}btn-ink{% endif %}" type="submit">
+        {% if current_user.published %}Fermer la salle{% else %}Ouvrir la salle{% endif %}
+      </button>
+    </form>
+    <a class="btn btn-ink" href="{{ url_for('atelier.new_work') }}">Accrocher une œuvre</a>
+  </div>
+</section>
+
+<ul class="stat-row">
+  <li>
+    <span>{{ hung }}</span>
+    <em>Accrochées</em>
+  </li>
+  <li>
+    <span>{{ reserve }}</span>
+    <em>En réserve</em>
+  </li>
+  <li>
+    <span>{{ works|length }}</span>
+    <em>Œuvres</em>
+  </li>
+  <li>
+    <span>{{ views }}</span>
+    <em>Vues</em>
+  </li>
+</ul>
+
+<section class="panel">
+  <header class="panel-head">
+    <h2>Accrochage récent</h2>
+    <a href="{{ url_for('atelier.studio') }}">Tout voir</a>
+  </header>
+  {% if recent %}
+    <ul class="studio-grid compact">
+      {% for work in recent %}
+        <li class="{% if not work.visible %}dim{% endif %}">
+          <a href="{{ url_for('atelier.edit_work', work_id=work.id) }}">
+            <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}">
+            <div>
+              <strong>{{ work.title }}</strong>
+              <span>{{ work.cartel or "Sans cartel" }} · {{ work.view_count }} vues</span>
+            </div>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty-room">Aucune œuvre. Commencez l’accrochage pour ouvrir la salle.</p>
+  {% endif %}
+</section>
+{% endblock %}

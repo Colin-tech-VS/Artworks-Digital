@@ -59,3 +59,19 @@ class WorkForm(FlaskForm):
             FileRequired("Un visuel est nécessaire pour accrocher l’œuvre."),
             FileAllowed(["jpg", "jpeg", "png", "webp"], "Image uniquement."),
         ]
+
+
+class AccountForm(FlaskForm):
+    email = StringField(
+        "E-mail de connexion",
+        validators=[DataRequired(), Email(message="Adresse e-mail invalide."), Length(max=180)],
+    )
+
+
+class PasswordForm(FlaskForm):
+    current = PasswordField("Mot de passe actuel", validators=[DataRequired()])
+    password = PasswordField("Nouveau mot de passe", validators=[DataRequired(), Length(min=8, max=128)])
+    confirm = PasswordField(
+        "Confirmation",
+        validators=[DataRequired(), EqualTo("password", message="Les mots de passe ne correspondent pas.")],
+    )
