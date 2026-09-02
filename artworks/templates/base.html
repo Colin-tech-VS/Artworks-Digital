@@ -3,21 +3,56 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Artworks Digital{% endblock %}</title>
-  <meta name="description" content="{% block description %}Artworks Digital — ouvrez votre galerie. Un espace pour accrocher vos œuvres, rien d’autre.{% endblock %}">
+  <title>{% block title %}Artworksdigital{% endblock %}</title>
+  <meta name="description" content="{% block description %}Artworksdigital — un atelier pour composer votre galerie. Une adresse, un accrochage, une note d’intention.{% endblock %}">
+  <meta name="robots" content="{% block robots %}index, follow, max-image-preview:large{% endblock %}">
+  <link rel="canonical" href="{% block canonical %}{{ canonical_url() }}{% endblock %}">
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+  <meta property="og:site_name" content="Artworksdigital">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}{{ self.description() }}{% endblock %}">
+  <meta property="og:url" content="{{ self.canonical() }}">
+  <meta property="og:image" content="{% block og_image %}{{ default_og_image }}{% endblock %}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ self.og_title() }}">
+  <meta name="twitter:description" content="{{ self.og_description() }}">
+  <meta name="twitter:image" content="{{ self.og_image() }}">
+  <meta name="theme-color" content="#f3efe6">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.svg') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+  {% block jsonld %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Artworksdigital",
+    "url": {{ canonical_url('/') | tojson }},
+    "inLanguage": "fr-FR",
+    "description": "Atelier et galerie pour artistes."
+  }
+  </script>
+  {% endblock %}
+  {% block extra_head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <a class="skip" href="#main">Aller au contenu</a>
+  {% block chrome %}
   <header class="site-bar">
     <a class="mark" href="{{ url_for('public.home') }}">Artworks <em>Digital</em></a>
     <nav>
+      <a href="{{ url_for('public.galleries') }}">Galeries</a>
       {% if current_user.is_authenticated %}
         <a href="{{ url_for('atelier.overview') }}">Atelier</a>
+        {% if current_user.is_admin %}
+          <a href="{{ url_for('admin.overview') }}">Admin</a>
+        {% endif %}
         {% if current_user.published %}
           <a href="{{ url_for('public.gallery', slug=current_user.slug) }}">Ma galerie</a>
         {% endif %}
@@ -28,6 +63,7 @@
       {% endif %}
     </nav>
   </header>
+  {% endblock %}
 
   <main id="main">
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -42,8 +78,10 @@
     {% block content %}{% endblock %}
   </main>
 
+  {% block footer %}
   <footer class="site-foot">
-    <p>Artworks Digital — la galerie appartient à l’artiste.</p>
+    <p>Artworksdigital — la galerie appartient à l’artiste.</p>
   </footer>
+  {% endblock %}
 </body>
 </html>

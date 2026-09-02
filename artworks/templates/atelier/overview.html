@@ -15,12 +15,7 @@
     </p>
   </div>
   <div class="atelier-actions">
-    <form method="post" action="{{ url_for('atelier.toggle_publish') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button class="btn {% if current_user.published %}btn-ghost{% else %}btn-ink{% endif %}" type="submit">
-        {% if current_user.published %}Fermer la salle{% else %}Ouvrir la salle{% endif %}
-      </button>
-    </form>
+    <a class="btn btn-ghost" href="{{ url_for('atelier.gallery') }}">Éditer la salle</a>
     <a class="btn btn-ink" href="{{ url_for('atelier.new_work') }}">Accrocher une œuvre</a>
   </div>
 </section>
@@ -35,12 +30,13 @@
     <em>En réserve</em>
   </li>
   <li>
-    <span>{{ works|length }}</span>
-    <em>Œuvres</em>
-  </li>
-  <li>
     <span>{{ views }}</span>
-    <em>Vues</em>
+    <em>Vues œuvres</em>
+  </li>
+  <li class="stat-chart">
+    <span>{{ trend_total }}</span>
+    <em>Visites 14 jours</em>
+    {{ spark|safe }}
   </li>
 </ul>
 
@@ -54,7 +50,7 @@
       {% for work in recent %}
         <li class="{% if not work.visible %}dim{% endif %}">
           <a href="{{ url_for('atelier.edit_work', work_id=work.id) }}">
-            <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}">
+            <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}" loading="lazy">
             <div>
               <strong>{{ work.title }}</strong>
               <span>{{ work.cartel or "Sans cartel" }} · {{ work.view_count }} vues</span>
@@ -64,7 +60,10 @@
       {% endfor %}
     </ul>
   {% else %}
-    <p class="empty-room">Aucune œuvre. Commencez l’accrochage pour ouvrir la salle.</p>
+    <div class="empty-card">
+      <p>Aucune œuvre. Commencez l’accrochage pour ouvrir la salle.</p>
+      <a class="btn btn-ink" href="{{ url_for('atelier.new_work') }}">Première œuvre</a>
+    </div>
   {% endif %}
 </section>
 {% endblock %}

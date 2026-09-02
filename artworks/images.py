@@ -17,6 +17,19 @@ def upload_dir() -> Path:
     return folder
 
 
+def save_bytes(payload: bytes, mime: str = "image/jpeg") -> str:
+    name = f"{uuid4().hex}.jpg"
+    dest = upload_dir() / name
+    dest.write_bytes(payload)
+    existing = db.session.get(Asset, name)
+    if existing:
+        existing.data = payload
+        existing.mime = mime
+    else:
+        db.session.add(Asset(id=name, mime=mime, data=payload))
+    return name
+
+
 def save_image(file: FileStorage, max_side: int = 2400) -> str:
     filename = secure_filename(file.filename or "")
     suffix = Path(filename).suffix.lower()

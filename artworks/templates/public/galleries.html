@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Galeries d’artistes — Artworksdigital{% endblock %}
+{% block description %}Salles ouvertes sur Artworksdigital. Chaque artiste a sa galerie : un accrochage, une adresse, une note d’intention.{% endblock %}
+{% block body_class %}rooms-page{% endblock %}
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "Galeries Artworksdigital",
+  "url": {{ canonical_url() | tojson }},
+  "hasPart": [
+    {% for artist in rooms %}
+    {"@type": "ArtGallery", "name": {{ artist.display_name | tojson }}, "url": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }}}{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="room-head">
+  <p class="eyebrow">Salles ouvertes</p>
+  <h1>Galeries</h1>
+  <p class="lead">Chaque adresse est une salle. Pas de catalogue commun.</p>
+</section>
+{% if rooms %}
+  <ul class="room-list rich">
+    {% for artist in rooms %}
+      <li>
+        <a href="{{ url_for('public.gallery', slug=artist.slug) }}">
+          {% if artist.cover_path %}
+            <img src="{{ url_for('media', filename=artist.cover_path) }}" alt="" loading="lazy">
+          {% endif %}
+          <div>
+            <span class="room-name">{{ artist.display_name }}</span>
+            <span class="room-meta">
+              {{ artist.discipline or "Artiste" }}
+              {% if artist.location %} · {{ artist.location }}{% endif %}
+              · {{ artist.hung_count }} œuvres
+            </span>
+          </div>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="empty-room">Aucune salle n’est encore ouverte.</p>
+{% endif %}
+{% endblock %}

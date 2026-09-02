@@ -1,16 +1,49 @@
 {% extends "base.html" %}
-
 {% block title %}{{ work.title }} — {{ artist.display_name }}{% endblock %}
+{% block description %}{{ work.seo_description }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_image %}{{ absolute_media(work.image_path) }}{% endblock %}
 {% block body_class %}work-view{% endblock %}
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VisualArtwork",
+  "name": {{ work.title | tojson }},
+  "url": {{ canonical_url() | tojson }},
+  "image": {{ absolute_media(work.image_path) | tojson }},
+  "creator": {
+    "@type": "Person",
+    "name": {{ artist.display_name | tojson }},
+    "url": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }}
+  }{% if work.year %},
+  "dateCreated": {{ work.year | tojson }}{% endif %}{% if work.medium %},
+  "artMedium": {{ work.medium | tojson }}{% endif %}{% if work.dimensions %},
+  "artform": {{ work.dimensions | tojson }}{% endif %},
+  "description": {{ work.seo_description | tojson }}
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Accueil", "item": {{ canonical_url('/') | tojson }}},
+    {"@type": "ListItem", "position": 2, "name": {{ artist.display_name | tojson }}, "item": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }}},
+    {"@type": "ListItem", "position": 3, "name": {{ work.title | tojson }}, "item": {{ canonical_url() | tojson }}}
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
-<nav class="crumb">
+<nav class="crumb" aria-label="Fil d’Ariane">
   <a href="{{ url_for('public.gallery', slug=artist.slug) }}">← {{ artist.display_name }}</a>
 </nav>
 
 <article class="solo">
   <figure class="solo-frame">
-    <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}">
+    <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}{% if work.year %}, {{ work.year }}{% endif %}" fetchpriority="high">
   </figure>
   <aside class="cartel">
     <p class="eyebrow">{{ artist.display_name }}</p>
@@ -19,10 +52,10 @@
     {% if work.note %}<p class="note">{{ work.note }}</p>{% endif %}
     <p class="walk">
       {% if prev_work %}
-        <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=prev_work.id) }}">Précédente</a>
+        <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=prev_work.id) }}" rel="prev">Précédente</a>
       {% endif %}
       {% if next_work %}
-        <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=next_work.id) }}">Suivante</a>
+        <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=next_work.id) }}" rel="next">Suivante</a>
       {% endif %}
     </p>
   </aside>

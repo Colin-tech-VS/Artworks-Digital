@@ -1,23 +1,53 @@
 {% extends "base.html" %}
 {% block body_class %}atelier-app{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block chrome %}{% endblock %}
+{% block footer %}{% endblock %}
 
 {% block content %}
 <div class="atelier-shell">
   <aside class="atelier-side">
-    <p class="side-kicker">Atelier</p>
-    <p class="side-name">{{ current_user.display_name }}</p>
-    <p class="side-status {% if current_user.published %}is-open{% endif %}">
-      {% if current_user.published %}Salle ouverte{% else %}Salle fermée{% endif %}
-    </p>
+    <a class="side-brand" href="{{ url_for('public.home') }}">Artworks <em>Digital</em></a>
+    <div class="side-identity">
+      <span class="avatar">{{ current_user.initial }}</span>
+      <div>
+        <p class="side-name">{{ current_user.display_name }}</p>
+        <p class="side-status {% if current_user.published %}is-open{% endif %}">
+          {% if current_user.published %}Salle ouverte{% else %}Salle fermée{% endif %}
+        </p>
+      </div>
+    </div>
     <nav class="side-nav">
-      <a href="{{ url_for('atelier.overview') }}" class="{% if request.endpoint == 'atelier.overview' %}is-on{% endif %}">Vue d’ensemble</a>
-      <a href="{{ url_for('atelier.studio') }}" class="{% if request.endpoint in ['atelier.studio', 'atelier.new_work', 'atelier.edit_work'] %}is-on{% endif %}">Accrochage</a>
-      <a href="{{ url_for('atelier.gallery') }}" class="{% if request.endpoint == 'atelier.gallery' %}is-on{% endif %}">La salle</a>
-      <a href="{{ url_for('atelier.account') }}" class="{% if request.endpoint == 'atelier.account' %}is-on{% endif %}">Compte</a>
+      <a href="{{ url_for('atelier.overview') }}" class="{% if request.endpoint == 'atelier.overview' %}is-on{% endif %}">
+        <span>Vue d’ensemble</span>
+      </a>
+      <a href="{{ url_for('atelier.studio') }}" class="{% if request.endpoint in ['atelier.studio', 'atelier.new_work', 'atelier.edit_work'] %}is-on{% endif %}">
+        <span>Accrochage</span>
+      </a>
+      <a href="{{ url_for('atelier.gallery') }}" class="{% if request.endpoint == 'atelier.gallery' %}is-on{% endif %}">
+        <span>La salle</span>
+      </a>
+      <a href="{{ url_for('atelier.messages') }}" class="{% if request.endpoint in ['atelier.messages', 'atelier.message_detail'] %}is-on{% endif %}">
+        <span>Messages</span>
+        {% if unread %}<em class="badge">{{ unread }}</em>{% endif %}
+      </a>
+      <a href="{{ url_for('atelier.account') }}" class="{% if request.endpoint == 'atelier.account' %}is-on{% endif %}">
+        <span>Compte</span>
+      </a>
+      {% if current_user.is_admin %}
+        <a href="{{ url_for('admin.overview') }}">Admin</a>
+      {% endif %}
+    </nav>
+    <div class="side-foot">
       {% if current_user.published %}
         <a href="{{ url_for('public.gallery', slug=current_user.slug) }}" target="_blank" rel="noopener">Voir la galerie</a>
       {% endif %}
-    </nav>
+      <form method="post" action="{{ url_for('atelier.toggle_publish') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">{% if current_user.published %}Fermer{% else %}Ouvrir la salle{% endif %}</button>
+      </form>
+      <a href="{{ url_for('auth.logout') }}">Quitter</a>
+    </div>
   </aside>
   <div class="atelier-canvas">
     {% block atelier %}{% endblock %}

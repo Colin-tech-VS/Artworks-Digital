@@ -1,28 +1,32 @@
 {% extends "atelier/shell.html" %}
-{% block title %}Accrochage — Artworks Digital{% endblock %}
+{% block title %}Accrochage — Artworksdigital{% endblock %}
 
 {% block atelier %}
 <section class="atelier-head">
   <div>
     <p class="eyebrow">Accrochage</p>
     <h1>Les œuvres</h1>
-    <p class="lead-sm">{{ hung }} accrochées · {{ reserve }} en réserve</p>
+    <p class="lead-sm">{{ hung }} accrochées · {{ reserve }} en réserve · glissez pour réordonner</p>
   </div>
-  <a class="btn btn-ink" href="{{ url_for('atelier.new_work') }}">Accrocher une œuvre</a>
+  <div class="atelier-actions">
+    <input class="studio-filter" type="search" id="studio-filter" placeholder="Filtrer une œuvre" autocomplete="off">
+    <a class="btn btn-ink" href="{{ url_for('atelier.new_work') }}">Accrocher une œuvre</a>
+  </div>
 </section>
 
 {% if works %}
-  <ul class="studio-grid">
+  <ul class="studio-grid" id="studio-board" data-reorder="{{ url_for('atelier.reorder_works') }}">
     {% for work in works %}
-      <li class="{% if not work.visible %}dim{% endif %}">
+      <li class="{% if not work.visible %}dim{% endif %}" data-id="{{ work.id }}" data-title="{{ work.title|lower }}">
         <a href="{{ url_for('atelier.edit_work', work_id=work.id) }}">
-          <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}">
+          <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}" loading="lazy">
           <div>
             <strong>{{ work.title }}</strong>
             <span>{{ work.cartel or "Sans cartel" }}{% if not work.visible %} · en réserve{% endif %} · {{ work.view_count }} vues</span>
           </div>
         </a>
         <div class="work-tools">
+          <button type="button" class="drag-handle" title="Déplacer" aria-label="Déplacer">↕</button>
           <form method="post" action="{{ url_for('atelier.move_work', work_id=work.id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="dir" value="up">
@@ -38,6 +42,9 @@
     {% endfor %}
   </ul>
 {% else %}
-  <p class="empty-room">Aucune œuvre pour l’instant. Commencez l’accrochage.</p>
+  <div class="empty-card">
+    <p>Aucune œuvre pour l’instant. Commencez l’accrochage.</p>
+    <a class="btn btn-ink" href="{{ url_for('atelier.new_work') }}">Accrocher une œuvre</a>
+  </div>
 {% endif %}
 {% endblock %}

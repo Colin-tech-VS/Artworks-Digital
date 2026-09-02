@@ -1,0 +1,35 @@
+{% extends "admin/shell.html" %}
+{% block title %}Emails — Admin{% endblock %}
+
+{% block admin %}
+<section class="atelier-head">
+  <div>
+    <p class="eyebrow">Courrier</p>
+    <h1>Emails</h1>
+    <p class="lead-sm">{% if mail_ok %}Envoi SMTP actif.{% else %}Réception interne active. Branchez MAIL_SERVER pour l’envoi réel.{% endif %}</p>
+  </div>
+  <a class="btn btn-ink" href="{{ url_for('admin.compose') }}">Nouveau message</a>
+</section>
+
+<nav class="range-tabs">
+  <a href="{{ url_for('admin.emails', folder='in') }}" class="{% if folder == 'in' %}is-on{% endif %}">Reçus</a>
+  <a href="{{ url_for('admin.emails', folder='unread') }}" class="{% if folder == 'unread' %}is-on{% endif %}">Non lus ({{ unread }})</a>
+  <a href="{{ url_for('admin.emails', folder='out') }}" class="{% if folder == 'out' %}is-on{% endif %}">Envoyés</a>
+</nav>
+
+{% if messages %}
+  <ul class="mail-list tall">
+    {% for item in messages %}
+      <li class="{% if not item.is_read %}is-unread{% endif %}">
+        <a href="{{ url_for('admin.email_detail', message_id=item.id) }}">
+          <strong>{{ item.from_name or item.from_email or item.to_email }}</strong>
+          <span>{{ item.subject }}</span>
+          <em>{{ item.created_at.strftime('%d/%m/%Y %H:%M') }} · {{ item.direction }}</em>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="empty-room">Aucun message dans ce dossier.</p>
+{% endif %}
+{% endblock %}

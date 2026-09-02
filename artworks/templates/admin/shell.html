@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block body_class %}admin-app{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block chrome %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div class="admin-shell">
+  <aside class="admin-side">
+    <a class="side-brand" href="{{ url_for('admin.overview') }}">Artworks <em>Admin</em></a>
+    <nav class="side-nav">
+      <a href="{{ url_for('admin.overview') }}" class="{% if request.endpoint == 'admin.overview' %}is-on{% endif %}">Vue d’ensemble</a>
+      <a href="{{ url_for('admin.analytics') }}" class="{% if request.endpoint == 'admin.analytics' %}is-on{% endif %}">Analytics</a>
+      <a href="{{ url_for('admin.emails') }}" class="{% if request.endpoint in ['admin.emails', 'admin.email_detail', 'admin.compose'] %}is-on{% endif %}">Emails</a>
+      <a href="{{ url_for('admin.artists') }}" class="{% if request.endpoint == 'admin.artists' %}is-on{% endif %}">Ateliers</a>
+      <a href="{{ url_for('atelier.overview') }}">Mon atelier</a>
+    </nav>
+    <div class="side-foot">
+      <a href="{{ url_for('public.home') }}">Site public</a>
+      <a href="{{ url_for('auth.logout') }}">Quitter</a>
+    </div>
+  </aside>
+  <div class="admin-canvas">
+    {% block admin %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /atelier
+Disallow: /admin
+Disallow: /connexion
+Disallow: /inscription
+Disallow: /deconnexion
+
+Sitemap: {{ sitemap }}

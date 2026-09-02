@@ -1,16 +1,20 @@
 from io import BytesIO
 from pathlib import Path
 
-from flask import Flask, abort, render_template, send_file
+from flask import Flask, abort, g, render_template, request, send_file
+from werkzeug.middleware.proxy_fix import ProxyFix
 
+from artworks.analytics import attach_session_cookie, record_view, should_track
 from artworks.config import Config, ensure_schema
 from artworks.extensions import csrf, db, login_manager
 from artworks.images import asset_bytes
+from artworks.seo import absolute_media, canonical_url, default_og_image
 
 
 def create_app(config_class=Config) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(config_class)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
     (Path(app.instance_path) / "uploads").mkdir(exist_ok=True)
@@ -24,6 +28,7 @@ def create_app(config_class=Config) -> Flask:
     csrf.init_app(app)
 
     from artworks import models  # noqa: F401
+    from artworks.blueprints.admin import admin_bp
     from artworks.blueprints.atelier import atelier_bp
     from artworks.blueprints.auth import auth_bp
     from artworks.blueprints.public import public_bp
@@ -31,10 +36,35 @@ def create_app(config_class=Config) -> Flask:
     app.register_blueprint(public_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(atelier_bp)
+    app.register_blueprint(admin_bp)
 
     from artworks.gate import enforce_gate
 
     app.before_request(enforce_gate)
+
+    @app.context_processor
+    def inject_seo():
+        return {
+            "canonical_url": canonical_url,
+            "absolute_media": absolute_media,
+            "default_og_image": default_og_image(),
+        }
+
+    @app.after_request
+    def track_and_headers(response):
+        endpoint = request.endpoint or ""
+        if endpoint.startswith("atelier.") or endpoint.startswith("admin.") or endpoint.startswith("auth."):
+            response.headers["X-Robots-Tag"] = "noindex, nofollow"
+        if response.status_code == 200 and should_track(request):
+            artist_id = getattr(g, "track_artist_id", None)
+            work_id = getattr(g, "track_work_id", None)
+            title = getattr(g, "track_title", "")
+            try:
+                sid = record_view(request, title=title, artist_id=artist_id, work_id=work_id)
+                attach_session_cookie(response, sid)
+            except Exception:
+                db.session.rollback()
+        return response
 
     @app.route("/media/<path:filename>")
     def media(filename: str):
@@ -44,11 +74,17 @@ def create_app(config_class=Config) -> Flask:
         if payload is None:
             abort(404)
         data, mime = payload
-        return send_file(BytesIO(data), mimetype=mime)
+        response = send_file(BytesIO(data), mimetype=mime)
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
 
     @app.errorhandler(404)
     def not_found(_error):
         return render_template("404.html"), 404
+
+    @app.errorhandler(403)
+    def forbidden(_error):
+        return render_template("403.html"), 403
 
     with app.app_context():
         ensure_schema()

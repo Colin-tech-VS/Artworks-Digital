@@ -5,6 +5,18 @@ from flask import current_app, redirect, request, session, url_for
 
 SESSION_KEY = "site_unlocked"
 
+OPEN_ENDPOINTS = {
+    None,
+    "static",
+    "media",
+    "public.home",
+    "public.gallery",
+    "public.artwork",
+    "public.galleries",
+    "public.sitemap",
+    "public.robots",
+}
+
 
 def site_is_gated() -> bool:
     return bool(current_app.config.get("SITE_UNLOCK_PASSWORD"))
@@ -28,6 +40,12 @@ def try_unlock(password: str) -> bool:
 def enforce_gate():
     if site_is_open():
         return None
-    if request.endpoint in (None, "static", "public.home"):
+    if request.endpoint in OPEN_ENDPOINTS:
+        return None
+    if request.endpoint and (
+        request.endpoint.startswith("atelier.")
+        or request.endpoint.startswith("admin.")
+        or request.endpoint in ("auth.login", "auth.logout")
+    ):
         return None
     return redirect(url_for("public.home"))

@@ -1,0 +1,23 @@
+{% extends "admin/shell.html" %}
+{% block title %}{{ message.subject }} — Emails{% endblock %}
+
+{% block admin %}
+<section class="atelier-head">
+  <div>
+    <p class="eyebrow">{{ message.direction }} · {{ message.status }}</p>
+    <h1>{{ message.subject }}</h1>
+    <p class="lead-sm">{{ message.from_name }} &lt;{{ message.from_email }}&gt; → {{ message.to_email }}</p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('admin.emails') }}">Boîte</a>
+</section>
+<article class="mail-body">{{ message.body }}</article>
+<form class="sheet" method="post" novalidate>
+  {{ form.hidden_tag() }}
+  <p class="eyebrow">Répondre</p>
+  {% if not mail_ok %}<p class="hint">Sans SMTP, la réponse reste dans l’admin.</p>{% endif %}
+  <label>{{ form.to_email.label }}{{ form.to_email() }}</label>
+  <label>{{ form.subject.label }}{{ form.subject() }}</label>
+  <label>{{ form.body.label }}{{ form.body(rows=8) }}</label>
+  <button class="btn btn-ink" type="submit">Envoyer</button>
+</form>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "admin/shell.html" %}
+{% block title %}Admin — Artworksdigital{% endblock %}
+
+{% block admin %}
+<section class="atelier-head">
+  <div>
+    <p class="eyebrow">Pilotage</p>
+    <h1>Tableau de bord</h1>
+    <p class="lead-sm">{{ total_artists }} ateliers · {{ rooms }} salles ouvertes · {{ total_works }} œuvres</p>
+  </div>
+  <div class="range-tabs">
+    <a href="?days=7" class="{% if days == 7 %}is-on{% endif %}">7 jours</a>
+    <a href="?days=28" class="{% if days == 28 %}is-on{% endif %}">28 jours</a>
+    <a href="?days=90" class="{% if days == 90 %}is-on{% endif %}">90 jours</a>
+  </div>
+</section>
+
+<ul class="stat-row kpi">
+  <li>
+    <span>{{ metrics.users }}</span>
+    <em>Utilisateurs</em>
+    <small class="{% if metrics.users_delta >= 0 %}up{% else %}down{% endif %}">{{ metrics.users_delta }}%</small>
+  </li>
+  <li>
+    <span>{{ metrics.views }}</span>
+    <em>Vues</em>
+    <small class="{% if metrics.views_delta >= 0 %}up{% else %}down{% endif %}">{{ metrics.views_delta }}%</small>
+  </li>
+  <li>
+    <span>{{ metrics.sessions }}</span>
+    <em>Sessions</em>
+  </li>
+  <li>
+    <span>{{ metrics.pages_per_session }}</span>
+    <em>Pages / session</em>
+  </li>
+</ul>
+
+<section class="panel chart-panel">
+  <header class="panel-head">
+    <h2>Trafic</h2>
+    <a href="{{ url_for('admin.analytics', days=days) }}">Analytics</a>
+  </header>
+  {{ spark|safe }}
+</section>
+
+<div class="admin-grid">
+  <section class="panel">
+    <header class="panel-head">
+      <h2>Emails</h2>
+      <a href="{{ url_for('admin.emails') }}">{{ unread }} non lus</a>
+    </header>
+    {% if not mail_ok %}<p class="hint">SMTP non branché : les messages restent ici.</p>{% endif %}
+    {% if recent_mail %}
+      <ul class="mail-list">
+        {% for item in recent_mail %}
+          <li class="{% if not item.is_read %}is-unread{% endif %}">
+            <a href="{{ url_for('admin.email_detail', message_id=item.id) }}">
+              <strong>{{ item.from_email or item.to_email }}</strong>
+              <span>{{ item.subject }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty-room">Boîte vide.</p>
+    {% endif %}
+    <p><a class="btn btn-ghost" href="{{ url_for('admin.compose') }}">Nouveau message</a></p>
+  </section>
+  <section class="panel">
+    <header class="panel-head">
+      <h2>Ateliers récents</h2>
+      <a href="{{ url_for('admin.artists') }}">Tous</a>
+    </header>
+    <ul class="mini-table">
+      {% for artist in artists %}
+        <li>
+          <strong>{{ artist.display_name }}</strong>
+          <span>{{ artist.email }}{% if artist.is_example %} · exemple{% endif %}{% if artist.published %} · ouverte{% endif %}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}

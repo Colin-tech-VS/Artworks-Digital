@@ -1,13 +1,32 @@
 {% extends "base.html" %}
-
-{% block title %}{{ artist.display_name }} — Artworks Digital{% endblock %}
-{% block description %}Galerie de {{ artist.display_name }}{% if artist.discipline %} — {{ artist.discipline }}{% endif %}.{% endblock %}
+{% block title %}{{ artist.display_name }} — Galerie Artworksdigital{% endblock %}
+{% block description %}{{ artist.seo_description }}{% endblock %}
+{% block og_type %}profile{% endblock %}
+{% block og_image %}{% if artist.cover_path %}{{ absolute_media(artist.cover_path) }}{% elif works %}{{ absolute_media(works[0].image_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
 {% block body_class %}room{% endblock %}
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ArtGallery",
+  "name": {{ artist.display_name | tojson }},
+  "url": {{ canonical_url() | tojson }},
+  "description": {{ artist.seo_description | tojson }},
+  {% if artist.location %}"address": {{ artist.location | tojson }},{% endif %}
+  "artist": {
+    "@type": "Person",
+    "name": {{ artist.display_name | tojson }}{% if artist.discipline %},
+    "jobTitle": {{ artist.discipline | tojson }}{% endif %}
+  },
+  "image": {{ self.og_image() | tojson }}
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <article class="room-head {% if artist.cover_path %}has-cover{% endif %}">
   {% if artist.cover_path %}
-    <img class="room-cover" src="{{ url_for('media', filename=artist.cover_path) }}" alt="">
+    <img class="room-cover" src="{{ url_for('media', filename=artist.cover_path) }}" alt="Salle de {{ artist.display_name }}" fetchpriority="high">
   {% endif %}
   <div class="room-intro">
     <p class="eyebrow">{{ artist.discipline or "Galerie" }}</p>
@@ -25,7 +44,7 @@
       <li>
         <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=work.id) }}">
           <figure>
-            <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}">
+            <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}{% if work.year %}, {{ work.year }}{% endif %}" loading="lazy">
             <figcaption>
               <strong>{{ work.title }}</strong>
               {% if work.cartel %}<span>{{ work.cartel }}</span>{% endif %}
@@ -39,10 +58,25 @@
   <p class="empty-room">L’accrochage n’a pas encore commencé.</p>
 {% endif %}
 
-{% if artist.contact_email %}
-  <p class="room-contact">
-    Écrire à l’artiste —
-    <a href="mailto:{{ artist.contact_email }}">{{ artist.contact_email }}</a>
-  </p>
-{% endif %}
+<section class="contact-block" id="ecrire">
+  <h2>Écrire à l’artiste</h2>
+  {% if sent %}
+    <p class="flash flash-ok">Message envoyé. Merci.</p>
+  {% endif %}
+  <form class="sheet contact-form" method="post" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="split">
+      <label>{{ form.name.label }}{{ form.name() }}
+        {% for error in form.name.errors %}<small>{{ error }}</small>{% endfor %}
+      </label>
+      <label>{{ form.email.label }}{{ form.email() }}
+        {% for error in form.email.errors %}<small>{{ error }}</small>{% endfor %}
+      </label>
+    </div>
+    <label>{{ form.message.label }}{{ form.message(rows=5) }}
+      {% for error in form.message.errors %}<small>{{ error }}</small>{% endfor %}
+    </label>
+    <button class="btn btn-ink" type="submit">Envoyer</button>
+  </form>
+</section>
 {% endblock %}

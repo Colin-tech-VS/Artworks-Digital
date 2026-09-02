@@ -68,6 +68,24 @@ class AccountForm(FlaskForm):
     )
 
 
+class ContactForm(FlaskForm):
+    name = StringField("Votre nom", validators=[DataRequired(), Length(max=120)])
+    email = StringField(
+        "Votre e-mail",
+        validators=[DataRequired(), Email(message="Adresse e-mail invalide."), Length(max=180)],
+    )
+    message = TextAreaField("Message", validators=[DataRequired(), Length(min=8, max=4000)])
+
+
+class ComposeForm(FlaskForm):
+    to_email = StringField(
+        "Destinataire",
+        validators=[DataRequired(), Email(message="Adresse e-mail invalide."), Length(max=180)],
+    )
+    subject = StringField("Objet", validators=[DataRequired(), Length(max=200)])
+    body = TextAreaField("Message", validators=[DataRequired(), Length(min=4, max=8000)])
+
+
 class PasswordForm(FlaskForm):
     current = PasswordField("Mot de passe actuel", validators=[DataRequired()])
     password = PasswordField("Nouveau mot de passe", validators=[DataRequired(), Length(min=8, max=128)])

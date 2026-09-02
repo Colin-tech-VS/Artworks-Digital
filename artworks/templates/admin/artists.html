@@ -1,0 +1,57 @@
+{% extends "admin/shell.html" %}
+{% block title %}Ateliers — Admin{% endblock %}
+
+{% block admin %}
+<section class="atelier-head">
+  <div>
+    <p class="eyebrow">Comptes</p>
+    <h1>Ateliers</h1>
+    <p class="lead-sm">Les exemples restent publiés. Votre compte n’est pas modifié.</p>
+  </div>
+</section>
+<div class="table-wrap">
+  <table class="data">
+    <thead>
+      <tr>
+        <th>Artiste</th>
+        <th>E-mail</th>
+        <th>Salle</th>
+        <th>Œuvres</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for artist in artists %}
+        <tr>
+          <td>
+            <strong>{{ artist.display_name }}</strong>
+            {% if artist.is_example %}<em class="tag">exemple</em>{% endif %}
+            {% if artist.is_admin %}<em class="tag">admin</em>{% endif %}
+          </td>
+          <td>{{ artist.email }}</td>
+          <td>
+            {% if artist.published %}
+              <a href="{{ url_for('public.gallery', slug=artist.slug) }}">/galerie/{{ artist.slug }}</a>
+            {% else %}fermée{% endif %}
+          </td>
+          <td>{{ artist.works.count() }}</td>
+          <td class="row-actions">
+            <form method="post" action="{{ url_for('admin.artist_action', artist_id=artist.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="action" value="publish">
+              <button type="submit">{% if artist.published %}Fermer{% else %}Ouvrir{% endif %}</button>
+            </form>
+            {% if not artist.is_example %}
+              <form method="post" action="{{ url_for('admin.artist_action', artist_id=artist.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="admin">
+                <button type="submit">{% if artist.is_admin %}Retirer admin{% else %}Nommer admin{% endif %}</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "atelier/shell.html" %}
+{% block title %}Messages — Atelier{% endblock %}
+
+{% block atelier %}
+<section class="atelier-head">
+  <div>
+    <p class="eyebrow">Courrier</p>
+    <h1>Messages</h1>
+    <p class="lead-sm">Ce que les visiteurs vous écrivent depuis la galerie.</p>
+  </div>
+</section>
+
+<div class="mail-split">
+  <section class="panel">
+    <header class="panel-head"><h2>Reçus</h2></header>
+    {% if inbox %}
+      <ul class="mail-list">
+        {% for item in inbox %}
+          <li class="{% if not item.is_read %}is-unread{% endif %}">
+            <a href="{{ url_for('atelier.message_detail', message_id=item.id) }}">
+              <strong>{{ item.from_name or item.from_email }}</strong>
+              <span>{{ item.subject }}</span>
+              <em>{{ item.created_at.strftime('%d/%m/%Y') }}</em>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty-room">Aucun message pour l’instant.</p>
+    {% endif %}
+  </section>
+  <section class="panel">
+    <header class="panel-head"><h2>Envoyés</h2></header>
+    {% if sent %}
+      <ul class="mail-list">
+        {% for item in sent %}
+          <li>
+            <a href="{{ url_for('atelier.message_detail', message_id=item.id) }}">
+              <strong>{{ item.to_email }}</strong>
+              <span>{{ item.subject }}</span>
+              <em>{{ item.status }}</em>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty-room">Pas encore d’envoi.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

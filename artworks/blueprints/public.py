@@ -1,8 +1,12 @@
-from flask import Blueprint, abort, redirect, render_template, request, url_for
+from flask import Blueprint, abort, g, redirect, render_template, request, url_for
 
 from artworks.extensions import db
+from artworks.forms import ContactForm
 from artworks.gate import site_is_open, try_unlock
-from artworks.models import Artist, Work
+from artworks.mailer import send_email
+from artworks.models import Artist, MailMessage, Work, utcnow
+from artworks.seo import canonical_url
+
 
 public_bp = Blueprint("public", __name__)
 
@@ -10,8 +14,7 @@ public_bp = Blueprint("public", __name__)
 def _open_rooms():
     return (
         Artist.query.filter_by(published=True)
-        .order_by(Artist.created_at.desc())
-        .limit(8)
+        .order_by(Artist.updated_at.desc(), Artist.created_at.desc())
         .all()
     )
 
@@ -25,16 +28,56 @@ def home():
                 return redirect(url_for("public.home"))
             error = True
         return render_template("public/coming_soon.html", gate_error=error)
+    g.track_title = "Artworksdigital"
     return render_template("public/home.html", rooms=_open_rooms())
 
 
-@public_bp.route("/galerie/<slug>")
+@public_bp.route("/galeries")
+def galleries():
+    rooms = _open_rooms()
+    g.track_title = "Galeries"
+    return render_template("public/galleries.html", rooms=rooms)
+
+
+@public_bp.route("/galerie/<slug>", methods=["GET", "POST"])
 def gallery(slug: str):
     artist = Artist.query.filter_by(slug=slug, published=True).first()
     if artist is None:
         abort(404)
     works = artist.hung_works
-    return render_template("public/gallery.html", artist=artist, works=works)
+    g.track_artist_id = artist.id
+    g.track_title = artist.display_name
+    form = ContactForm()
+    if form.validate_on_submit():
+        body = form.message.data.strip()
+        message = MailMessage(
+            artist_id=artist.id,
+            direction="in",
+            kind="contact",
+            status="inbox",
+            from_name=form.name.data.strip(),
+            from_email=form.email.data.strip().lower(),
+            to_name=artist.display_name,
+            to_email=artist.contact_email or artist.email,
+            subject=f"Message pour {artist.display_name}",
+            body=body,
+            is_read=False,
+        )
+        db.session.add(message)
+        notice = (
+            f"Nouveau message depuis la galerie de {artist.display_name}\n"
+            f"De : {message.from_name} <{message.from_email}>\n\n{body}"
+        )
+        send_email(message.to_email, message.subject, notice, reply_to=message.from_email)
+        db.session.commit()
+        return redirect(url_for("public.gallery", slug=artist.slug, sent=1))
+    return render_template(
+        "public/gallery.html",
+        artist=artist,
+        works=works,
+        form=form,
+        sent=request.args.get("sent") == "1",
+    )
 
 
 @public_bp.route("/galerie/<slug>/oeuvre/<int:work_id>")
@@ -47,6 +90,9 @@ def artwork(slug: str, work_id: int):
         abort(404)
     work.view_count = (work.view_count or 0) + 1
     db.session.commit()
+    g.track_artist_id = artist.id
+    g.track_work_id = work.id
+    g.track_title = f"{work.title} — {artist.display_name}"
     hung = artist.hung_works
     index = next((i for i, item in enumerate(hung) if item.id == work.id), 0)
     prev_work = hung[index - 1] if index > 0 else None
@@ -58,3 +104,34 @@ def artwork(slug: str, work_id: int):
         prev_work=prev_work,
         next_work=next_work,
     )
+
+
+@public_bp.route("/sitemap.xml")
+def sitemap():
+    pages = [
+        {"loc": canonical_url("/"), "changefreq": "weekly", "priority": "1.0", "lastmod": utcnow()},
+        {"loc": canonical_url("/galeries"), "changefreq": "daily", "priority": "0.9", "lastmod": utcnow()},
+    ]
+    for artist in Artist.query.filter_by(published=True).all():
+        lastmod = artist.updated_at or artist.created_at
+        pages.append({
+            "loc": canonical_url(url_for("public.gallery", slug=artist.slug)),
+            "changefreq": "weekly",
+            "priority": "0.8",
+            "lastmod": lastmod,
+        })
+        for work in artist.hung_works:
+            pages.append({
+                "loc": canonical_url(url_for("public.artwork", slug=artist.slug, work_id=work.id)),
+                "changefreq": "monthly",
+                "priority": "0.7",
+                "lastmod": work.updated_at or work.created_at,
+            })
+    response = render_template("public/sitemap.xml", pages=pages)
+    return response, 200, {"Content-Type": "application/xml; charset=utf-8"}
+
+
+@public_bp.route("/robots.txt")
+def robots():
+    body = render_template("public/robots.txt", sitemap=canonical_url("/sitemap.xml"))
+    return body, 200, {"Content-Type": "text/plain; charset=utf-8"}
