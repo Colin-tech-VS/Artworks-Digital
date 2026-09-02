@@ -476,46 +476,217 @@ form small { display: block; color: var(--alerte); margin-top: 0.3rem; }
 }
 .studio-grid.compact img { height: 180px; }
 
+/* Salle vide, lumière de fin d’après-midi : le fond est le mur,
+   le main est le carton scotché sur la porte. */
 .letter-page {
+  position: relative;
+  overflow-x: hidden;
   min-height: 100vh;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 5.5rem max(1.75rem, env(safe-area-inset-left)) 6rem max(1.75rem, env(safe-area-inset-right));
+  background:
+    radial-gradient(ellipse 70% 46% at 100% 0%, color-mix(in srgb, var(--bronze) 11%, transparent), transparent 58%),
+    radial-gradient(ellipse 55% 38% at 0% 100%, color-mix(in srgb, var(--ocre) 8%, transparent), transparent 52%),
+    var(--wall);
 }
-.letter {
-  max-width: 38rem;
+.letter-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.16;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+.letter-page .letter {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: min(36rem, 100%);
+  max-width: 36rem;
   margin: 0 auto;
-  padding: 5.5rem 7vw 6rem;
-  animation: rise 0.9s ease both;
+  padding: 4rem 3.15rem 3.4rem;
+  background:
+    linear-gradient(168deg, var(--paper) 0%, var(--paper) 56%, color-mix(in srgb, var(--wall) 36%, var(--paper)) 100%);
+  /* Double filet bronze, puis une ombre chaude et basse. */
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--bronze) 70%, var(--paper)),
+    0 0 0 6px var(--paper),
+    0 0 0 7px color-mix(in srgb, var(--bronze) 58%, var(--paper)),
+    0 32px 54px -22px color-mix(in srgb, var(--bronze) 26%, transparent),
+    0 10px 20px -12px color-mix(in srgb, var(--ink) 7%, transparent);
+  animation: letter-settle 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes letter-settle {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.letter-head {
+  margin: 0 0 2.6rem;
+}
+.letter-head::after {
+  content: "";
+  display: block;
+  width: 2.6rem;
+  height: 1px;
+  margin-top: 1.55rem;
+  background: var(--bronze);
+}
+.letter-page .eyebrow {
+  margin-bottom: 0.7rem;
+  letter-spacing: 0.22em;
 }
 .letter h1 {
-  font-size: clamp(2.4rem, 6vw, 3.6rem);
-  margin: 0 0 1.8rem;
+  font-size: clamp(2.35rem, 6.4vw, 3.55rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  margin: 0;
+  hyphens: none;
+}
+.letter h1 em {
+  display: block;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--bronze);
 }
 .letter h2 {
-  font-size: 1.8rem;
-  margin: 2.4rem 0 1rem;
+  font-size: clamp(1.65rem, 3.2vw, 2.05rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.15rem;
 }
-.letter p { line-height: 1.7; color: var(--quiet); }
+.letter p {
+  max-width: 44ch;
+  margin: 0 0 1.05rem;
+  line-height: 1.75;
+  color: var(--quiet);
+  font-weight: 300;
+}
+.letter p:last-child { margin-bottom: 0; }
 .letter p a, .statement a, .lead a, .kael-note a {
   color: var(--bronze);
   text-decoration-color: var(--line);
   text-underline-offset: 0.2em;
 }
 .letter p a:hover, .statement a:hover, .lead a:hover { text-decoration-color: var(--bronze); }
+.letter a:focus-visible {
+  outline: 2px solid var(--bronze);
+  outline-offset: 3px;
+}
+.letter .letter-open {
+  max-width: 26ch;
+  margin-bottom: 1.35rem;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.28rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+/* Deux salles, pas deux cartes : un chiffre romain et un silence. */
+.letter-act { margin-top: 0; }
+.letter-act + .letter-act {
+  margin-top: 3.1rem;
+  padding-top: 0;
+}
+.letter .letter-act-mark {
+  max-width: none;
+  margin: 0 0 0.85rem;
+  font-family: var(--serif);
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  color: var(--bronze);
+}
+
+/* Cartels : la question, puis le « Oui. » */
 .letter .emphasis {
   color: var(--ink);
   font-family: var(--serif);
-  font-size: 1.25rem;
+  font-size: clamp(1.38rem, 2.4vw, 1.68rem);
+  font-weight: 400;
+  line-height: 1.35;
+  max-width: 26ch;
+  margin: 1.8rem 0 1.9rem;
+  padding: 0.1rem 0 0.1rem 1rem;
+  border-left: 1px solid var(--bronze);
 }
-.sign { margin-top: 2.4rem; color: var(--ink); }
+.letter .emphasis-ask { font-style: italic; }
+.letter .emphasis-return {
+  font-style: normal;
+  font-weight: 500;
+  font-size: clamp(1.5rem, 2.7vw, 1.82rem);
+  max-width: 16ch;
+  margin: 1.9rem 0 1.7rem;
+}
+.letter .oui {
+  display: block;
+  margin: 0 0 0.2rem;
+  font-size: 1.28em;
+  letter-spacing: -0.03em;
+}
+
+.letter-close {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.85rem 1.6rem;
+  margin-top: 2.8rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--bronze) 28%, var(--paper));
+}
+.letter .letter-write {
+  max-width: none;
+  margin: 0;
+}
+.letter .letter-write a {
+  font-size: 0.84rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  color: var(--bronze);
+  border-bottom: 1px solid color-mix(in srgb, var(--bronze) 32%, var(--paper));
+  padding-bottom: 0.14em;
+}
+.letter .letter-write a:hover {
+  border-bottom-color: var(--bronze);
+}
+
+.letter .sign {
+  max-width: none;
+  margin: 0 0 0 auto;
+  text-align: right;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.28rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.letter-close .gate {
+  flex-basis: 100%;
+}
 .gate-dot {
   border: 0;
   background: none;
-  padding: 0;
+  padding: 0 0.15em 0 0;
   font: inherit;
   color: inherit;
   cursor: default;
 }
+.gate-dot:focus-visible,
+.gate-go:focus-visible {
+  outline: 2px solid var(--bronze);
+  outline-offset: 3px;
+}
 .gate {
-  margin-top: 1.2rem;
+  margin-top: 1rem;
+  text-align: right;
 }
 .gate input {
   width: 8rem;
@@ -523,16 +694,23 @@ form small { display: block; color: var(--alerte); margin-top: 0.3rem; }
   border-bottom: 1px solid var(--line);
   background: transparent;
   font: inherit;
+  font-family: var(--sans);
+  font-style: normal;
   color: var(--ink);
   padding: 0.3rem 0;
   opacity: 0.35;
 }
 .gate input:focus { outline: none; opacity: 0.7; }
+.gate input:focus-visible {
+  outline: 2px solid var(--bronze);
+  outline-offset: 3px;
+  opacity: 0.85;
+}
 .gate-go {
   border: 0;
   background: none;
   color: var(--quiet);
-  font: inherit;
+  font-family: var(--sans);
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   opacity: 0.25;
@@ -1470,13 +1648,30 @@ code { overflow-wrap: anywhere; }
 
   .mail-body { padding: 1rem; }
   .post-log img { width: 3.2rem; height: 3.2rem; }
-  .letter { padding: 3.5rem 6vw 4rem; }
+  .letter-page { padding: 2.8rem max(1.1rem, env(safe-area-inset-left)) 3.4rem max(1.1rem, env(safe-area-inset-right)); }
+  .letter-page .letter { padding: 2.8rem 1.85rem 2.4rem; }
   table.data { font-size: 0.85rem; }
 }
 
 /* Les plus petits écrans encore vendus (SE, Galaxy A0x). */
 @media (max-width: 420px) {
   main { padding: 0 5vw 3rem; }
+  .letter-page { padding: 1.5rem 0.95rem 2rem; }
+  .letter-page .letter {
+    width: 100%;
+    padding: 2.1rem 1.3rem 2rem;
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--bronze) 68%, var(--paper)),
+      0 0 0 4px var(--paper),
+      0 0 0 5px color-mix(in srgb, var(--bronze) 52%, var(--paper)),
+      0 16px 28px -14px color-mix(in srgb, var(--bronze) 22%, transparent);
+  }
+  .letter h1 { font-size: clamp(2.05rem, 9vw, 2.55rem); }
+  .letter .letter-open { font-size: 1.18rem; }
+  .letter .emphasis { padding-left: 0.85rem; max-width: 32ch; }
+  .letter .emphasis-return { max-width: 14ch; }
+  .letter-close { flex-direction: column; align-items: flex-start; }
+  .letter .sign { margin-left: 0; align-self: flex-end; }
   .site-bar, .site-foot { padding-left: 5vw; padding-right: 5vw; }
   .atelier-canvas, .admin-canvas, .atelier-side, .admin-side, .shell-toggle { padding-left: 5vw; padding-right: 5vw; }
   .mark { font-size: 1.15rem; }
