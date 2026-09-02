@@ -3,10 +3,15 @@ from flask_login import current_user, login_required
 from markupsafe import Markup
 
 from artworks.analytics import artist_series, sparkline_svg
+from artworks.emails import (
+    deliver as deliver_email,
+    send_email_changed,
+    send_gallery_published,
+    send_password_changed,
+)
 from artworks.extensions import db
-from artworks.forms import AccountForm, ComposeForm, GalleryForm, PasswordForm, WorkForm
+from artworks.forms import AccountForm, AtelierAIForm, ComposeForm, GalleryForm, PasswordForm, WorkForm
 from artworks.images import remove_image, save_image
-from artworks.mailer import send_email
 from artworks.models import Artist, MailMessage, Work
 from artworks.plans import active_offers, get_offer
 from artworks.slugs import unique_slug
@@ -57,6 +62,8 @@ def toggle_publish():
     current_user.published = not current_user.published
     current_user.touch()
     db.session.commit()
+    if current_user.published:
+        send_gallery_published(current_user)
     flash("Galerie ouverte." if current_user.published else "Galerie fermée au public.", "ok")
     return redirect(request.referrer or url_for("atelier.overview"))
 
@@ -131,29 +138,90 @@ def stats():
     )
 
 
-@atelier_bp.route("/ia")
+@atelier_bp.route("/ia", methods=["GET", "POST"])
 @login_required
 def ai_tools():
     if not current_user.has_feature("ai"):
         flash("L’IA est incluse dans Pro et Studio.", "info")
         return redirect(url_for("atelier.billing"))
-    works = current_user.works.order_by(Work.position.asc()).limit(8).all()
-    draft = ""
+
+    from artworks.composer import compose
+    from artworks.mistral import generate_statement
+
+    works = current_user.works.order_by(Work.position.asc()).limit(40).all()
+    form = AtelierAIForm()
+    form.work_id.choices = [("", "— sans œuvre —")] + [(str(work.id), work.title) for work in works]
+
+    draft = None
+    note = None
+    action = request.form.get("action", "")
+
+    if action == "note" and form.validate_on_submit():
+        if not mistral_ready():
+            flash("La clé Mistral n’est pas encore branchée.", "info")
+        else:
+            try:
+                note = generate_statement(
+                    current_user.display_name,
+                    current_user.discipline,
+                    [work.title for work in works],
+                    form.prompt.data.strip(),
+                )
+            except Exception as exc:
+                flash(f"Génération impossible : {exc}", "info")
+    elif action == "visuel" and form.validate_on_submit():
+        work = current_user.works.filter_by(id=int(form.work_id.data)).first() if form.work_id.data else None
+        try:
+            draft = compose(
+                form.prompt.data.strip(),
+                platforms=["instagram"],
+                work=work,
+                artist_name=current_user.display_name,
+                fmt=form.fmt.data,
+                layout=form.layout.data or "",
+                heavy=current_user.has_feature("priority"),
+            )
+        except Exception as exc:
+            db.session.rollback()
+            flash(f"Composition impossible : {exc}", "info")
+        else:
+            if draft["warning"]:
+                flash(draft["warning"], "info")
+
+    suggestion = ""
     if works:
         titles = ", ".join(work.title for work in works[:4])
-        draft = (
-            f"{current_user.display_name} compose une salle autour de {titles}. "
-            "L’accrochage cherche une tension minimale : matière, lumière, silence."
+        suggestion = (
+            f"Écrire la note d’intention de la salle de {current_user.display_name}, "
+            f"autour de {titles}."
         )
+
     return render_template(
         "atelier/ai.html",
         unread=current_user.unread_count,
         offer=current_user.offer,
         advanced=current_user.has_feature("priority"),
+        form=form,
         draft=draft,
+        note=note,
+        suggestion=suggestion,
         works=works,
         mistral_ok=mistral_ready(),
     )
+
+
+@atelier_bp.route("/ia/note", methods=["POST"])
+@login_required
+def ai_apply_note():
+    if not current_user.has_feature("ai"):
+        return redirect(url_for("atelier.billing"))
+    text = (request.form.get("note") or "").strip()
+    if text:
+        current_user.statement = text[:4000]
+        current_user.touch()
+        db.session.commit()
+        flash("Note d’intention enregistrée.", "ok")
+    return redirect(url_for("atelier.gallery"))
 
 
 @atelier_bp.route("/collections")
@@ -178,6 +246,7 @@ def collections():
 def gallery():
     form = GalleryForm(obj=current_user)
     if form.validate_on_submit():
+        was_published = current_user.published
         current_user.display_name = form.display_name.data.strip()
         current_user.slug = unique_slug(form.slug.data, artist_id=current_user.id)
         current_user.discipline = (form.discipline.data or "").strip()
@@ -197,6 +266,8 @@ def gallery():
                 form.cover.errors.append(str(exc))
                 return render_template("atelier/gallery.html", form=form, unread=current_user.unread_count)
         db.session.commit()
+        if current_user.published and not was_published:
+            send_gallery_published(current_user)
         flash("La salle est à jour.", "ok")
         return redirect(url_for("atelier.gallery"))
     return render_template("atelier/gallery.html", form=form, unread=current_user.unread_count)
@@ -216,9 +287,11 @@ def account():
             if taken:
                 email_form.email.errors.append("Cet e-mail est déjà utilisé.")
             else:
+                previous = current_user.email
                 current_user.email = email
                 current_user.touch()
                 db.session.commit()
+                send_email_changed(current_user, previous)
                 flash("E-mail mis à jour.", "ok")
                 return redirect(url_for("atelier.account"))
     elif request.method == "POST" and posted.get("form_name") == "password":
@@ -228,6 +301,7 @@ def account():
             else:
                 current_user.set_password(password_form.password.data)
                 db.session.commit()
+                send_password_changed(current_user)
                 flash("Mot de passe mis à jour.", "ok")
                 return redirect(url_for("atelier.account"))
 
@@ -273,11 +347,16 @@ def message_detail(message_id: int):
         form.to_email.data = message.from_email if message.direction == "in" else message.to_email
         form.subject.data = message.subject if message.subject.lower().startswith("re:") else f"Re: {message.subject}"
     if form.validate_on_submit():
-        ok, error = send_email(
+        blocks = [block.strip() for block in (form.body.data or "").split("\n\n") if block.strip()]
+        ok, error = deliver_email(
             form.to_email.data.strip(),
             form.subject.data.strip(),
-            form.body.data.strip(),
+            eyebrow=current_user.display_name,
+            title=form.subject.data.strip(),
+            paragraphs=blocks or [(form.body.data or "").strip()],
             reply_to=current_user.contact_email or current_user.email,
+            footer_note=f"Réponse envoyée depuis la galerie de {current_user.display_name}.",
+            log=False,
         )
         reply = MailMessage(
             artist_id=current_user.id,

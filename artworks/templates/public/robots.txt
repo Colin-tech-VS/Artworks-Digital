@@ -5,6 +5,8 @@ Disallow: /admin
 Disallow: /connexion
 Disallow: /inscription
 Disallow: /deconnexion
+Disallow: /mot-de-passe
+Disallow: /mot-de-passe-oublie
 Disallow: /stripe
 
 Sitemap: {{ sitemap }}

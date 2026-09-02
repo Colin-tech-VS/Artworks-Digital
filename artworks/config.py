@@ -97,6 +97,11 @@ def ensure_schema() -> None:
     _add_column("artist", "plan_period_end", dt_type)
     _add_column("work", "collection_name", "VARCHAR(120) DEFAULT ''")
     _add_column("mail_message", "external_id", "VARCHAR(200) DEFAULT ''")
+    _add_column("social_post", "artist_id", "INTEGER")
+    _add_column("social_post", "image_name", "VARCHAR(80) DEFAULT ''")
+    _add_column("social_post", "alt_text", "VARCHAR(400) DEFAULT ''")
+    _add_column("social_post", "prompt", "TEXT")
+    _add_column("social_post", "design_json", "TEXT")
     try:
         db.session.execute(text("UPDATE artist SET updated_at = created_at WHERE updated_at IS NULL"))
         db.session.execute(text("UPDATE work SET updated_at = created_at WHERE updated_at IS NULL"))

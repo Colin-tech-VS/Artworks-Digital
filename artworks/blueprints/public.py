@@ -2,9 +2,10 @@ from flask import Blueprint, abort, g, redirect, render_template, request, url_f
 from sqlalchemy import case
 
 from artworks.extensions import db
+from artworks.emails import notify_admin_contact, send_contact_receipt, send_new_message
 from artworks.forms import ContactForm
 from artworks.gate import site_is_open, try_unlock
-from artworks.mailer import contact_inbox, send_email
+from artworks.mailer import contact_inbox
 from artworks.models import Artist, MailMessage, Work, utcnow
 from artworks.seo import canonical_url
 
@@ -74,12 +75,9 @@ def contact():
             is_read=False,
         )
         db.session.add(message)
-        notice = (
-            f"Message depuis /contact\n"
-            f"De : {message.from_name} <{message.from_email}>\n\n{body}"
-        )
-        send_email(inbox, message.subject, notice, reply_to=message.from_email)
         db.session.commit()
+        notify_admin_contact(message.from_name, message.from_email, message.subject, body)
+        send_contact_receipt(message.from_name, message.from_email, body)
         sent = True
         form = ContactForm()
     g.track_title = "Contact"
@@ -116,12 +114,9 @@ def gallery(slug: str):
             is_read=False,
         )
         db.session.add(message)
-        notice = (
-            f"Nouveau message depuis la galerie de {artist.display_name}\n"
-            f"De : {message.from_name} <{message.from_email}>\n\n{body}"
-        )
-        send_email(message.to_email, message.subject, notice, reply_to=message.from_email)
         db.session.commit()
+        send_new_message(artist, message.from_name, message.from_email, body)
+        send_contact_receipt(message.from_name, message.from_email, body, artist=artist)
         return redirect(url_for("public.gallery", slug=artist.slug, sent=1))
     return render_template(
         "public/gallery.html",

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Nouveau mot de passe — Artworksdigital{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+  <p class="eyebrow">Atelier</p>
+  {% if expired %}
+    <h1>Lien expiré</h1>
+    <p class="lead-sm">
+      Ce lien n’est plus valable — il dure une heure, et devient inutilisable
+      dès qu’un mot de passe a été choisi.
+    </p>
+    <a class="btn btn-ink" href="{{ url_for('auth.forgot_password') }}">Demander un nouveau lien</a>
+  {% else %}
+    <h1>Nouveau mot de passe</h1>
+    <p class="lead-sm">Pour le compte {{ artist.email }}. Huit caractères au minimum.</p>
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+      <label>
+        {{ form.password.label }}
+        {{ form.password(autocomplete="new-password") }}
+        {% for error in form.password.errors %}<small>{{ error }}</small>{% endfor %}
+      </label>
+      <label>
+        {{ form.confirm.label }}
+        {{ form.confirm(autocomplete="new-password") }}
+        {% for error in form.confirm.errors %}<small>{{ error }}</small>{% endfor %}
+      </label>
+      <button class="btn btn-ink" type="submit">Enregistrer</button>
+    </form>
+  {% endif %}
+</section>
+{% endblock %}

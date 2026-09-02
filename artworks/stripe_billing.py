@@ -103,6 +103,9 @@ def portal_url(artist: Artist) -> str:
 
 
 def apply_plan(artist: Artist, plan_key: str, status: str = "active", subscription_id: str = "", note: str = "") -> None:
+    from artworks.emails import send_plan_changed
+
+    previous_key = artist.plan_key
     offer = get_offer(plan_key)
     artist.plan_key = offer.key if offer else "decouverte"
     artist.plan_status = status
@@ -120,6 +123,10 @@ def apply_plan(artist: Artist, plan_key: str, status: str = "active", subscripti
         )
     )
     db.session.commit()
+    if artist.plan_key != previous_key and status not in {"incomplete", "past_due"}:
+        final = get_offer(artist.plan_key)
+        if final is not None:
+            send_plan_changed(artist, final.name, final.price_label)
 
 
 def cancel_to_free(artist: Artist) -> tuple[bool, str]:
@@ -179,10 +186,13 @@ def handle_webhook(payload: bytes, signature: str) -> None:
             artist.stripe_subscription_id = ""
             db.session.commit()
     elif kind == "invoice.payment_failed":
+        from artworks.emails import send_payment_failed
+
         artist = _artist_from_customer(data.get("customer"))
         if artist:
             artist.plan_status = "past_due"
             db.session.commit()
+            send_payment_failed(artist)
 
 
 def _artist_from_meta(meta: dict, customer_id: str | None) -> Artist | None:

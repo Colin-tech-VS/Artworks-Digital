@@ -29,7 +29,16 @@ def contact_inbox() -> str:
     return current_app.config.get("SITE_CONTACT_EMAIL") or "contact@artworksdigital.fr"
 
 
-def send_email(to_email: str, subject: str, body: str, reply_to: str = "") -> tuple[bool, str]:
+def send_email(
+    to_email: str,
+    subject: str,
+    body: str,
+    reply_to: str = "",
+    html: str = "",
+    headers: dict | None = None,
+) -> tuple[bool, str]:
+    """Envoie un e-mail. Si ``html`` est fourni, le message part en
+    multipart/alternative : texte brut d’abord, version mise en page ensuite."""
     if not to_email:
         return False, "Destinataire manquant."
     if not mail_configured():
@@ -41,7 +50,12 @@ def send_email(to_email: str, subject: str, body: str, reply_to: str = "") -> tu
     message["To"] = to_email
     if reply_to:
         message["Reply-To"] = reply_to
+    for key, value in (headers or {}).items():
+        if value:
+            message[key] = value
     message.set_content(body)
+    if html:
+        message.add_alternative(html, subtype="html")
 
     cfg = current_app.config
     host = cfg["MAIL_SERVER"]

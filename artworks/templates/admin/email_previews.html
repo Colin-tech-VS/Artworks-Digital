@@ -1,0 +1,35 @@
+{% extends "admin/shell.html" %}
+{% block title %}Modèles d’e-mail — Admin{% endblock %}
+
+{% block admin %}
+<section class="atelier-head">
+  <div>
+    <p class="eyebrow">Transactionnel</p>
+    <h1>Modèles d’e-mail</h1>
+    <p class="lead-sm">
+      Chaque e-mail automatique de la plateforme, dans sa mise en page réelle.
+      L’aperçu s’ouvre tel qu’il arrive dans la boîte du destinataire.
+    </p>
+  </div>
+</section>
+
+<div class="preview-grid">
+  {% for kind, label in previews.items() %}
+    <article class="preview-card">
+      <h2>{{ label }}</h2>
+      <p class="quiet">{{ kind }}</p>
+      <div class="preview-frame">
+        <iframe src="{{ url_for('admin.email_preview', kind=kind) }}" title="Aperçu {{ label }}" loading="lazy"></iframe>
+      </div>
+      <div class="preview-actions">
+        <a class="btn btn-ghost" href="{{ url_for('admin.email_preview', kind=kind) }}" target="_blank" rel="noopener">Plein écran</a>
+        <form method="post" action="{{ url_for('admin.email_preview_send', kind=kind) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="email" name="to" placeholder="adresse de test" aria-label="Adresse de test">
+          <button class="btn btn-ink" type="submit">Envoyer un test</button>
+        </form>
+      </div>
+    </article>
+  {% endfor %}
+</div>
+{% endblock %}

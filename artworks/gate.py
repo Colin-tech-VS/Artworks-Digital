@@ -48,7 +48,7 @@ def enforce_gate():
     if request.endpoint and (
         request.endpoint.startswith("atelier.")
         or request.endpoint.startswith("admin.")
-        or request.endpoint in ("auth.login", "auth.logout")
+        or request.endpoint in ("auth.login", "auth.logout", "auth.forgot_password", "auth.reset_password")
     ):
         return None
     return redirect(url_for("public.home"))

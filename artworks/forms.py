@@ -25,6 +25,21 @@ class LoginForm(FlaskForm):
     password = PasswordField("Mot de passe", validators=[DataRequired()])
 
 
+class ForgotPasswordForm(FlaskForm):
+    email = StringField(
+        "E-mail du compte",
+        validators=[DataRequired(), Email(message="Adresse e-mail invalide."), Length(max=180)],
+    )
+
+
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField("Nouveau mot de passe", validators=[DataRequired(), Length(min=8, max=128)])
+    confirm = PasswordField(
+        "Confirmation",
+        validators=[DataRequired(), EqualTo("password", message="Les mots de passe ne correspondent pas.")],
+    )
+
+
 class GalleryForm(FlaskForm):
     display_name = StringField("Nom affiché", validators=[DataRequired(), Length(min=2, max=120)])
     slug = StringField(
@@ -111,10 +126,86 @@ class SocialPublishForm(FlaskForm):
     message = TextAreaField("Texte", validators=[DataRequired(), Length(min=4, max=2000)])
     link = StringField("Lien", validators=[Optional(), Length(max=400)])
     image_url = StringField("Image (URL)", validators=[Optional(), Length(max=400)])
+    image_name = StringField("Visuel généré", validators=[Optional(), Length(max=80)])
+    alt_text = StringField("Description de l’image", validators=[Optional(), Length(max=400)])
+    prompt = StringField("Consigne d’origine", validators=[Optional(), Length(max=1000)])
+    design_json = StringField("Brief visuel", validators=[Optional(), Length(max=2000)])
     facebook = BooleanField("Facebook", default=True)
     instagram = BooleanField("Instagram", default=True)
     pinterest = BooleanField("Pinterest")
     deviantart = BooleanField("DeviantArt")
+
+
+class SocialComposeForm(FlaskForm):
+    """Le prompt qui déclenche Mistral, et le cadre qu’on lui impose."""
+
+    prompt = TextAreaField(
+        "Consigne",
+        validators=[DataRequired(), Length(min=4, max=1200)],
+    )
+    work_id = SelectField("Œuvre", validators=[Optional()])
+    platform = SelectField(
+        "Réseau visé",
+        choices=[("instagram", "Instagram"), ("facebook", "Facebook"), ("pinterest", "Pinterest"), ("deviantart", "DeviantArt")],
+        default="instagram",
+    )
+    fmt = SelectField(
+        "Format",
+        choices=[
+            ("", "Automatique selon le réseau"),
+            ("square", "Carré 1080×1080"),
+            ("portrait", "Portrait 1080×1350"),
+            ("landscape", "Paysage 1200×630"),
+            ("story", "Story 1080×1920"),
+        ],
+        default="",
+        validators=[Optional()],
+    )
+    layout = SelectField(
+        "Mise en page",
+        choices=[
+            ("", "Laisser Mistral choisir"),
+            ("gallery", "Œuvre encadrée + cartel"),
+            ("artwork", "Œuvre plein cadre"),
+            ("editorial", "Éditorial (sans image)"),
+            ("quote", "Citation"),
+            ("poster", "Affiche"),
+        ],
+        default="",
+        validators=[Optional()],
+    )
+    use_artwork = BooleanField("Utiliser le visuel de l’œuvre", default=True)
+    heavy = BooleanField("Modèle avancé (mistral-large)")
+
+
+class AtelierAIForm(FlaskForm):
+    """L’atelier : une consigne, une œuvre, un cadre."""
+
+    prompt = TextAreaField("Consigne", validators=[DataRequired(), Length(min=4, max=1200)])
+    work_id = SelectField("Œuvre", validators=[Optional()])
+    fmt = SelectField(
+        "Format",
+        choices=[
+            ("square", "Carré 1080×1080 — Instagram"),
+            ("portrait", "Portrait 1080×1350 — Instagram"),
+            ("landscape", "Paysage 1200×630 — Facebook"),
+            ("story", "Story 1080×1920"),
+        ],
+        default="square",
+    )
+    layout = SelectField(
+        "Mise en page",
+        choices=[
+            ("", "Laisser l’IA choisir"),
+            ("gallery", "Œuvre encadrée + cartel"),
+            ("artwork", "Œuvre plein cadre"),
+            ("editorial", "Éditorial (sans image)"),
+            ("quote", "Citation"),
+            ("poster", "Affiche"),
+        ],
+        default="",
+        validators=[Optional()],
+    )
 
 
 class ComposeForm(FlaskForm):

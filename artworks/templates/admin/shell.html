@@ -12,6 +12,7 @@
       <a href="{{ url_for('admin.overview') }}" class="{% if request.endpoint == 'admin.overview' %}is-on{% endif %}">Vue d’ensemble</a>
       <a href="{{ url_for('admin.analytics') }}" class="{% if request.endpoint == 'admin.analytics' %}is-on{% endif %}">Analytics</a>
       <a href="{{ url_for('admin.emails') }}" class="{% if request.endpoint in ['admin.emails', 'admin.email_detail', 'admin.compose'] %}is-on{% endif %}">Emails</a>
+      <a href="{{ url_for('admin.email_previews') }}" class="{% if request.endpoint in ['admin.email_previews', 'admin.email_preview'] %}is-on{% endif %}">Modèles d’e-mail</a>
       <a href="{{ url_for('admin.artists') }}" class="{% if request.endpoint == 'admin.artists' %}is-on{% endif %}">Ateliers</a>
       <a href="{{ url_for('admin.offers') }}" class="{% if request.endpoint in ['admin.offers', 'admin.offer_edit'] %}is-on{% endif %}">Offres</a>
       <a href="{{ url_for('admin.subscriptions') }}" class="{% if request.endpoint == 'admin.subscriptions' %}is-on{% endif %}">Abonnements</a>

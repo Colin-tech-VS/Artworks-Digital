@@ -5,8 +5,11 @@
 <section class="atelier-head">
   <div>
     <p class="eyebrow">Diffusion</p>
-    <h1>Autopublication</h1>
-    <p class="lead-sm">Facebook et Instagram sont branchés par jeton de page. DeviantArt et Pinterest se connectent en OAuth.</p>
+    <h1>Composer et publier</h1>
+    <p class="lead-sm">
+      Une consigne suffit : Mistral écrit le post et choisit la direction du visuel,
+      qui est composé ici au format du réseau. Vous relisez, puis vous publiez.
+    </p>
   </div>
 </section>
 
@@ -20,6 +23,11 @@
       </small>
     </li>
   {% endfor %}
+  <li>
+    <span>{{ "prête" if mistral_ok else "absente" }}</span>
+    <em>mistral</em>
+    <small class="{% if mistral_ok %}up{% else %}down{% endif %}">{{ "clé active" if mistral_ok else "clé manquante" }}</small>
+  </li>
 </ul>
 
 <div class="atelier-actions">
@@ -29,56 +37,134 @@
   {% if status.pinterest.configured and not status.pinterest.connected %}
     <a class="btn btn-ghost" href="{{ url_for('admin.social_oauth_start', platform='pinterest') }}">Connecter Pinterest</a>
   {% endif %}
-  {% if status.deviantart.connected %}
-    <form method="post" action="{{ url_for('admin.social_disconnect', platform='deviantart') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button class="btn btn-ghost" type="submit">Déconnecter DeviantArt</button>
-    </form>
-  {% endif %}
-  {% if status.pinterest.connected %}
-    <form method="post" action="{{ url_for('admin.social_disconnect', platform='pinterest') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button class="btn btn-ghost" type="submit">Déconnecter Pinterest</button>
-    </form>
-  {% endif %}
+  {% for platform in ['deviantart', 'pinterest'] %}
+    {% if status[platform].connected %}
+      <form method="post" action="{{ url_for('admin.social_disconnect', platform=platform) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-ghost" type="submit">Déconnecter {{ platform }}</button>
+      </form>
+    {% endif %}
+  {% endfor %}
 </div>
 
-<form class="sheet" method="post" novalidate>
-  {{ form.hidden_tag() }}
-  <label>
-    Œuvre publiée
-    <select name="work_id">
-      <option value="">— sans œuvre —</option>
-      {% for work in works %}
-        <option value="{{ work.id }}">{{ work.artist.display_name }} — {{ work.title }}</option>
-      {% endfor %}
-    </select>
-  </label>
-  <label>{{ form.title.label }}{{ form.title() }}</label>
-  <label>{{ form.message.label }}{{ form.message(rows=6) }}
-    {% for error in form.message.errors %}<small>{{ error }}</small>{% endfor %}
-  </label>
-  <div class="split">
-    <label>{{ form.link.label }}{{ form.link(placeholder="https://www.artworksdigital.fr/…") }}</label>
-    <label>{{ form.image_url.label }}{{ form.image_url() }}</label>
-  </div>
-  <div class="flag-grid">
-    <label class="check">{{ form.facebook() }}<span>Facebook</span></label>
-    <label class="check">{{ form.instagram() }}<span>Instagram</span></label>
-    <label class="check">{{ form.pinterest() }}<span>Pinterest</span></label>
-    <label class="check">{{ form.deviantart() }}<span>DeviantArt</span></label>
-  </div>
-  <button class="btn btn-ink" type="submit">Publier</button>
-</form>
+<section class="panel">
+  <header class="panel-head">
+    <h2>1 · Composer avec Mistral</h2>
+  </header>
+  {% if not mistral_ok %}
+    <p class="quiet">
+      Aucune clé <code>MISTRAL_API_KEY</code> : la génération produit quand même un
+      brouillon et un visuel, mais sans rédaction par l’IA.
+    </p>
+  {% endif %}
+  <form class="sheet" method="post" novalidate>
+    {{ compose_form.hidden_tag() }}
+    <input type="hidden" name="action" value="generate">
+    <label>
+      {{ compose_form.prompt.label }}
+      {{ compose_form.prompt(rows=4, placeholder="Ex. : annoncer l’accrochage de cette toile, insister sur la lumière du matin et inviter à visiter la salle.") }}
+      {% for error in compose_form.prompt.errors %}<small>{{ error }}</small>{% endfor %}
+    </label>
+    <div class="split">
+      <label>{{ compose_form.work_id.label }}{{ compose_form.work_id() }}
+        {% for error in compose_form.work_id.errors %}<small>{{ error }}</small>{% endfor %}
+      </label>
+      <label>{{ compose_form.platform.label }}{{ compose_form.platform() }}</label>
+    </div>
+    <div class="split">
+      <label>{{ compose_form.fmt.label }}{{ compose_form.fmt() }}</label>
+      <label>{{ compose_form.layout.label }}{{ compose_form.layout() }}</label>
+    </div>
+    <div class="flag-grid">
+      <label class="check">{{ compose_form.use_artwork() }}<span>Utiliser le visuel de l’œuvre</span></label>
+      <label class="check">{{ compose_form.heavy() }}<span>Modèle avancé</span></label>
+    </div>
+    <button class="btn btn-ink" type="submit">Générer le post</button>
+  </form>
+</section>
+
+{% if draft %}
+  <section class="panel draft-panel">
+    <header class="panel-head">
+      <h2>Brouillon</h2>
+      <span class="quiet">{{ draft.design.layout }} · {{ draft.format }}</span>
+    </header>
+    <div class="draft-split">
+      <figure class="draft-visual">
+        <img src="{{ url_for('media', filename=draft.image_name) }}" alt="{{ draft.alt }}" loading="lazy">
+        <figcaption class="quiet">{{ draft.alt }}</figcaption>
+      </figure>
+      <div class="draft-copy">
+        <p class="mail-body">{{ draft.caption }}</p>
+        {% if draft.hashtags %}
+          <p class="quiet">{{ draft.hashtags | join(' ') }}</p>
+        {% endif %}
+        <ul class="mini-table">
+          <li><strong>Titre du visuel</strong><span>{{ draft.design.headline }}</span></li>
+          {% if draft.design.kicker %}<li><strong>Surtitre</strong><span>{{ draft.design.kicker }}</span></li>{% endif %}
+          {% if draft.design.subline %}<li><strong>Sous-titre</strong><span>{{ draft.design.subline }}</span></li>{% endif %}
+          <li><strong>Palette</strong><span>{{ draft.design.palette.bg }} · {{ draft.design.palette.ink }} · {{ draft.design.palette.accent }}</span></li>
+        </ul>
+        <a class="btn btn-ghost" href="{{ url_for('media', filename=draft.image_name) }}" download>Télécharger le visuel</a>
+      </div>
+    </div>
+  </section>
+{% endif %}
+
+<section class="panel">
+  <header class="panel-head">
+    <h2>2 · Relire et publier</h2>
+  </header>
+  <form class="sheet" method="post" novalidate>
+    {{ form.hidden_tag() }}
+    <input type="hidden" name="action" value="publish">
+    {{ form.image_name(type="hidden") }}
+    {{ form.alt_text(type="hidden") }}
+    {{ form.prompt(type="hidden") }}
+    {{ form.design_json(type="hidden") }}
+    <label>
+      Œuvre publiée
+      <select name="work_id">
+        <option value="">— sans œuvre —</option>
+        {% for work in works %}
+          <option value="{{ work.id }}" {% if form.work_id.data and form.work_id.data|int == work.id %}selected{% endif %}>{{ work.artist.display_name }} — {{ work.title }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>{{ form.title.label }}{{ form.title() }}</label>
+    <label>{{ form.message.label }}{{ form.message(rows=7) }}
+      {% for error in form.message.errors %}<small>{{ error }}</small>{% endfor %}
+    </label>
+    <div class="split">
+      <label>{{ form.link.label }}{{ form.link(placeholder="https://www.artworksdigital.fr/…") }}</label>
+      <label>{{ form.image_url.label }}{{ form.image_url() }}</label>
+    </div>
+    <p class="quiet">Instagram exige une image accessible en HTTPS : le visuel généré en fournit une.</p>
+    <div class="flag-grid">
+      <label class="check">{{ form.facebook() }}<span>Facebook</span></label>
+      <label class="check">{{ form.instagram() }}<span>Instagram</span></label>
+      <label class="check">{{ form.pinterest() }}<span>Pinterest</span></label>
+      <label class="check">{{ form.deviantart() }}<span>DeviantArt</span></label>
+    </div>
+    <button class="btn btn-ink" type="submit">Publier maintenant</button>
+  </form>
+</section>
 
 {% if logs %}
   <section class="panel">
     <header class="panel-head"><h2>Historique</h2></header>
-    <ul class="mini-table">
+    <ul class="post-log">
       {% for item in logs %}
         <li>
-          <strong>{{ item.platform }} · {{ item.status }}</strong>
-          <span>{{ item.title or item.body[:80] }}{% if item.error %} — {{ item.error }}{% endif %}</span>
+          {% if item.image_name %}
+            <img src="{{ url_for('media', filename=item.image_name) }}" alt="" loading="lazy">
+          {% endif %}
+          <div>
+            <strong>{{ item.platform }} · {{ item.status }}</strong>
+            <span>{{ item.title or item.body[:80] }}</span>
+            {% if item.remote_url %}<a href="{{ item.remote_url }}" target="_blank" rel="noopener">voir la publication</a>{% endif %}
+            {% if item.error %}<small class="down">{{ item.error[:200] }}</small>{% endif %}
+          </div>
         </li>
       {% endfor %}
     </ul>

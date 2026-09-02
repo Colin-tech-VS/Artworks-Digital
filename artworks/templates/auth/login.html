@@ -21,6 +21,7 @@
     </label>
     <button class="btn btn-ink" type="submit">Entrer</button>
   </form>
+  <p class="auth-switch"><a href="{{ url_for('auth.forgot_password') }}">Mot de passe oublié ?</a></p>
   <p class="auth-switch">Pas encore d’atelier ? <a href="{{ url_for('auth.register') }}">Ouvrir le sien</a></p>
 </section>
 {% endblock %}

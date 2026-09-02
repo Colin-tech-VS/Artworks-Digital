@@ -1,3 +1,4 @@
+import json
 from functools import wraps
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
@@ -7,8 +8,9 @@ from sqlalchemy import func
 from artworks.admin_auth import admin_logout, require_admin, try_admin_login
 from artworks.analytics import breakdown, kpis, series, sparkline_svg, top_paths
 from artworks.extensions import db
-from artworks.forms import AdminLoginForm, ComposeForm, OfferForm, SocialPublishForm
-from artworks.mailer import fetch_inbox, mail_configured, send_email
+from artworks.forms import AdminLoginForm, ComposeForm, OfferForm, SocialComposeForm, SocialPublishForm
+from artworks.emails import deliver as deliver_email
+from artworks.mailer import contact_inbox, fetch_inbox, mail_configured
 from artworks.mistral import mistral_ready
 from artworks.models import Artist, MailMessage, Offer, PageView, SocialPost, SubscriptionEvent, Work
 from artworks.seo import absolute_media, canonical_url
@@ -29,6 +31,20 @@ def admin_required(fn):
         return fn(*args, **kwargs)
 
     return wrapped
+
+
+def _loads(raw: str | None) -> dict:
+    try:
+        value = json.loads(raw or "")
+    except (TypeError, ValueError):
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def _paragraphs(body: str) -> list[str]:
+    """Un texte libre devient des paragraphes : les lignes vides séparent."""
+    blocks = [block.strip() for block in (body or "").split("\n\n")]
+    return [block for block in blocks if block] or [(body or "").strip()]
 
 
 def _days() -> int:
@@ -151,13 +167,20 @@ def compose():
     if request.args.get("to"):
         form.to_email.data = request.args.get("to")
     if form.validate_on_submit():
-        ok, error = send_email(form.to_email.data.strip(), form.subject.data.strip(), form.body.data.strip())
+        ok, error = deliver_email(
+            form.to_email.data.strip(),
+            form.subject.data.strip(),
+            eyebrow="Artworksdigital",
+            title=form.subject.data.strip(),
+            paragraphs=_paragraphs(form.body.data),
+            log=False,
+        )
         message = MailMessage(
             direction="out",
             kind="admin",
             status="sent" if ok else "failed",
             from_name="Artworksdigital",
-            from_email="hello@artworksdigital.fr",
+            from_email=contact_inbox(),
             to_email=form.to_email.data.strip().lower(),
             subject=form.subject.data.strip(),
             body=form.body.data.strip(),
@@ -186,11 +209,14 @@ def email_detail(message_id: int):
         form.to_email.data = message.from_email if message.direction == "in" else message.to_email
         form.subject.data = message.subject if message.subject.lower().startswith("re:") else f"Re: {message.subject}"
     if form.validate_on_submit():
-        ok, error = send_email(
+        ok, error = deliver_email(
             form.to_email.data.strip(),
             form.subject.data.strip(),
-            form.body.data.strip(),
-            reply_to="hello@artworksdigital.fr",
+            eyebrow="Réponse",
+            title=form.subject.data.strip(),
+            paragraphs=_paragraphs(form.body.data),
+            reply_to=contact_inbox(),
+            log=False,
         )
         reply = MailMessage(
             artist_id=message.artist_id,
@@ -198,7 +224,7 @@ def email_detail(message_id: int):
             kind="admin",
             status="sent" if ok else "failed",
             from_name="Artworksdigital",
-            from_email="hello@artworksdigital.fr",
+            from_email=contact_inbox(),
             to_email=form.to_email.data.strip().lower(),
             to_name=message.from_name,
             subject=form.subject.data.strip(),
@@ -210,6 +236,47 @@ def email_detail(message_id: int):
         flash("Réponse envoyée." if ok else f"Réponse conservée. {error}", "ok" if ok else "info")
         return redirect(url_for("admin.email_detail", message_id=reply.id))
     return render_template("admin/email.html", message=message, form=form, mail_ok=mail_configured())
+
+
+EMAIL_PREVIEWS = {
+    "welcome": "Bienvenue — atelier ouvert",
+    "password_reset": "Mot de passe oublié",
+    "password_changed": "Mot de passe modifié",
+    "email_changed": "E-mail de connexion modifié",
+    "gallery_published": "Galerie publiée",
+    "new_message": "Nouveau message reçu",
+    "contact_receipt": "Accusé de réception visiteur",
+    "plan_changed": "Changement d’offre",
+    "payment_failed": "Paiement refusé",
+}
+
+
+@admin_bp.route("/emails/modeles")
+@admin_required
+def email_previews():
+    return render_template("admin/email_previews.html", previews=EMAIL_PREVIEWS)
+
+
+@admin_bp.route("/emails/modeles/<kind>")
+@admin_required
+def email_preview(kind: str):
+    from artworks.emails import preview_html
+
+    html = preview_html(kind)
+    if html is None:
+        abort(404)
+    return html
+
+
+@admin_bp.route("/emails/modeles/<kind>/test", methods=["POST"])
+@admin_required
+def email_preview_send(kind: str):
+    from artworks.emails import send_preview
+
+    target = (request.form.get("to") or contact_inbox()).strip()
+    ok, error = send_preview(kind, target)
+    flash(f"Aperçu envoyé à {target}." if ok else f"Envoi impossible. {error}", "ok" if ok else "info")
+    return redirect(url_for("admin.email_previews"))
 
 
 @admin_bp.route("/artistes")
@@ -328,7 +395,10 @@ def assign_plan(artist_id: int):
 @admin_bp.route("/social", methods=["GET", "POST"])
 @admin_required
 def social():
-    form = SocialPublishForm()
+    from artworks.composer import compose, log_publication
+
+    publish_form = SocialPublishForm()
+    compose_form = SocialComposeForm()
     works = (
         Work.query.join(Artist)
         .filter(Work.visible.is_(True), Artist.published.is_(True))
@@ -336,39 +406,80 @@ def social():
         .limit(80)
         .all()
     )
-    if form.validate_on_submit():
-        work = db.session.get(Work, form.work_id.data) if form.work_id.data else None
-        image_url = (form.image_url.data or "").strip()
-        link = (form.link.data or "").strip()
-        title = (form.title.data or "").strip()
+    choices = [("", "— sans œuvre —")] + [
+        (str(work.id), f"{work.artist.display_name} — {work.title}") for work in works
+    ]
+    compose_form.work_id.choices = choices
+    draft = None
+    action = request.form.get("action", "")
+
+    if action == "generate" and compose_form.validate_on_submit():
+        work = db.session.get(Work, int(compose_form.work_id.data)) if compose_form.work_id.data else None
+        try:
+            draft = compose(
+                compose_form.prompt.data.strip(),
+                platforms=[compose_form.platform.data],
+                work=work,
+                fmt=compose_form.fmt.data or "",
+                layout=compose_form.layout.data or "",
+                heavy=bool(compose_form.heavy.data),
+                use_artwork=bool(compose_form.use_artwork.data),
+            )
+        except Exception as exc:
+            db.session.rollback()
+            flash(f"Génération impossible : {exc}", "info")
+        else:
+            if draft["warning"]:
+                flash(draft["warning"], "info")
+            # Le brouillon remplit le formulaire de publication, prêt à corriger.
+            publish_form.process(
+                data={
+                    "work_id": work.id if work else None,
+                    "title": draft["design"]["headline"],
+                    "message": draft["message"],
+                    "link": draft["link"],
+                    "image_url": draft["image_url"],
+                    "image_name": draft["image_name"],
+                    "alt_text": draft["alt"],
+                    "prompt": draft["prompt"],
+                    "design_json": json.dumps(draft["design"], ensure_ascii=False),
+                    "facebook": compose_form.platform.data == "facebook",
+                    "instagram": compose_form.platform.data == "instagram",
+                    "pinterest": compose_form.platform.data == "pinterest",
+                    "deviantart": compose_form.platform.data == "deviantart",
+                }
+            )
+
+    elif action != "generate" and publish_form.validate_on_submit():
+        work = db.session.get(Work, publish_form.work_id.data) if publish_form.work_id.data else None
+        image_url = (publish_form.image_url.data or "").strip()
+        link = (publish_form.link.data or "").strip()
+        title = (publish_form.title.data or "").strip()
         if work:
             image_url = image_url or absolute_media(work.image_path)
             link = link or canonical_url(url_for("public.artwork", slug=work.artist.slug, work_id=work.id))
             title = title or work.title
         platforms = [name for name, on in (
-            ("facebook", form.facebook.data),
-            ("instagram", form.instagram.data),
-            ("pinterest", form.pinterest.data),
-            ("deviantart", form.deviantart.data),
+            ("facebook", publish_form.facebook.data),
+            ("instagram", publish_form.instagram.data),
+            ("pinterest", publish_form.pinterest.data),
+            ("deviantart", publish_form.deviantart.data),
         ) if on]
         if not platforms:
             flash("Choisissez au moins un réseau.", "info")
         else:
-            results = publish_social(platforms, title=title, message=form.message.data.strip(), image_url=image_url, link=link)
+            message = publish_form.message.data.strip()
+            results = publish_social(platforms, title=title, message=message, image_url=image_url, link=link)
+            payload = {
+                "message": message,
+                "image_url": image_url,
+                "image_name": (publish_form.image_name.data or "").strip(),
+                "alt": (publish_form.alt_text.data or "").strip(),
+                "prompt": (publish_form.prompt.data or "").strip(),
+                "design": _loads(publish_form.design_json.data) or {"headline": title},
+            }
             for item in results:
-                db.session.add(
-                    SocialPost(
-                        platform=item["platform"],
-                        work_id=work.id if work else None,
-                        title=title,
-                        body=form.message.data.strip(),
-                        image_url=image_url,
-                        remote_id=item.get("id") or "",
-                        remote_url=item.get("url") or "",
-                        status="ok" if item.get("ok") else "error",
-                        error=item.get("error") or "",
-                    )
-                )
+                log_publication(item, platform=item["platform"], draft=payload, work=work)
             db.session.commit()
             ok = sum(1 for item in results if item.get("ok"))
             flash(f"{ok}/{len(results)} publication(s) réussie(s).", "ok" if ok else "info")
@@ -376,10 +487,14 @@ def social():
                 if not item.get("ok"):
                     flash(f"{item['platform']} : {item.get('error')}", "info")
             return redirect(url_for("admin.social"))
+
     return render_template(
         "admin/social.html",
-        form=form,
+        form=publish_form,
+        compose_form=compose_form,
+        draft=draft,
         works=works,
+        mistral_ok=mistral_ready(),
         status=platform_status(),
         logs=SocialPost.query.order_by(SocialPost.created_at.desc()).limit(20).all(),
         boards=Pinterest.boards() if Pinterest.status().get("connected") else [],

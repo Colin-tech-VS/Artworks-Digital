@@ -1,0 +1,7 @@
+Cormorant Garamond — Copyright 2015 The Cormorant Project Authors
+Outfit — Copyright 2020 The Outfit Project Authors
+
+Ces deux familles sont distribuées sous SIL Open Font License 1.1
+(https://scripts.sil.org/OFL). Elles sont embarquées ici pour que la
+génération des visuels réseaux (artworks/design.py) rende le même
+lettrage que le site, sans dépendre des polices de la machine.

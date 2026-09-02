@@ -5,36 +5,87 @@
 <section class="atelier-head">
   <div>
     <p class="eyebrow">{{ offer.name }}</p>
-    <h1>Outils de présentation</h1>
+    <h1>Composer avec l’IA</h1>
     <p class="lead-sm">
-      {% if advanced %}
-        Brouillons enrichis à partir de votre accrochage.
-      {% else %}
-        Une première note à partir des œuvres déjà accrochées.
-      {% endif %}
-      {% if mistral_ok %} Mistral est branché ; les outils IA arriveront ensuite.{% endif %}
+      Une consigne, et Mistral écrit — une note d’intention pour la salle, ou le
+      texte et le visuel d’un post prêt à partager.
+      {% if not mistral_ok %} La clé Mistral n’est pas branchée : le visuel se compose quand même, sans rédaction.{% endif %}
     </p>
   </div>
 </section>
 
 <section class="panel">
   <header class="panel-head">
-    <h2>Note d’intention suggérée</h2>
+    <h2>Votre consigne</h2>
   </header>
-  {% if draft %}
-    <p class="mail-body">{{ draft }}</p>
-  {% else %}
-    <p class="empty-room">Accrochez quelques œuvres pour générer une note.</p>
-  {% endif %}
+  <form class="sheet" method="post" novalidate>
+    {{ form.hidden_tag() }}
+    <label>
+      {{ form.prompt.label }}
+      {{ form.prompt(rows=4, placeholder=suggestion or "Ex. : présenter cette toile en insistant sur la matière et la lumière du matin.") }}
+      {% for error in form.prompt.errors %}<small>{{ error }}</small>{% endfor %}
+    </label>
+    <div class="split">
+      <label>{{ form.work_id.label }}{{ form.work_id() }}
+        {% for error in form.work_id.errors %}<small>{{ error }}</small>{% endfor %}
+      </label>
+      <label>{{ form.fmt.label }}{{ form.fmt() }}</label>
+    </div>
+    <label>{{ form.layout.label }}{{ form.layout() }}</label>
+    <div class="atelier-actions">
+      <button class="btn btn-ink" type="submit" name="action" value="visuel">Composer un visuel</button>
+      <button class="btn btn-ghost" type="submit" name="action" value="note">Écrire une note d’intention</button>
+    </div>
+  </form>
 </section>
+
+{% if note %}
+  <section class="panel">
+    <header class="panel-head"><h2>Note d’intention proposée</h2></header>
+    <p class="mail-body">{{ note }}</p>
+    <form method="post" action="{{ url_for('atelier.ai_apply_note') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="note" value="{{ note }}">
+      <button class="btn btn-ink" type="submit">Utiliser cette note</button>
+    </form>
+  </section>
+{% endif %}
+
+{% if draft %}
+  <section class="panel draft-panel">
+    <header class="panel-head">
+      <h2>Visuel composé</h2>
+      <span class="quiet">{{ draft.design.layout }} · {{ draft.format }}</span>
+    </header>
+    <div class="draft-split">
+      <figure class="draft-visual">
+        <img src="{{ url_for('media', filename=draft.image_name) }}" alt="{{ draft.alt }}" loading="lazy">
+        <figcaption class="quiet">{{ draft.alt }}</figcaption>
+      </figure>
+      <div class="draft-copy">
+        <p class="mail-body">{{ draft.caption }}</p>
+        {% if draft.hashtags %}<p class="quiet">{{ draft.hashtags | join(' ') }}</p>{% endif %}
+        <label class="copy-field">
+          Texte du post
+          <textarea rows="6" readonly>{{ draft.message }}</textarea>
+        </label>
+        <div class="atelier-actions">
+          <a class="btn btn-ink" href="{{ url_for('media', filename=draft.image_name) }}" download>Télécharger le visuel</a>
+          {% if draft.link %}<a class="btn btn-ghost" href="{{ draft.link }}">Voir la page de l’œuvre</a>{% endif %}
+        </div>
+        <p class="quiet">
+          Le visuel est à vous : téléchargez-le et publiez-le depuis vos comptes.
+        </p>
+      </div>
+    </div>
+  </section>
+{% endif %}
 
 {% if works %}
   <section class="panel">
-    <header class="panel-head">
-      <h2>Œuvres prises en compte</h2>
-    </header>
+    <header class="panel-head"><h2>Œuvres disponibles</h2></header>
     <ul class="mini-table">
-      {% for work in works %}
+      {% for work in works[:10] %}
         <li>
           <strong>{{ work.title }}</strong>
           <span>{{ work.cartel or "Sans cartel" }}</span>
