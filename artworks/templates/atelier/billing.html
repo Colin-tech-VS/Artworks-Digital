@@ -26,7 +26,7 @@
 
 <div class="offers-grid atelier-offers">
   {% for offer in offers %}
-    <article class="offer-card {% if offer.key == current.key %}is-current{% endif %} {% if offer.key == 'pro' %}is-featured{% endif %}">
+    <article class="offer-card {% if offer.key == current.key %}is-current{% endif %} {% if offer.key == 'pro' %}is-featured{% endif %}" data-offre="{{ offer.key }}">
       <p class="offer-badge">{{ offer.badge }} {{ offer.name }}</p>
       <p class="offer-audience">{{ offer.audience }}</p>
       <p class="offer-price">{{ offer.price_label }}</p>

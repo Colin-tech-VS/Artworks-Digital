@@ -42,7 +42,7 @@
                 <small class="quiet">kael_{{ token.prefix }}_…</small>
               </td>
               <td>
-                {% for scope in token.scopes %}<span class="scope-chip">{{ scope }}</span>{% endfor %}
+                {% for scope in token.scopes %}<span class="scope-chip" data-portee="{{ scope }}">{{ scope }}</span>{% endfor %}
               </td>
               <td>{% if token.artist_id %}Atelier #{{ token.artist_id }}{% else %}Toute la plateforme{% endif %}</td>
               <td>
@@ -107,8 +107,8 @@
                 <br><small class="down">Confirmation humaine requise.</small>
               {% endif %}
             </td>
-            <td><span class="scope-chip">{{ tool.permission }}</span></td>
-            <td>{{ tool.risk }}{% if tool.mutating %} · modifie{% endif %}</td>
+            <td><span class="scope-chip" data-portee="{{ tool.permission }}">{{ tool.permission }}</span></td>
+            <td><span class="risk-chip" data-risque="{{ tool.risk }}">{{ tool.risk }}</span>{% if tool.mutating %} <small class="quiet">· modifie</small>{% endif %}</td>
           </tr>
         {% endfor %}
       </tbody>

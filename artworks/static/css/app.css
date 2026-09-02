@@ -6,6 +6,24 @@
   --line: #d8d0c4;
   --bronze: #5c4634;
   --ok: #2f4a38;
+
+  /* Les pigments. Tirés d’une boîte de couleurs, jamais saturés : ils
+     désignent — une offre, une portée, un état — et ne décorent pas. Tous
+     tiennent le rapport de contraste AA sur le mur comme sur le papier. */
+  --ocre: #8a6220;      /* jaune de Naples assombri — ce qui modifie */
+  --terre: #9d5233;     /* terre de Sienne brûlée — ce qui sort du site */
+  --olive: #5f6b40;     /* terre verte — ce qui observe */
+  --indigo: #3f4d6b;    /* indigo — ce qui lit, ce qui informe */
+  --prune: #6a3d54;     /* garance sombre — ce qui est rare */
+  --alerte: #8a2d2d;    /* rouge de Venise — ce qui casse */
+
+  /* Les mêmes, étendus au lavis : des fonds, pas des traits. */
+  --ocre-voile: #f6efdf;
+  --terre-voile: #f7ebe4;
+  --olive-voile: #eef0e5;
+  --indigo-voile: #e9ecf2;
+  --prune-voile: #f3e9ee;
+
   --serif: "Cormorant Garamond", "Times New Roman", serif;
   --sans: "Outfit", "Segoe UI", sans-serif;
 }
@@ -25,6 +43,8 @@ body {
 }
 img { max-width: 100%; height: auto; display: block; }
 a { color: inherit; }
+/* Même la sélection reste dans la boîte de couleurs. */
+::selection { background: var(--ocre-voile); color: var(--ink); }
 .skip {
   position: absolute;
   left: -999px;
@@ -80,8 +100,13 @@ main { flex: 1; padding: 0 7vw 5rem; }
   font-size: 0.95rem;
   transition: opacity 0.4s ease, transform 0.4s ease;
 }
-.flash-ok { color: var(--ok); }
-.flash-info { color: var(--quiet); }
+.flash {
+  padding-left: 0.8rem;
+  border-left: 2px solid var(--line);
+}
+.flash-ok { color: var(--ok); border-left-color: var(--ok); }
+.flash-info { color: var(--indigo); border-left-color: var(--indigo); }
+.flash-error { color: var(--alerte); border-left-color: var(--alerte); }
 
 .eyebrow {
   margin: 0 0 0.8rem;
@@ -127,6 +152,9 @@ h1, h2 {
 .btn-ink { background: var(--ink); color: var(--paper); }
 .btn-ghost { border-color: var(--line); }
 .btn:hover { opacity: 1; transform: translateY(-2px); }
+.btn-ink:hover { background: var(--bronze); border-color: var(--bronze); }
+.btn:not(.btn-ink):hover { border-color: var(--bronze); color: var(--bronze); }
+.btn:focus-visible { outline: 2px solid var(--bronze); outline-offset: 3px; }
 
 .strip {
   display: grid;
@@ -135,12 +163,21 @@ h1, h2 {
   padding: 3rem 0 5rem;
   border-top: 1px solid var(--line);
 }
+/* Les trois temps — l'atelier, l'accrochage, la galerie — se suivent en
+   couleur comme ils se suivent dans le texte. */
 .strip span {
   font-family: var(--serif);
   font-style: italic;
   color: var(--bronze);
   font-size: 1.2rem;
 }
+.strip article:nth-child(1) span { color: var(--olive); }
+.strip article:nth-child(2) span { color: var(--bronze); }
+.strip article:nth-child(3) span { color: var(--terre); }
+.strip article { border-top: 2px solid var(--line); padding-top: 1rem; }
+.strip article:nth-child(1) { border-top-color: var(--olive); }
+.strip article:nth-child(2) { border-top-color: var(--bronze); }
+.strip article:nth-child(3) { border-top-color: var(--terre); }
 .strip h2 { font-size: 1.7rem; margin: 0.4rem 0 0.6rem; }
 .strip p { margin: 0; color: var(--quiet); line-height: 1.55; }
 
@@ -165,6 +202,8 @@ h1, h2 {
   color: var(--quiet);
   font-size: 0.85rem;
 }
+.site-foot a { color: var(--bronze); text-decoration-color: var(--line); }
+.site-foot a:hover { text-decoration-color: var(--bronze); }
 
 .room-head { padding: 3.5rem 0 2.5rem; max-width: 40rem; }
 .room-head.has-cover { max-width: none; }
@@ -243,7 +282,7 @@ form input, form textarea, form select {
   color: inherit;
 }
 form textarea { resize: vertical; }
-form small { display: block; color: #8a2d2d; margin-top: 0.3rem; }
+form small { display: block; color: var(--alerte); margin-top: 0.3rem; }
 .hint { display: block; color: var(--quiet); font-size: 0.8rem; margin-top: 0.2rem; }
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .check { display: flex; align-items: center; gap: 0.7rem; }
@@ -290,7 +329,7 @@ form small { display: block; color: #8a2d2d; margin-top: 0.3rem; }
 .danger button {
   background: none;
   border: 0;
-  color: #8a2d2d;
+  color: var(--alerte);
   cursor: pointer;
   font: inherit;
   letter-spacing: 0.06em;
@@ -358,7 +397,18 @@ form small { display: block; color: #8a2d2d; margin-top: 0.3rem; }
   font-size: 0.82rem;
   color: var(--quiet);
 }
+.side-status::before {
+  content: "";
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+  background: var(--line);
+  vertical-align: 0.05em;
+}
 .side-status.is-open { color: var(--ok); }
+.side-status.is-open::before { background: var(--ok); }
 .side-nav { display: flex; flex-direction: column; gap: 0.35rem; }
 .side-nav a {
   text-decoration: none;
@@ -444,6 +494,12 @@ form small { display: block; color: #8a2d2d; margin-top: 0.3rem; }
   margin: 2.4rem 0 1rem;
 }
 .letter p { line-height: 1.7; color: var(--quiet); }
+.letter p a, .statement a, .lead a, .kael-note a {
+  color: var(--bronze);
+  text-decoration-color: var(--line);
+  text-underline-offset: 0.2em;
+}
+.letter p a:hover, .statement a:hover, .lead a:hover { text-decoration-color: var(--bronze); }
 .letter .emphasis {
   color: var(--ink);
   font-family: var(--serif);
@@ -519,7 +575,7 @@ form small { display: block; color: #8a2d2d; margin-top: 0.3rem; }
   height: 1.2rem;
   padding: 0 0.35rem;
   border-radius: 99px;
-  background: var(--ink);
+  background: var(--terre);
   color: var(--paper);
   font-size: 0.68rem;
   font-style: normal;
@@ -662,14 +718,21 @@ form small { display: block; color: #8a2d2d; margin-top: 0.3rem; }
 .range-tabs a.is-on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .kpi small { display: block; margin-top: 0.35rem; font-size: 0.78rem; }
 .kpi .up { color: var(--ok); }
-.kpi .down { color: #8a2d2d; }
+.kpi .down { color: var(--alerte); }
 .chart-panel { margin-bottom: 1.6rem; }
 .bars li { align-items: baseline; }
 .bars small { display: block; color: var(--quiet); }
 .table-wrap { overflow: auto; }
 table.data { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 table.data th, table.data td { text-align: left; padding: 0.8rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
-.tag { font-style: normal; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bronze); margin-left: 0.35rem; }
+.tag {
+  font-style: normal;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ocre);
+  margin-left: 0.35rem;
+}
 .row-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 .row-actions button {
   border: 1px solid var(--line);
@@ -708,12 +771,25 @@ table.data th, table.data td { text-align: left; padding: 0.8rem 0.5rem; border-
 }
 .offer-card.is-featured { border-color: var(--ink); }
 .offer-card.is-current { box-shadow: inset 0 0 0 1px var(--bronze); }
+/* Chaque offre porte son pigment : quatre colonnes se distinguent d’un
+   coup d’œil, sans qu’on ait à lire les quatre titres. */
+.offer-card::before {
+  content: "";
+  display: block;
+  height: 3px;
+  margin: -1.5rem -1.3rem 0.9rem;
+  background: var(--teinte, var(--line));
+}
+.offer-card[data-offre="decouverte"] { --teinte: var(--olive); }
+.offer-card[data-offre="artiste"] { --teinte: var(--bronze); }
+.offer-card[data-offre="pro"] { --teinte: var(--indigo); }
+.offer-card[data-offre="studio"] { --teinte: var(--prune); }
 .offer-badge {
   margin: 0;
   font-size: 0.82rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--bronze);
+  color: var(--teinte, var(--bronze));
 }
 .offer-audience { margin: 0; color: var(--quiet); font-size: 0.92rem; }
 .offer-price {
@@ -797,7 +873,7 @@ table.data th, table.data td { text-align: left; padding: 0.8rem 0.5rem; border-
 .post-log div { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
 .post-log span, .post-log small { color: var(--quiet); font-size: 0.86rem; }
 .post-log a { color: var(--bronze); font-size: 0.84rem; }
-.post-log .down { color: #8a2d2d; }
+.post-log .down { color: var(--alerte); }
 
 .preview-grid {
   display: grid;
@@ -881,6 +957,14 @@ table.data th, table.data td { text-align: left; padding: 0.8rem 0.5rem; border-
   border: 0;
 }
 
+/* ------------------------------------------------------------------
+   K.A.E.L. — le panneau de conversation.
+
+   Il porte le pigment de ce qu'il voit : indigo pour toute la plateforme,
+   terre verte pour un seul atelier. Sa tête est sombre, comme la colonne
+   de l'admin : K.A.E.L. n'est pas une carte de la page, c'est quelqu'un
+   d'autre à qui l'on parle.
+   ------------------------------------------------------------------ */
 .kael-open {
   position: fixed;
   right: 1.4rem;
@@ -899,140 +983,289 @@ table.data th, table.data td { text-align: left; padding: 0.8rem 0.5rem; border-
   letter-spacing: 0.14em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  box-shadow: 0 10px 26px rgba(22, 20, 18, 0.22);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.2s ease;
 }
-.kael-open:hover { transform: translateY(-2px); }
+.kael-open:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(22, 20, 18, 0.28);
+}
+.kael-open:focus-visible { outline: 2px solid var(--ocre); outline-offset: 3px; }
+/* Panneau ouvert : le bouton n'a plus rien à dire, il s'efface. */
+.kael-is-open .kael-open { opacity: 0; pointer-events: none; }
+
 .kael-mark {
   display: grid;
   place-items: center;
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: var(--bronze);
+  background: linear-gradient(150deg, var(--bronze), var(--terre));
   color: var(--paper);
   font-family: var(--serif);
   font-size: 1.15rem;
   letter-spacing: 0;
+  flex-shrink: 0;
+}
+/* La pastille de présence : verte quand K.A.E.L. répond vraiment, creuse
+   quand il n'est pas branché — l'un ne doit pas se faire passer pour l'autre. */
+.kael-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid var(--quiet);
+  background: transparent;
+}
+.kael-pulse.is-live {
+  border-color: transparent;
+  background: #7fae86;
+  box-shadow: 0 0 0 0 rgba(127, 174, 134, 0.6);
+  animation: kael-breathe 2.6s ease-out infinite;
+}
+@keyframes kael-breathe {
+  0% { box-shadow: 0 0 0 0 rgba(127, 174, 134, 0.55); }
+  70% { box-shadow: 0 0 0 7px rgba(127, 174, 134, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(127, 174, 134, 0); }
 }
 
 /* `display: flex` sur une classe l'emporte sur `[hidden]` : sans cette
    ligne, le panneau resterait affiché et masquerait son propre bouton. */
 .kael-panel[hidden] { display: none; }
 .kael-panel {
+  --teinte: var(--indigo);
+  --voile: var(--indigo-voile);
   position: fixed;
   right: 1.4rem;
   bottom: 1.4rem;
   z-index: 61;
-  width: min(24rem, calc(100vw - 2.8rem));
-  max-height: min(34rem, calc(100vh - 2.8rem));
+  width: min(25rem, calc(100vw - 2.8rem));
+  max-height: min(36rem, calc(100vh - 2.8rem));
   display: flex;
   flex-direction: column;
   background: var(--paper);
-  border: 1px solid var(--line);
-  box-shadow: 0 18px 50px rgba(22, 20, 18, 0.18);
-  animation: rise 0.35s ease both;
+  border: 1px solid var(--ink);
+  box-shadow: 0 22px 60px rgba(22, 20, 18, 0.26);
+  animation: rise 0.3s ease both;
 }
+.kael-panel[data-ton="atelier"] { --teinte: var(--olive); --voile: var(--olive-voile); }
+
 .kael-head {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 1rem 1.1rem 0.7rem;
-  border-bottom: 1px solid var(--line);
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.85rem 0.9rem;
+  background: var(--ink);
+  color: var(--paper);
 }
+.kael-mark-head { width: 38px; height: 38px; font-size: 1.25rem; }
+.kael-ident { flex: 1; min-width: 0; }
 .kael-name {
   margin: 0;
   font-family: var(--serif);
-  font-size: 1.25rem;
-  letter-spacing: 0.06em;
+  font-size: 1.3rem;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
 }
-.kael-tag { margin: 0.15rem 0 0; font-size: 0.78rem; color: var(--quiet); }
+.kael-tag {
+  margin: 0.1rem 0 0;
+  font-size: 0.74rem;
+  color: #a49b8f;
+  letter-spacing: 0.02em;
+}
 .kael-close {
   border: 0;
   background: none;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   line-height: 1;
-  color: var(--quiet);
+  color: #a49b8f;
   cursor: pointer;
-  min-width: 32px;
-  min-height: 32px;
+  min-width: 34px;
+  min-height: 34px;
+  transition: color 0.2s ease;
 }
+.kael-close:hover { color: var(--paper); }
+
+/* Le bandeau de portée : ce que K.A.E.L. a sous les yeux, en une ligne. */
 .kael-context {
-  padding: 0.5rem 1.1rem;
-  background: var(--wall);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.5rem 0.9rem;
+  background: var(--voile);
   border-bottom: 1px solid var(--line);
-  font-size: 0.74rem;
+  border-left: 3px solid var(--teinte);
+  font-size: 0.76rem;
+  color: var(--quiet);
+  overflow-wrap: anywhere;
+}
+.kael-scope {
+  flex-shrink: 0;
+  padding: 0.1rem 0.4rem;
+  background: var(--teinte);
+  color: var(--paper);
+  font-size: 0.66rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--bronze);
 }
+
 .kael-stream {
   flex: 1;
   overflow-y: auto;
-  padding: 0.9rem 1.1rem;
+  padding: 1rem 0.9rem;
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  gap: 0.85rem;
+  background:
+    linear-gradient(var(--paper) 30%, rgba(250, 247, 241, 0)) top / 100% 1.4rem no-repeat,
+    linear-gradient(rgba(22, 20, 18, 0.07), rgba(22, 20, 18, 0)) top / 100% 0.4rem no-repeat;
+  background-attachment: local, scroll;
 }
-.kael-hello { margin: 0; color: var(--quiet); font-size: 0.9rem; line-height: 1.6; }
+
+/* K.A.E.L. parle depuis la marge, avec sa marque ; l'artiste répond en
+   face, à droite. Deux voix, deux formes — on suit sans lire les noms. */
+.kael-line { display: grid; }
 .kael-line p { margin: 0; font-size: 0.9rem; line-height: 1.6; }
+.kael-kael {
+  grid-template-columns: 1.6rem minmax(0, 1fr);
+  gap: 0.55rem;
+  justify-items: start;
+}
+.kael-kael::before {
+  content: "K";
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--voile);
+  color: var(--teinte);
+  border: 1px solid var(--teinte);
+  font-family: var(--serif);
+  font-size: 0.85rem;
+}
+.kael-kael > * { grid-column: 2; }
+.kael-kael > p {
+  padding: 0.55rem 0.75rem;
+  background: var(--wall);
+  border-left: 2px solid var(--teinte);
+}
 .kael-me {
-  align-self: flex-end;
+  justify-items: end;
+}
+.kael-me > p {
   max-width: 85%;
   background: var(--ink);
   color: var(--paper);
-  padding: 0.5rem 0.75rem;
+  padding: 0.55rem 0.75rem;
 }
-.kael-kael { align-self: flex-start; max-width: 95%; }
-.kael-kael > p { border-left: 2px solid var(--bronze); padding-left: 0.7rem; }
 .kael-list {
-  margin: 0.5rem 0 0;
-  padding-left: 1.6rem;
+  margin: 0.45rem 0 0;
+  padding-left: 1.5rem;
   color: var(--quiet);
   font-size: 0.85rem;
   line-height: 1.55;
 }
+.kael-list li::marker { color: var(--teinte); }
+
+/* L'attente a sa forme propre : trois points qui respirent, pas un
+   message vide qu'on prendrait pour une réponse. */
+.kael-typing > p { display: flex; gap: 0.28rem; align-items: center; padding: 0.75rem; }
+.kael-typing i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--teinte);
+  opacity: 0.35;
+  animation: kael-dot 1.2s ease-in-out infinite;
+}
+.kael-typing i:nth-child(2) { animation-delay: 0.16s; }
+.kael-typing i:nth-child(3) { animation-delay: 0.32s; }
+@keyframes kael-dot {
+  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+
 .kael-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
-  padding: 0.7rem 1.1rem;
+  padding: 0.7rem 0.9rem;
   border-top: 1px solid var(--line);
 }
 .kael-actions button {
   border: 1px solid var(--line);
   background: var(--wall);
+  color: var(--quiet);
   font: inherit;
   font-size: 0.78rem;
   padding: 0.45rem 0.7rem;
   min-height: 36px;
   cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
-.kael-actions button:hover { border-color: var(--ink); }
+.kael-actions button:hover:not(:disabled) {
+  color: var(--teinte);
+  border-color: var(--teinte);
+  background: var(--voile);
+}
+.kael-actions button:focus-visible { outline: 2px solid var(--teinte); outline-offset: 2px; }
+
 .kael-form {
   display: flex;
   gap: 0.5rem;
   align-items: flex-end;
-  padding: 0.7rem 1.1rem 1rem;
+  padding: 0.7rem 0.9rem 0.9rem;
   border-top: 1px solid var(--line);
+  margin: 0;
 }
 .kael-form textarea {
   flex: 1;
+  min-height: 40px;
+  max-height: 8rem;
   border: 1px solid var(--line);
   background: var(--wall);
-  padding: 0.5rem 0.6rem;
+  padding: 0.6rem 0.65rem;
   font: inherit;
   font-size: 0.9rem;
+  line-height: 1.45;
   resize: none;
   margin: 0;
+  transition: border-color 0.2s ease;
 }
-.kael-form .btn { padding: 0.6rem 0.9rem; }
+.kael-form textarea:focus {
+  outline: none;
+  border-color: var(--teinte);
+}
+.kael-send {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+.kael-send:hover:not(:disabled) { background: var(--teinte); border-color: var(--teinte); }
+.kael-send:disabled { opacity: 0.35; cursor: default; }
+.kael-send:focus-visible { outline: 2px solid var(--teinte); outline-offset: 2px; }
+.kael-actions button:disabled { opacity: 0.45; cursor: default; }
+
 .kael-note {
   margin: 0;
-  padding: 0 1.1rem 1rem;
+  padding: 0 0.9rem 0.9rem;
   font-size: 0.78rem;
   color: var(--quiet);
   line-height: 1.5;
+}
+.kael-note code {
+  background: var(--ocre-voile);
+  color: var(--ocre);
+  padding: 0 0.2rem;
 }
 
 /* Console d'administration de K.A.E.L. */
@@ -1047,29 +1280,59 @@ table.data th, table.data td { text-align: left; padding: 0.8rem 0.5rem; border-
   font-size: 0.82rem;
   word-break: break-all;
 }
-.scope-chip {
+/* Une portée n’est pas une étiquette parmi d’autres : elle dit ce que
+   K.A.E.L. peut casser. Le pigment monte avec la gravité — lire, observer,
+   corriger, publier, tout. On la voit avant de la lire. */
+.scope-chip, .risk-chip {
   display: inline-block;
   margin: 0 0.25rem 0.25rem 0;
   padding: 0.15rem 0.45rem;
-  border: 1px solid var(--line);
-  background: var(--wall);
+  border: 1px solid var(--teinte, var(--line));
+  background: var(--voile, var(--wall));
+  color: var(--teinte, inherit);
   font-size: 0.7rem;
   letter-spacing: 0.06em;
 }
-.up { color: var(--ok); }
-.down { color: #8a2d2d; }
+.scope-chip[data-portee="KAEL_READ"] { --teinte: var(--indigo); --voile: var(--indigo-voile); }
+.scope-chip[data-portee="KAEL_ANALYZE"] { --teinte: var(--olive); --voile: var(--olive-voile); }
+.scope-chip[data-portee="KAEL_WRITE"] { --teinte: var(--ocre); --voile: var(--ocre-voile); }
+.scope-chip[data-portee="KAEL_PUBLISH"] { --teinte: var(--terre); --voile: var(--terre-voile); }
+.scope-chip[data-portee="KAEL_ADMIN"] { --teinte: var(--alerte); --voile: var(--terre-voile); }
 
+.risk-chip { text-transform: uppercase; }
+.risk-chip[data-risque="low"] { --teinte: var(--olive); --voile: var(--olive-voile); }
+.risk-chip[data-risque="medium"] { --teinte: var(--ocre); --voile: var(--ocre-voile); }
+.risk-chip[data-risque="high"] { --teinte: var(--terre); --voile: var(--terre-voile); }
+.risk-chip[data-risque="critical"] { --teinte: var(--paper); --voile: var(--alerte); border-color: var(--alerte); }
+.up { color: var(--ok); }
+.down { color: var(--alerte); }
+
+/* Sur un téléphone, un panneau flottant de 25rem n'a nulle part où
+   flotter : il devient une feuille, ancrée en bas, sur toute la largeur. */
 @media (max-width: 620px) {
-  .kael-open { right: 1rem; bottom: 1rem; padding-right: 0.8rem; }
+  .kael-open { right: 1rem; bottom: 1rem; padding: 0 0.9rem 0 0.5rem; }
   .kael-open-label { display: none; }
   .kael-panel {
-    right: 0.7rem;
-    left: 0.7rem;
-    bottom: 0.7rem;
+    right: 0;
+    left: 0;
+    bottom: 0;
     width: auto;
-    max-height: min(30rem, calc(100vh - 1.4rem));
+    max-height: min(80vh, calc(100vh - 3rem));
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    box-shadow: 0 -14px 44px rgba(22, 20, 18, 0.3);
   }
-  .kael-actions { padding: 0.6rem 0.9rem; }
+  .kael-stream { padding: 0.9rem 1rem; }
+  .kael-actions, .kael-form { padding-left: 1rem; padding-right: 1rem; }
+  .kael-actions button { flex: 1 1 auto; }
+}
+/* La barre gestuelle iOS mord sur le dernier élément, quel qu'il soit —
+   le formulaire ici, la note là. C'est donc au panneau de reculer. */
+@supports (padding: max(0px)) {
+  @media (max-width: 620px) {
+    .kael-panel { padding-bottom: env(safe-area-inset-bottom); }
+  }
 }
 
 /* ------------------------------------------------------------------

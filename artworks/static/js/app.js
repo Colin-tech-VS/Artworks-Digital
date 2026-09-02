@@ -227,6 +227,33 @@ document.querySelectorAll(".link-copy").forEach((button) => {
     return line;
   };
 
+  /* L'attente a sa forme : trois points. Une bulle vide se lirait comme
+     une réponse que K.A.E.L. n'a pas donnée. */
+  const waitingBubble = () => {
+    const line = document.createElement("div");
+    line.className = "kael-line kael-kael kael-typing";
+    const body = document.createElement("p");
+    body.append(...[0, 1, 2].map(() => document.createElement("i")));
+    line.appendChild(body);
+    line.setAttribute("aria-label", "K.A.E.L. répond…");
+    stream.appendChild(line);
+    stream.scrollTop = stream.scrollHeight;
+    return line;
+  };
+
+  const form = panel.querySelector(".kael-form");
+  const field = form?.querySelector("textarea");
+  const send = form?.querySelector(".kael-send");
+  const tools = panel.querySelectorAll(".kael-actions button");
+
+  /* Tant qu'une réponse est en route, rien d'autre ne part. Le bouton
+     d'envoi obéit en plus au champ : vide, il reste éteint. */
+  const setBusy = (value) => {
+    busy = value;
+    tools.forEach((tool) => { tool.disabled = value; });
+    if (send) send.disabled = value || !field.value.trim();
+  };
+
   const list = (items) => {
     const ul = document.createElement("ul");
     ul.className = "kael-list";
@@ -288,8 +315,8 @@ document.querySelectorAll(".link-copy").forEach((button) => {
 
   const post = async (body) => {
     if (busy) return null;
-    busy = true;
-    const waiting = bubble("kael", "…");
+    setBusy(true);
+    const waiting = waitingBubble();
     try {
       const response = await fetch(endpoint, {
         method: "POST",
@@ -304,7 +331,7 @@ document.querySelectorAll(".link-copy").forEach((button) => {
       bubble("kael", `Je n’ai pas pu joindre le serveur : ${error}`);
       return null;
     } finally {
-      busy = false;
+      setBusy(false);
     }
   };
 
@@ -331,14 +358,32 @@ document.querySelectorAll(".link-copy").forEach((button) => {
     });
   });
 
-  const form = panel.querySelector(".kael-form");
+  /* Le champ grandit avec le texte, jusqu'à la limite posée en CSS : on
+     relit ce qu'on écrit sans faire défiler deux lignes à la fois. */
+  const fitField = () => {
+    field.style.height = "auto";
+    field.style.height = `${field.scrollHeight}px`;
+  };
+  if (field) {
+    fitField();
+    field.addEventListener("input", () => { fitField(); setBusy(busy); });
+    // Entrée envoie, Maj+Entrée passe à la ligne — l'usage d'une messagerie.
+    field.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        form.requestSubmit();
+      }
+    });
+    setBusy(false);
+  }
+
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const field = form.querySelector("textarea");
     const message = field.value.trim();
-    if (!message) return;
+    if (!message || busy) return;
     bubble("me", message);
     field.value = "";
+    fitField();
     const payload = await post({
       message,
       page: panel.dataset.page,

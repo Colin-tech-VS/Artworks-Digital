@@ -1,36 +1,47 @@
-{# Le panneau K.A.E.L. — présent dans l'atelier et dans l'admin. #}
+{# Le panneau K.A.E.L. — présent dans l'atelier et dans l'admin.
+
+   `data-ton` donne au panneau son pigment : indigo quand K.A.E.L. voit
+   toute la plateforme, terre verte quand il ne voit qu'un atelier. C'est
+   la première chose qu'on lit du panneau, avant même le libellé. #}
 <button class="kael-open" type="button" aria-expanded="false" aria-controls="kael-panel" title="K.A.E.L.">
   <span class="kael-mark" aria-hidden="true">K</span>
   <span class="kael-open-label">K.A.E.L.</span>
+  <span class="kael-pulse{% if kael_ready %} is-live{% endif %}" aria-hidden="true"></span>
 </button>
 
 <aside class="kael-panel" id="kael-panel" hidden
+       aria-label="K.A.E.L."
        data-mode="{{ kael_mode }}"
+       data-ton="{{ 'plateforme' if kael_mode == 'admin' else 'atelier' }}"
        data-endpoint="{{ kael_endpoint }}"
        data-page="{{ request.path }}"
        {% if kael_work_id %}data-work-id="{{ kael_work_id }}"{% endif %}>
   <header class="kael-head">
-    <div>
+    <span class="kael-mark kael-mark-head" aria-hidden="true">K</span>
+    <div class="kael-ident">
       <p class="kael-name">K.A.E.L.</p>
       <p class="kael-tag">L’intelligence d’Artworks&nbsp;Digital.</p>
     </div>
     <button class="kael-close" type="button" aria-label="Fermer le panneau">×</button>
   </header>
 
-  <div class="kael-context">
+  <p class="kael-context">
+    <span class="kael-scope">{{ 'Plateforme' if kael_mode == 'admin' else 'Atelier' }}</span>
     <span>{{ kael_context_label }}</span>
-  </div>
+  </p>
 
   <div class="kael-stream" role="log" aria-live="polite">
-    <p class="kael-hello">
-      {% if kael_mode == 'admin' %}
-        Je vois la plateforme : ateliers, œuvres, audience, offres, réseaux.
-        Demandez, ou lancez une analyse.
-      {% else %}
-        Je regarde votre atelier — vos œuvres, vos cartels, votre audience.
-        Rien de ce qui appartient à un autre artiste ne m’est visible.
-      {% endif %}
-    </p>
+    <div class="kael-line kael-kael">
+      <p>
+        {% if kael_mode == 'admin' %}
+          Je vois la plateforme : ateliers, œuvres, audience, offres, réseaux.
+          Demandez, ou lancez une analyse.
+        {% else %}
+          Je regarde votre atelier — vos œuvres, vos cartels, votre audience.
+          Rien de ce qui appartient à un autre artiste ne m’est visible.
+        {% endif %}
+      </p>
+    </div>
   </div>
 
   <div class="kael-actions">
@@ -50,8 +61,10 @@
   {% if kael_mode == 'admin' %}
     <form class="kael-form" autocomplete="off">
       <label class="sr-only" for="kael-input">Message pour K.A.E.L.</label>
-      <textarea id="kael-input" rows="2" placeholder="Demandez à K.A.E.L. — il connaît la page où vous êtes."></textarea>
-      <button class="btn btn-ink" type="submit">Envoyer</button>
+      <textarea id="kael-input" rows="1" placeholder="Demandez à K.A.E.L."></textarea>
+      <button class="kael-send" type="submit" aria-label="Envoyer">
+        <span aria-hidden="true">↑</span>
+      </button>
     </form>
     {% if not kael_ready %}
       <p class="kael-note">
