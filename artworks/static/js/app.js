@@ -8,6 +8,9 @@ if (gateDot && gate) {
     const field = gate.querySelector("input[name='key']");
     if (field) field.focus();
   });
+  gate.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") gate.submit();
+  });
 }
 
 const flashes = document.querySelectorAll(".flash");

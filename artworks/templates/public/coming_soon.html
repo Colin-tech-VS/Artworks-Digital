@@ -42,6 +42,7 @@
     <form class="gate{% if gate_error %} is-on{% endif %}" id="gate" method="post" {% if not gate_error %}hidden{% endif %}>
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="password" name="key" autocomplete="off" aria-label="Accès" {% if gate_error %}autofocus{% endif %}>
+      <button type="submit" class="gate-go">ok</button>
     </form>
   </main>
 </body>

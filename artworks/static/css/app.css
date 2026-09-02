@@ -474,6 +474,16 @@ form small { display: block; color: #8a2d2d; margin-top: 0.3rem; }
   opacity: 0.35;
 }
 .gate input:focus { outline: none; opacity: 0.7; }
+.gate-go {
+  border: 0;
+  background: none;
+  color: var(--quiet);
+  font: inherit;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  opacity: 0.25;
+  cursor: pointer;
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
