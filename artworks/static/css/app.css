@@ -1111,6 +1111,26 @@ form small { display: block; color: var(--alerte); margin-top: 0.3rem; }
   border: 0;
   background: #f3efe6;
 }
+.mail-embed-wrap {
+  margin: 0 0 2.2rem;
+  padding: 2rem 1.2rem 2.4rem;
+  background: #f3efe6;
+  border: 1px solid var(--line);
+}
+.mail-embed-mark {
+  margin: 0 0 1.2rem;
+  text-align: center;
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  letter-spacing: 0.06em;
+}
+.mail-embed-mark em { color: var(--bronze); font-style: italic; }
+.mail-embed-card {
+  max-width: 40rem;
+  margin: 0 auto;
+  background: #faf7f1;
+  border: 1px solid #d8d0c4;
+}
 .mail-raw {
   margin: 0 0 2rem;
   color: var(--quiet);

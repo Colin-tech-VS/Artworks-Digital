@@ -6,6 +6,7 @@ from artworks.analytics import artist_series, sparkline_svg
 from artworks.emails import (
     compose_letter,
     deliver as deliver_email,
+    letter_embed,
     reading_html,
     send_email_changed,
     send_gallery_published,
@@ -443,6 +444,7 @@ def message_detail(message_id: int):
         message=message,
         form=form,
         unread=current_user.unread_count,
+        letter=letter_embed(message),
     )
 
 

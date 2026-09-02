@@ -90,6 +90,19 @@ def _decode_header(value: str) -> str:
     return " ".join(chunks).strip()
 
 
+def _html_body(message) -> str:
+    if message.is_multipart():
+        for part in message.walk():
+            if part.get_content_type() == "text/html" and "attachment" not in (part.get("Content-Disposition") or ""):
+                payload = part.get_payload(decode=True) or b""
+                return payload.decode(part.get_content_charset() or "utf-8", errors="replace")
+        return ""
+    if message.get_content_type() == "text/html":
+        payload = message.get_payload(decode=True) or b""
+        return payload.decode(message.get_content_charset() or "utf-8", errors="replace")
+    return ""
+
+
 def _plain_body(message) -> str:
     if message.is_multipart():
         for part in message.walk():
@@ -127,6 +140,7 @@ def fetch_inbox(limit: int = 40) -> int:
             name, addr = parseaddr(parsed.get("From") or "")
             subject = _decode_header(parsed.get("Subject") or "(sans objet)")[:200]
             body = _plain_body(parsed).strip()[:8000]
+            html = _html_body(parsed).strip()[:120000]
             created = None
             try:
                 created = parsedate_to_datetime(parsed.get("Date"))
@@ -141,6 +155,7 @@ def fetch_inbox(limit: int = 40) -> int:
                 to_email=contact_inbox(),
                 subject=subject or "(sans objet)",
                 body=body,
+                html_body=html,
                 is_read=False,
                 external_id=external,
             )

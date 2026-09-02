@@ -26,7 +26,7 @@ from artworks.forms import (
     SocialComposeForm,
     SocialPublishForm,
 )
-from artworks.emails import compose_letter, deliver as deliver_email, reading_html
+from artworks.emails import compose_letter, deliver as deliver_email, letter_embed, reading_html
 from artworks.mailer import contact_inbox, fetch_inbox, mail_configured
 from artworks.mistral import mistral_ready
 from artworks.models import Artist, MailMessage, Offer, PageView, SocialPost, SubscriptionEvent, Work
@@ -296,7 +296,13 @@ def email_detail(message_id: int):
         db.session.commit()
         flash("Réponse envoyée." if ok else f"Réponse conservée. {error}", "ok" if ok else "info")
         return redirect(url_for("admin.email_detail", message_id=reply.id))
-    return render_template("admin/email.html", message=message, form=form, mail_ok=mail_configured())
+    return render_template(
+        "admin/email.html",
+        message=message,
+        form=form,
+        mail_ok=mail_configured(),
+        letter=letter_embed(message),
+    )
 
 
 @admin_bp.route("/emails/<int:message_id>/page")

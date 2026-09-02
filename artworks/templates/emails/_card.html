@@ -1,0 +1,77 @@
+{#- Carte commune : l’e-mail envoyé et la lecture dans l’admin. -#}
+<tr><td style="height:4px;line-height:4px;font-size:0;background:#5c4634;">&nbsp;</td></tr>
+<tr>
+  <td class="pad" style="padding:38px 44px 8px;">
+    {% if eyebrow %}
+      <p style="margin:0 0 12px;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#5c4634;">{{ eyebrow }}</p>
+    {% endif %}
+    <h1 class="h1" style="margin:0;font-family:Georgia,'Times New Roman',serif;font-weight:normal;font-size:30px;line-height:1.18;color:#161412;">{{ title }}</h1>
+  </td>
+</tr>
+<tr>
+  <td class="pad" style="padding:18px 44px 0;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:#45403a;">
+    {% for block in paragraphs %}
+      <p style="margin:0 0 16px;">{{ block }}</p>
+    {% endfor %}
+  </td>
+</tr>
+{% if details %}
+<tr>
+  <td class="pad" style="padding:6px 44px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-left:3px solid #d8d0c4;">
+      {% for label, value in details %}
+      <tr>
+        <td style="padding:8px 0 8px 16px;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#8a8177;width:38%;vertical-align:top;">{{ label }}</td>
+        <td style="padding:8px 0;font-family:Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#161412;">{{ value }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </td>
+</tr>
+{% endif %}
+{% if quote %}
+<tr>
+  <td class="pad" style="padding:14px 44px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f3efe6;border:1px solid #e6dfd3;">
+      <tr>
+        <td style="padding:18px 20px;font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.7;color:#3b3630;white-space:pre-wrap;">{{ quote }}</td>
+      </tr>
+    </table>
+  </td>
+</tr>
+{% endif %}
+{% if cta_url and cta_label %}
+<tr>
+  <td class="pad" style="padding:28px 44px 6px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="btn">
+      <tr>
+        <td style="background:#161412;">
+          <a href="{{ cta_url }}" style="display:inline-block;padding:14px 30px;font-family:Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#faf7f1;text-decoration:none;">{{ cta_label }}</a>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+{% if cta_hint %}
+<tr>
+  <td class="pad" style="padding:14px 44px 0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#8a8177;word-break:break-all;">
+    {{ cta_hint }}<br>
+    <a href="{{ cta_url }}" style="color:#5c4634;">{{ cta_url }}</a>
+  </td>
+</tr>
+{% endif %}
+{% endif %}
+{% if outro %}
+<tr>
+  <td class="pad" style="padding:24px 44px 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.7;color:#6f675e;">
+    {{ outro }}
+  </td>
+</tr>
+{% endif %}
+<tr>
+  <td class="pad" style="padding:34px 44px 38px;">
+    <div style="border-top:1px solid #e6dfd3;padding-top:18px;font-family:Georgia,'Times New Roman',serif;font-size:15px;color:#6f675e;font-style:italic;">
+      L’équipe Artworksdigital
+    </div>
+  </td>
+</tr>

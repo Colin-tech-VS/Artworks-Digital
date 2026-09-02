@@ -79,6 +79,29 @@ def compose_letter(
     )
 
 
+def letter_embed(message: MailMessage) -> dict:
+    """Données pour afficher la lettre dans la page, sans iframe ni cookie."""
+    incoming = message.direction == "in"
+    sender = " · ".join(part for part in (message.from_name, message.from_email) if part)
+    intro = ""
+    if incoming and (message.kind or "") in {"site", "contact", "imap"}:
+        intro = "Un visiteur a écrit depuis le site." if message.kind != "imap" else "Message reçu dans la boîte."
+    return {
+        "eyebrow": "Reçu" if incoming else (message.kind or "Envoi"),
+        "title": message.subject or "Message",
+        "paragraphs": [intro] if intro else [],
+        "details": [
+            ("De", sender or "—"),
+            ("À", message.to_email or "—"),
+        ],
+        "quote": message.body or "",
+        "cta_url": "",
+        "cta_label": "",
+        "cta_hint": "",
+        "outro": "",
+    }
+
+
 def reading_html(message: MailMessage) -> str:
     """Le design complet d’un message archivé, même s’il n’a été stocké qu’en texte."""
     stored = (getattr(message, "html_body", None) or "").strip()
