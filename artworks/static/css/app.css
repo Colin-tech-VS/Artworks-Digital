@@ -45,9 +45,19 @@ a { color: inherit; }
   font-size: 1.35rem;
   font-weight: 500;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 .mark em { font-style: italic; font-weight: 400; color: var(--bronze); }
-.site-bar nav { display: flex; gap: 1.4rem; align-items: center; }
+/* L'écart se resserre avant que les libellés ne touchent le logo, et la
+   rangée sait passer à la ligne plutôt que déborder de l'écran. */
+.site-bar nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.4rem clamp(0.9rem, 1.9vw, 1.4rem);
+  min-width: 0;
+}
 .site-bar nav a {
   text-decoration: none;
   font-size: 0.86rem;
@@ -57,6 +67,10 @@ a { color: inherit; }
 }
 .site-bar nav a:hover { color: var(--ink); }
 .nav-cta { color: var(--ink) !important; }
+.site-bar a:focus-visible, .nav-toggle:focus-visible {
+  outline: 2px solid var(--bronze);
+  outline-offset: 3px;
+}
 
 main { flex: 1; padding: 0 7vw 5rem; }
 .home main { padding-top: 0; }
@@ -1070,6 +1084,8 @@ main, .atelier-canvas, .admin-canvas { min-width: 0; }
 .mail-list a, .mini-table li, .post-log div, .stat-row li { overflow-wrap: anywhere; }
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .mail-body { overflow-wrap: anywhere; }
+/* Une URL de webhook citée en clair élargissait la page entière sous 360px. */
+code { overflow-wrap: anywhere; }
 
 @media (max-width: 1180px) {
   .offers-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1081,24 +1097,33 @@ main, .atelier-canvas, .admin-canvas { min-width: 0; }
   .draft-split { grid-template-columns: 1fr; }
 }
 
-/* Sous 860px : la barre se replie, les colonnes s’empilent. */
-@media (max-width: 860px) {
+/* Sous 960px : six à sept libellés en capitales ne tiennent plus à côté du
+   logo — la barre se replie derrière le bouton. Tout est conditionné à
+   `.js` : sans JavaScript, un menu qu’on ne peut pas ouvrir vaudrait moins
+   que des liens qui passent à la ligne. */
+@media (max-width: 960px) {
   .site-bar {
     flex-wrap: wrap;
-    padding: 1rem 6vw;
     gap: 1rem;
   }
-  .nav-toggle { display: flex; }
-  .site-bar nav {
+  .js .nav-toggle { display: flex; }
+  .js .site-bar nav {
     display: none;
     flex-basis: 100%;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    justify-content: flex-start;
     gap: 0;
     padding-bottom: 0.4rem;
   }
-  .site-bar nav.is-open { display: flex; }
-  .site-bar nav a {
+  /* Paysage téléphone : le panneau déroule au lieu de pousser la page. */
+  .js .site-bar nav.is-open {
+    display: flex;
+    max-height: calc(100vh - 8rem);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .js .site-bar nav a {
     width: 100%;
     padding: 0.85rem 0;
     min-height: 44px;
@@ -1107,7 +1132,12 @@ main, .atelier-canvas, .admin-canvas { min-width: 0; }
     border-top: 1px solid var(--line);
     font-size: 0.92rem;
   }
-  .nav-cta { color: var(--bronze) !important; }
+  .js .nav-cta { color: var(--bronze) !important; }
+}
+
+/* Sous 860px : les marges se resserrent, les colonnes s’empilent. */
+@media (max-width: 860px) {
+  .site-bar { padding: 1rem 6vw; }
 
   main { padding: 0 6vw 3.5rem; }
   .site-foot { padding: 1.4rem 6vw; }
@@ -1121,10 +1151,11 @@ main, .atelier-canvas, .admin-canvas { min-width: 0; }
   .solo-frame img { max-height: 60vh; }
   .room-cover { max-height: 38vh; margin: 1.4rem 0 1.6rem; }
 
-  /* Atelier et admin : la colonne devient un tiroir. */
+  /* Atelier et admin : la colonne devient un tiroir — là aussi, seulement
+     si le bouton qui l’ouvre peut fonctionner. */
   .atelier-shell, .admin-shell { grid-template-columns: 1fr; }
-  .shell-toggle { display: flex; }
-  .atelier-side, .admin-side {
+  .js .shell-toggle { display: flex; }
+  .js .atelier-side, .js .admin-side {
     display: none;
     position: static;
     height: auto;
@@ -1133,7 +1164,7 @@ main, .atelier-canvas, .admin-canvas { min-width: 0; }
     border-right: 0;
     border-bottom: 1px solid var(--line);
   }
-  .atelier-side.is-open, .admin-side.is-open { display: flex; }
+  .js .atelier-side.is-open, .js .admin-side.is-open { display: flex; }
   .admin-side { border-bottom-color: #2a2622; }
   .side-brand, .side-identity { margin-bottom: 1rem; }
   .side-nav a { min-height: 44px; }

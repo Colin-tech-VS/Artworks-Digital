@@ -2,15 +2,18 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  {#- Posé avant le rendu : le menu repliable ne doit exister que si le
+      bouton peut l’ouvrir, et sans clignotement au chargement. #}
+  <script>document.documentElement.classList.add("js");</script>
   <title>{% block title %}Artworksdigital{% endblock %}</title>
   <meta name="description" content="{% block description %}Artworksdigital — un atelier pour composer votre galerie. Une adresse, un accrochage, une note d’intention.{% endblock %}">
   <meta name="robots" content="{% block robots %}index, follow, max-image-preview:large{% endblock %}">
-  {%- set page_author = self.author() | trim %}
-  {%- if page_author %}
-  <meta name="author" content="{{ page_author }}">
+  {#- Le bloc est rendu dans l’attribut : le déclarer à côté écrirait sa
+      valeur en texte nu, au-dessus de la barre. #}
+  {%- if self.author() | trim %}
+  <meta name="author" content="{% block author %}{% endblock %}">
   {%- endif %}
-  {%- block author %}{% endblock %}
   <link rel="canonical" href="{% block canonical %}{{ canonical_url() }}{% endblock %}">
   <meta property="og:type" content="{% block og_type %}website{% endblock %}">
   <meta property="og:site_name" content="Artworksdigital">
@@ -21,13 +24,10 @@
   <meta property="og:image" content="{% block og_image %}{{ default_og_image }}{% endblock %}">
   <meta property="og:image:secure_url" content="{{ self.og_image() }}">
   <meta property="og:image:alt" content="{% block og_image_alt %}{{ self.og_title() }}{% endblock %}">
-  {%- set og_w = self.og_image_width() | trim %}
-  {%- set og_h = self.og_image_height() | trim %}
-  {%- if og_w and og_h %}
-  <meta property="og:image:width" content="{{ og_w }}">
-  <meta property="og:image:height" content="{{ og_h }}">
+  {%- if self.og_image_width() | trim and self.og_image_height() | trim %}
+  <meta property="og:image:width" content="{% block og_image_width %}{% endblock %}">
+  <meta property="og:image:height" content="{% block og_image_height %}{% endblock %}">
   {%- endif %}
-  {%- block og_image_width %}{% endblock %}{% block og_image_height %}{% endblock %}
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{{ self.og_title() }}">
   <meta name="twitter:description" content="{{ self.og_description() }}">

@@ -1,46 +1,73 @@
 document.documentElement.classList.add("js");
 
-// Menu mobile — la barre se replie sous 860px, ce bouton la rouvre.
-const navToggle = document.querySelector(".nav-toggle");
-const siteNav = document.getElementById("site-nav");
-if (navToggle && siteNav) {
-  const closeNav = () => {
-    siteNav.classList.remove("is-open");
-    navToggle.setAttribute("aria-expanded", "false");
-    navToggle.setAttribute("aria-label", "Ouvrir le menu");
+/* Le seuil de repli est défini une seule fois, ici et dans app.css : deux
+   valeurs qui se répondent finissent toujours par diverger. */
+const COMPACT = window.matchMedia("(max-width: 960px)");
+const SHELL_COMPACT = window.matchMedia("(max-width: 860px)");
+
+// Ouvre et referme un panneau replié (barre du site, tiroir de l’atelier).
+function foldablePanel(button, panel, query, labels) {
+  if (!button || !panel) return;
+
+  const setState = (open) => {
+    panel.classList.toggle("is-open", open);
+    button.setAttribute("aria-expanded", String(open));
+    if (labels) button.setAttribute("aria-label", open ? labels.close : labels.open);
   };
-  navToggle.addEventListener("click", () => {
-    const open = siteNav.classList.toggle("is-open");
-    navToggle.setAttribute("aria-expanded", String(open));
-    navToggle.setAttribute("aria-label", open ? "Fermer le menu" : "Ouvrir le menu");
-    if (open) siteNav.querySelector("a")?.focus();
+  const close = () => setState(false);
+  const isOpen = () => panel.classList.contains("is-open");
+
+  button.addEventListener("click", () => {
+    const open = !isOpen();
+    setState(open);
+    if (open) panel.querySelector("a, button")?.focus();
   });
-  siteNav.addEventListener("click", (event) => {
-    if (event.target.tagName === "A") closeNav();
+
+  // Un lien suivi referme le panneau : la page d’arrivée ne doit pas
+  // s’ouvrir derrière un menu resté déplié.
+  panel.addEventListener("click", (event) => {
+    if (event.target.closest("a")) close();
   });
+
+  // Un clic à côté referme aussi — sur un téléphone, c’est le geste attendu.
+  document.addEventListener("click", (event) => {
+    if (!isOpen()) return;
+    if (panel.contains(event.target) || button.contains(event.target)) return;
+    close();
+  });
+
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeNav();
+    if (event.key !== "Escape" || !isOpen()) return;
+    close();
+    button.focus();
   });
-  window.addEventListener("resize", () => {
-    if (window.innerWidth > 860) closeNav();
-  });
+
+  // Rotation de l’écran ou fenêtre élargie : le panneau replié n’a plus
+  // lieu d’être, et la barre reprend sa forme longue.
+  const onChange = (event) => {
+    if (!event.matches) close();
+  };
+  if (query.addEventListener) query.addEventListener("change", onChange);
+  else query.addListener(onChange);
+
+  close();
 }
 
+// Menu du site — la barre se replie sous 960px, ce bouton la rouvre.
+foldablePanel(
+  document.querySelector(".nav-toggle"),
+  document.getElementById("site-nav"),
+  COMPACT,
+  { open: "Ouvrir le menu", close: "Fermer le menu" }
+);
+
 // Barre latérale de l’atelier et de l’admin : même repli sur petit écran.
-const shellToggle = document.querySelector(".shell-toggle");
-const shellSide = document.querySelector(".atelier-side, .admin-side");
-if (shellToggle && shellSide) {
-  shellToggle.addEventListener("click", () => {
-    const open = shellSide.classList.toggle("is-open");
-    shellToggle.setAttribute("aria-expanded", String(open));
-  });
-  shellSide.addEventListener("click", (event) => {
-    if (event.target.tagName === "A") {
-      shellSide.classList.remove("is-open");
-      shellToggle.setAttribute("aria-expanded", "false");
-    }
-  });
-}
+foldablePanel(
+  document.querySelector(".shell-toggle"),
+  document.querySelector(".atelier-side, .admin-side"),
+  SHELL_COMPACT,
+  null
+);
 
 const gateDot = document.getElementById("gate-dot");
 const gate = document.getElementById("gate");
