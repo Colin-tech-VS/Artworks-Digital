@@ -24,7 +24,7 @@
   </form>
 
   <form class="sheet" method="post" novalidate>
-    {{ password_form.hidden_tag() }}
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="form_name" value="password">
     <p class="eyebrow">Sécurité</p>
     <label>

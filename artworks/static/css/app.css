@@ -564,6 +564,29 @@ form small { display: block; color: #8a2d2d; margin-top: 0.3rem; }
 .admin-side .side-foot a { color: #8c847a; }
 .admin-canvas, .atelier-canvas { padding: 0 4vw 4rem; animation: rise 0.45s ease both; }
 
+/* La colonne est collante et haute d'un écran : sur une page longue, sa
+   couleur s'arrêtait net au milieu. Le fond est peint sur la grille. */
+.atelier-shell, .admin-shell { position: relative; }
+.atelier-shell::before, .admin-shell::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 250px;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, #f7f3eb, var(--wall));
+}
+.admin-shell::before { background: #161412; border-right-color: #2a2622; }
+.atelier-side, .admin-side { position: sticky; z-index: 1; }
+
+@media (max-width: 1024px) {
+  .atelier-shell::before, .admin-shell::before { width: 200px; }
+}
+@media (max-width: 860px) {
+  .atelier-shell::before, .admin-shell::before { display: none; }
+}
+
 .studio-filter {
   border: 1px solid var(--line);
   background: var(--paper);

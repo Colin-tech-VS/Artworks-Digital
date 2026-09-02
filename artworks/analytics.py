@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from hashlib import sha1
 from urllib.parse import urlparse
 

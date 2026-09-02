@@ -116,11 +116,11 @@
     <h2>2 · Relire et publier</h2>
   </header>
   <form class="sheet" method="post" novalidate>
-    {{ form.hidden_tag() }}
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="action" value="publish">
     {{ form.image_name(type="hidden") }}
     {{ form.alt_text(type="hidden") }}
-    {{ form.prompt(type="hidden") }}
+    {{ form.prompt(type="hidden", id="publish_prompt") }}
     {{ form.design_json(type="hidden") }}
     <label>
       Œuvre publiée

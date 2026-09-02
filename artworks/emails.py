@@ -267,7 +267,7 @@ def send_new_message(artist: Artist, from_name: str, from_email: str, body: str)
         f"Nouveau message pour {artist.display_name}",
         eyebrow="Votre galerie",
         title="Quelqu’un vous écrit.",
-        paragraphs=[f"Un visiteur a laissé un message depuis votre galerie."],
+        paragraphs=["Un visiteur a laissé un message depuis votre galerie."],
         details=[("De", from_name or "—"), ("E-mail", from_email or "—")],
         quote=body[:900],
         cta_url=canonical_url(url_for("atelier.messages")),
