@@ -499,3 +499,71 @@ document.querySelectorAll("form[data-busy]").forEach((form) => {
   message?.addEventListener("input", refresh);
   imageUrl?.addEventListener("input", refresh);
 })();
+
+(function () {
+  const root = document.querySelector("[data-live]");
+  if (!root) return;
+  const url = root.getAttribute("data-live");
+  const activeEl = root.querySelector("[data-live-active]");
+  const viewsEl = root.querySelector("[data-live-views]");
+  const lamp = root.querySelector("[data-live-lamp]");
+  const feed = root.querySelector("[data-live-feed]");
+
+  const ago = (iso) => {
+    if (!iso) return "";
+    const seconds = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 1000));
+    if (Number.isNaN(seconds) || seconds < 8) return "à l’instant";
+    if (seconds < 60) return `il y a ${seconds} s`;
+    if (seconds < 3600) return `il y a ${Math.round(seconds / 60)} min`;
+    return `il y a ${Math.round(seconds / 60 / 60)} h`;
+  };
+
+  const stamp = () => {
+    feed?.querySelectorAll("[data-at]").forEach((el) => {
+      el.textContent = ago(el.getAttribute("data-at"));
+    });
+  };
+
+  const paint = (data) => {
+    if (activeEl) activeEl.textContent = String(data.active ?? 0);
+    if (viewsEl) viewsEl.textContent = String(data.views ?? 0);
+    lamp?.classList.toggle("is-up", Boolean(data.active));
+    if (!feed) return;
+    const hits = data.feed || [];
+    feed.replaceChildren();
+    if (!hits.length) {
+      const empty = document.createElement("li");
+      empty.className = "is-empty";
+      empty.textContent = "Personne sur le site pour l’instant.";
+      feed.appendChild(empty);
+      return;
+    }
+    hits.forEach((hit) => {
+      const item = document.createElement("li");
+      const name = document.createElement("strong");
+      name.textContent = hit.place || "Lieu inconnu";
+      const meta = document.createElement("span");
+      meta.textContent = [hit.channel, hit.device, hit.title || hit.path].filter(Boolean).join(" · ");
+      const when = document.createElement("em");
+      when.setAttribute("data-at", hit.at || "");
+      when.textContent = ago(hit.at);
+      item.append(name, meta, when);
+      feed.appendChild(item);
+    });
+  };
+
+  const tick = async () => {
+    if (document.hidden) return;
+    try {
+      const response = await fetch(url, { headers: { Accept: "application/json" } });
+      if (!response.ok) return;
+      paint(await response.json());
+    } catch (_) {
+      stamp();
+    }
+  };
+
+  stamp();
+  setInterval(stamp, 8000);
+  setInterval(tick, 10000);
+})();

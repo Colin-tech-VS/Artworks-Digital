@@ -400,7 +400,7 @@ def get_catalogue(grant, limit: int = 50) -> dict:
 
 @tool(
     "get_analytics",
-    description="Audience de la plateforme : visites, sessions, sources, appareils, pages les plus vues.",
+    description="Audience de la plateforme : visites, sessions, canaux, villes, pays, appareils, pages, temps réel.",
     permission=perm.READ,
     category="lecture",
     returns="KPI, série quotidienne et répartitions.",
@@ -409,16 +409,28 @@ def get_catalogue(grant, limit: int = 50) -> dict:
     }),
 )
 def get_analytics(grant, days: int = 28) -> dict:
-    from artworks.analytics import breakdown, kpis, series, top_paths
+    from artworks.analytics import (
+        DEVICE_LABELS,
+        SOURCE_LABELS,
+        breakdown,
+        city_breakdown,
+        kpis,
+        live_snapshot,
+        series,
+        top_paths,
+    )
 
     days = max(1, min(int(days or 28), 365))
     return {
         "days": days,
         "kpis": kpis(days),
         "series": series(days),
-        "sources": breakdown(PageView.source, days),
-        "devices": breakdown(PageView.device, days),
-        "referrers": breakdown(PageView.referrer, days, limit=10),
+        "live": live_snapshot(),
+        "sources": breakdown(PageView.source, days, labels=SOURCE_LABELS),
+        "cities": city_breakdown(days),
+        "countries": breakdown(PageView.country, days, hide_empty=True),
+        "devices": breakdown(PageView.device, days, labels=DEVICE_LABELS),
+        "referrers": breakdown(PageView.referrer_host, days, hide_empty=True, limit=10),
         "top_pages": top_paths(days),
     }
 

@@ -1,10 +1,12 @@
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from markupsafe import Markup
 
 from artworks.analytics import artist_series, sparkline_svg
 from artworks.emails import (
+    compose_letter,
     deliver as deliver_email,
+    reading_html,
     send_email_changed,
     send_gallery_published,
     send_password_changed,
@@ -399,13 +401,21 @@ def message_detail(message_id: int):
         form.to_email.data = message.from_email if message.direction == "in" else message.to_email
         form.subject.data = message.subject if message.subject.lower().startswith("re:") else f"Re: {message.subject}"
     if form.validate_on_submit():
-        blocks = [block.strip() for block in (form.body.data or "").split("\n\n") if block.strip()]
+        blocks = [block.strip() for block in (form.body.data or "").split("\n\n") if block.strip()] or [
+            (form.body.data or "").strip()
+        ]
+        html = compose_letter(
+            title=form.subject.data.strip(),
+            eyebrow=current_user.display_name,
+            paragraphs=blocks,
+            footer_note=f"Réponse envoyée depuis la galerie de {current_user.display_name}.",
+        )
         ok, error = deliver_email(
             form.to_email.data.strip(),
             form.subject.data.strip(),
             eyebrow=current_user.display_name,
             title=form.subject.data.strip(),
-            paragraphs=blocks or [(form.body.data or "").strip()],
+            paragraphs=blocks,
             reply_to=current_user.contact_email or current_user.email,
             footer_note=f"Réponse envoyée depuis la galerie de {current_user.display_name}.",
             log=False,
@@ -421,6 +431,7 @@ def message_detail(message_id: int):
             to_email=form.to_email.data.strip().lower(),
             subject=form.subject.data.strip(),
             body=form.body.data.strip(),
+            html_body=html,
             is_read=True,
         )
         db.session.add(reply)
@@ -433,6 +444,19 @@ def message_detail(message_id: int):
         form=form,
         unread=current_user.unread_count,
     )
+
+
+@atelier_bp.route("/messages/<int:message_id>/page")
+@login_required
+def message_page(message_id: int):
+    message = current_user.messages.filter_by(id=message_id).first_or_404()
+    response = current_app.response_class(reading_html(message), mimetype="text/html")
+    response.headers["X-Robots-Tag"] = "noindex, nofollow"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; "
+        "font-src https: data:; frame-ancestors 'self'"
+    )
+    return response
 
 
 @atelier_bp.route("/oeuvres/nouvelle", methods=["GET", "POST"])

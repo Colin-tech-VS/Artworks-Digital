@@ -4,13 +4,29 @@
 {% block admin %}
 <section class="atelier-head">
   <div>
-    <p class="eyebrow">{{ message.direction }} · {{ message.status }}</p>
+    <p class="eyebrow">{{ 'Reçu' if message.direction == 'in' else 'Envoyé' }} · {{ message.status }}</p>
     <h1>{{ message.subject }}</h1>
     <p class="lead-sm">{{ message.from_name }} &lt;{{ message.from_email }}&gt; → {{ message.to_email }}</p>
   </div>
-  <a class="btn btn-ghost" href="{{ url_for('admin.emails') }}">Boîte</a>
+  <div class="atelier-actions">
+    <a class="btn btn-ghost" href="{{ url_for('admin.email_page', message_id=message.id) }}" target="_blank" rel="noopener">Plein écran</a>
+    <a class="btn btn-ghost" href="{{ url_for('admin.emails') }}">Boîte</a>
+  </div>
 </section>
-<article class="mail-body">{{ message.body }}</article>
+
+<section class="mail-letter">
+  <iframe
+    src="{{ url_for('admin.email_page', message_id=message.id) }}"
+    title="Lettre : {{ message.subject }}"
+    sandbox="allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
+  ></iframe>
+</section>
+
+<details class="mail-raw">
+  <summary>Texte brut</summary>
+  <pre>{{ message.body }}</pre>
+</details>
+
 <form class="sheet" method="post" novalidate data-busy="Envoi de la réponse…">
   {{ form.hidden_tag() }}
   <p class="eyebrow">Répondre</p>

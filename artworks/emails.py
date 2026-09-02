@@ -46,6 +46,63 @@ def _text_version(
     return "\n".join(lines)
 
 
+def compose_letter(
+    *,
+    title: str,
+    paragraphs: list[str] | None = None,
+    eyebrow: str = "",
+    preheader: str = "",
+    details: list[tuple[str, str]] | None = None,
+    quote: str = "",
+    cta_url: str = "",
+    cta_label: str = "",
+    cta_hint: str = "",
+    outro: str = "",
+    footer_note: str = "",
+) -> str:
+    """La lettre HTML telle qu’elle part — et telle qu’on la relit."""
+    blocks = [block for block in (paragraphs or []) if block]
+    return render_template(
+        "emails/message.html",
+        title=title,
+        eyebrow=eyebrow,
+        preheader=preheader or (blocks[0] if blocks else title),
+        paragraphs=blocks,
+        details=details or [],
+        quote=quote,
+        cta_url=cta_url,
+        cta_label=cta_label,
+        cta_hint=cta_hint,
+        outro=outro,
+        footer_note=footer_note,
+        site_url=site_url(),
+    )
+
+
+def reading_html(message: MailMessage) -> str:
+    """Le design complet d’un message archivé, même s’il n’a été stocké qu’en texte."""
+    stored = (getattr(message, "html_body", None) or "").strip()
+    if stored:
+        return stored
+    incoming = message.direction == "in"
+    sender = " · ".join(part for part in (message.from_name, message.from_email) if part)
+    return compose_letter(
+        title=message.subject or "Message",
+        eyebrow="Reçu" if incoming else (message.kind or "Envoi"),
+        preheader=(message.body or "")[:140],
+        paragraphs=[
+            "Un visiteur a écrit depuis le site."
+            if incoming and (message.kind or "") in {"site", "contact", "imap"}
+            else ""
+        ],
+        details=[
+            ("De", sender or "—"),
+            ("À", message.to_email or "—"),
+        ],
+        quote=message.body or "",
+    )
+
+
 def deliver(
     to_email: str,
     subject: str,
@@ -75,20 +132,18 @@ def deliver(
 
     html = ""
     try:
-        html = render_template(
-            "emails/message.html",
+        html = compose_letter(
             title=title,
-            eyebrow=eyebrow,
-            preheader=preheader or (paragraphs[0] if paragraphs else title),
             paragraphs=paragraphs,
-            details=details or [],
+            eyebrow=eyebrow,
+            preheader=preheader,
+            details=details,
             quote=quote,
             cta_url=cta_url,
             cta_label=cta_label,
             cta_hint=cta_hint,
             outro=outro,
             footer_note=footer_note,
-            site_url=site_url(),
         )
     except Exception:
         html = ""
@@ -120,6 +175,7 @@ def deliver(
                 to_email=to_email.lower()[:180],
                 subject=subject[:200],
                 body=text[:8000],
+                html_body=html[:120000],
                 is_read=True,
             )
             db.session.add(row)

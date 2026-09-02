@@ -1,12 +1,22 @@
 import json
 from functools import wraps
 
-from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, session, url_for
 from markupsafe import Markup
 from sqlalchemy import func
 
 from artworks.admin_auth import admin_logout, require_admin, try_admin_login
-from artworks.analytics import breakdown, kpis, series, sparkline_svg, top_paths
+from artworks.analytics import (
+    DEVICE_LABELS,
+    SOURCE_LABELS,
+    breakdown,
+    city_breakdown,
+    kpis,
+    live_snapshot,
+    series,
+    sparkline_svg,
+    top_paths,
+)
 from artworks.extensions import db
 from artworks.forms import (
     AdminLoginForm,
@@ -16,7 +26,7 @@ from artworks.forms import (
     SocialComposeForm,
     SocialPublishForm,
 )
-from artworks.emails import deliver as deliver_email
+from artworks.emails import compose_letter, deliver as deliver_email, reading_html
 from artworks.mailer import contact_inbox, fetch_inbox, mail_configured
 from artworks.mistral import mistral_ready
 from artworks.models import Artist, MailMessage, Offer, PageView, SocialPost, SubscriptionEvent, Work
@@ -146,6 +156,7 @@ def overview():
 def analytics():
     days = _days()
     chart = series(days)
+    live = live_snapshot()
     return render_template(
         "admin/analytics.html",
         days=days,
@@ -153,11 +164,21 @@ def analytics():
         chart=chart,
         spark=Markup(sparkline_svg([row["views"] for row in chart], 720, 160)),
         users_spark=Markup(sparkline_svg([row["users"] for row in chart], 720, 120)),
-        sources=breakdown(PageView.source, days),
-        devices=breakdown(PageView.device, days),
+        live_spark=Markup(sparkline_svg(live["pulse"], 720, 72)),
+        live=live,
+        sources=breakdown(PageView.source, days, labels=SOURCE_LABELS),
+        devices=breakdown(PageView.device, days, labels=DEVICE_LABELS),
+        cities=city_breakdown(days),
+        countries=breakdown(PageView.country, days, hide_empty=True),
         paths=top_paths(days),
-        referrers=breakdown(PageView.referrer, days, limit=8),
+        referrers=breakdown(PageView.referrer_host, days, hide_empty=True),
     )
+
+
+@admin_bp.route("/analytics/live")
+@admin_required
+def analytics_live():
+    return jsonify(live_snapshot())
 
 
 @admin_bp.route("/emails")
@@ -193,12 +214,18 @@ def compose():
     if request.args.get("to"):
         form.to_email.data = request.args.get("to")
     if form.validate_on_submit():
+        blocks = _paragraphs(form.body.data)
+        html = compose_letter(
+            title=form.subject.data.strip(),
+            eyebrow="Artworksdigital",
+            paragraphs=blocks,
+        )
         ok, error = deliver_email(
             form.to_email.data.strip(),
             form.subject.data.strip(),
             eyebrow="Artworksdigital",
             title=form.subject.data.strip(),
-            paragraphs=_paragraphs(form.body.data),
+            paragraphs=blocks,
             log=False,
         )
         message = MailMessage(
@@ -210,6 +237,7 @@ def compose():
             to_email=form.to_email.data.strip().lower(),
             subject=form.subject.data.strip(),
             body=form.body.data.strip(),
+            html_body=html,
             is_read=True,
         )
         artist = Artist.query.filter_by(email=message.to_email).first()
@@ -235,12 +263,18 @@ def email_detail(message_id: int):
         form.to_email.data = message.from_email if message.direction == "in" else message.to_email
         form.subject.data = message.subject if message.subject.lower().startswith("re:") else f"Re: {message.subject}"
     if form.validate_on_submit():
+        blocks = _paragraphs(form.body.data)
+        html = compose_letter(
+            title=form.subject.data.strip(),
+            eyebrow="Réponse",
+            paragraphs=blocks,
+        )
         ok, error = deliver_email(
             form.to_email.data.strip(),
             form.subject.data.strip(),
             eyebrow="Réponse",
             title=form.subject.data.strip(),
-            paragraphs=_paragraphs(form.body.data),
+            paragraphs=blocks,
             reply_to=contact_inbox(),
             log=False,
         )
@@ -255,6 +289,7 @@ def email_detail(message_id: int):
             to_name=message.from_name,
             subject=form.subject.data.strip(),
             body=form.body.data.strip(),
+            html_body=html,
             is_read=True,
         )
         db.session.add(reply)
@@ -262,6 +297,19 @@ def email_detail(message_id: int):
         flash("Réponse envoyée." if ok else f"Réponse conservée. {error}", "ok" if ok else "info")
         return redirect(url_for("admin.email_detail", message_id=reply.id))
     return render_template("admin/email.html", message=message, form=form, mail_ok=mail_configured())
+
+
+@admin_bp.route("/emails/<int:message_id>/page")
+@admin_required
+def email_page(message_id: int):
+    message = db.session.get(MailMessage, message_id) or abort(404)
+    response = current_app.response_class(reading_html(message), mimetype="text/html")
+    response.headers["X-Robots-Tag"] = "noindex, nofollow"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; "
+        "font-src https: data:; frame-ancestors 'self'"
+    )
+    return response
 
 
 EMAIL_PREVIEWS = {

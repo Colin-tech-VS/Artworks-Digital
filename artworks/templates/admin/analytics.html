@@ -6,13 +6,40 @@
   <div>
     <p class="eyebrow">Fréquentation</p>
     <h1>Analytics</h1>
-    <p class="lead-sm">Trafic public des galeries et des pages, hors robots.</p>
+    <p class="lead-sm">Trafic public des galeries et des pages, hors robots. La ville se pose à l’arrivée.</p>
   </div>
   <div class="range-tabs">
     <a href="?days=7" class="{% if days == 7 %}is-on{% endif %}">7 jours</a>
     <a href="?days=28" class="{% if days == 28 %}is-on{% endif %}">28 jours</a>
     <a href="?days=90" class="{% if days == 90 %}is-on{% endif %}">90 jours</a>
   </div>
+</section>
+
+<section class="live-now" data-live="{{ url_for('admin.analytics_live') }}">
+  <header class="live-now-head">
+    <div>
+      <p class="eyebrow">En ce moment</p>
+      <h2>Temps réel</h2>
+      <p class="live-count">
+        <strong data-live-active>{{ live.active }}</strong>
+        visiteur{{ 's' if live.active != 1 }}
+        · <span data-live-views>{{ live.views }}</span> vue{{ 's' if live.views != 1 }} / {{ live.minutes }} min
+      </p>
+    </div>
+    <span class="live-lamp{% if live.active %} is-up{% endif %}" data-live-lamp aria-hidden="true">en ligne</span>
+  </header>
+  <div class="live-pulse">{{ live_spark|safe }}</div>
+  <ul class="live-feed" data-live-feed aria-live="polite">
+    {% for hit in live.feed %}
+      <li>
+        <strong>{{ hit.place }}</strong>
+        <span>{{ hit.channel }} · {{ hit.device }} · {{ hit.title }}</span>
+        <em data-at="{{ hit.at }}"></em>
+      </li>
+    {% else %}
+      <li class="is-empty">Personne sur le site pour l’instant.</li>
+    {% endfor %}
+  </ul>
 </section>
 
 <ul class="stat-row kpi">
@@ -43,6 +70,26 @@
     </ul>
   </section>
   <section class="panel">
+    <header class="panel-head"><h2>Villes</h2></header>
+    <ul class="bars">
+      {% for row in cities %}
+        <li><span>{{ row.label }}</span><b>{{ row.value }}</b></li>
+      {% else %}
+        <li>Les villes apparaîtront dès les prochaines visites.</li>
+      {% endfor %}
+    </ul>
+  </section>
+  <section class="panel">
+    <header class="panel-head"><h2>Pays</h2></header>
+    <ul class="bars">
+      {% for row in countries %}
+        <li><span>{{ row.label }}</span><b>{{ row.value }}</b></li>
+      {% else %}
+        <li>Pas encore de pays distincts.</li>
+      {% endfor %}
+    </ul>
+  </section>
+  <section class="panel">
     <header class="panel-head"><h2>Appareils</h2></header>
     <ul class="bars">
       {% for row in devices %}
@@ -59,10 +106,12 @@
     </ul>
   </section>
   <section class="panel">
-    <header class="panel-head"><h2>Sources</h2></header>
+    <header class="panel-head"><h2>Sites d’origine</h2></header>
     <ul class="bars">
       {% for row in referrers %}
-        <li><span>{{ row.label or 'Direct' }}</span><b>{{ row.value }}</b></li>
+        <li><span>{{ row.label }}</span><b>{{ row.value }}</b></li>
+      {% else %}
+        <li>Aucun site référent pour l’instant.</li>
       {% endfor %}
     </ul>
   </section>

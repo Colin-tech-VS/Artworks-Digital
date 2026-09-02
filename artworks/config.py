@@ -115,6 +115,11 @@ def ensure_schema() -> None:
     _add_column("social_post", "design_json", "TEXT")
     _add_column("kael_token", "artist_id", "INTEGER")
     _add_column("kael_token", "use_count", "INTEGER DEFAULT 0")
+    _add_column("page_view", "referrer_host", "VARCHAR(120) DEFAULT ''")
+    _add_column("page_view", "city", "VARCHAR(80) DEFAULT ''")
+    _add_column("page_view", "country", "VARCHAR(80) DEFAULT ''")
+    _add_column("page_view", "country_code", "VARCHAR(8) DEFAULT ''")
+    _add_column("mail_message", "html_body", "TEXT")
     try:
         db.session.execute(text("UPDATE artist SET updated_at = created_at WHERE updated_at IS NULL"))
         db.session.execute(text("UPDATE work SET updated_at = created_at WHERE updated_at IS NULL"))

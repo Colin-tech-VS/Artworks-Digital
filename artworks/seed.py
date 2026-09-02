@@ -218,6 +218,7 @@ def seed_demo_traffic() -> None:
     if not current_app.debug and os.environ.get("SEED_DEMO_TRAFFIC") != "1":
         return
     if PageView.query.count() > 0:
+        paint_demo_geo()
         return
     artists = Artist.query.filter_by(is_example=True, published=True).all()
     if not artists:
@@ -236,13 +237,33 @@ def seed_demo_traffic() -> None:
             path = f"/galerie/{artist.slug}/oeuvre/{work.id}"
             title = f"{work.title} — {artist.display_name}"
             work_id = work.id
+        referrer = rng.choice(("", "https://www.google.fr/", "https://instagram.com/", "https://www.bing.com/"))
+        city, country, code = rng.choice((
+            ("Paris", "France", "FR"),
+            ("Lyon", "France", "FR"),
+            ("Marseille", "France", "FR"),
+            ("Bordeaux", "France", "FR"),
+            ("Bruxelles", "Belgique", "BE"),
+            ("Genève", "Suisse", "CH"),
+        ))
+        host = ""
+        if "google" in referrer:
+            host = "google.fr"
+        elif "instagram" in referrer:
+            host = "instagram.com"
+        elif "bing" in referrer:
+            host = "bing.com"
         rows.append(
             PageView(
                 path=path,
                 title=title,
-                referrer=rng.choice(("", "https://www.google.fr/", "https://instagram.com/", "https://www.bing.com/")),
+                referrer=referrer,
+                referrer_host=host,
                 source=rng.choice(("direct", "organic", "social", "referral")),
                 device=rng.choice(("desktop", "mobile", "tablet")),
+                city=city,
+                country=country,
+                country_code=code,
                 session_id=token_urlsafe(8),
                 artist_id=artist.id,
                 work_id=work_id,
@@ -251,4 +272,59 @@ def seed_demo_traffic() -> None:
             )
         )
     db.session.add_all(rows)
+    db.session.commit()
+    paint_demo_geo()
+
+
+def paint_demo_geo() -> None:
+    """En local, les anciennes vues n’ont pas de ville : on leur en donne une."""
+    from flask import current_app
+
+    if not current_app.debug:
+        return
+    vacant = PageView.query.filter((PageView.city == "") | (PageView.city.is_(None))).all()
+    if not vacant and PageView.query.filter(PageView.created_at >= utcnow() - timedelta(minutes=5)).count():
+        return
+    rng = Random("geo")
+    places = (
+        ("Paris", "France", "FR"),
+        ("Lyon", "France", "FR"),
+        ("Lille", "France", "FR"),
+        ("Nantes", "France", "FR"),
+        ("Bruxelles", "Belgique", "BE"),
+    )
+    for row in vacant:
+        city, country, code = rng.choice(places)
+        row.city = city
+        row.country = country
+        row.country_code = code
+        if row.referrer and not row.referrer_host:
+            if "google" in row.referrer:
+                row.referrer_host = "google.fr"
+            elif "instagram" in row.referrer:
+                row.referrer_host = "instagram.com"
+            elif "bing" in row.referrer:
+                row.referrer_host = "bing.com"
+    if not PageView.query.filter(PageView.created_at >= utcnow() - timedelta(minutes=5)).count():
+        artists = Artist.query.filter_by(is_example=True, published=True).all()
+        if artists:
+            artist = rng.choice(artists)
+            city, country, code = rng.choice(places)
+            db.session.add(
+                PageView(
+                    path=f"/galerie/{artist.slug}",
+                    title=artist.display_name,
+                    source="organic",
+                    referrer="https://www.google.fr/",
+                    referrer_host="google.fr",
+                    device="mobile",
+                    city=city,
+                    country=country,
+                    country_code=code,
+                    session_id=token_urlsafe(8),
+                    artist_id=artist.id,
+                    is_bot=False,
+                    created_at=utcnow() - timedelta(seconds=rng.randint(20, 180)),
+                )
+            )
     db.session.commit()
