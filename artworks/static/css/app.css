@@ -854,6 +854,211 @@ table.data th, table.data td { text-align: left; padding: 0.8rem 0.5rem; border-
 .admin-app .shell-toggle { background: #161412; color: #b9b0a4; border-bottom-color: #2a2622; }
 
 /* ------------------------------------------------------------------
+   K.A.E.L. — le panneau. Discret tant qu'on ne l'appelle pas.
+   ------------------------------------------------------------------ */
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.kael-open {
+  position: fixed;
+  right: 1.4rem;
+  bottom: 1.4rem;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 48px;
+  padding: 0 1.1rem 0 0.55rem;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  font: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.kael-open:hover { transform: translateY(-2px); }
+.kael-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--bronze);
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  letter-spacing: 0;
+}
+
+/* `display: flex` sur une classe l'emporte sur `[hidden]` : sans cette
+   ligne, le panneau resterait affiché et masquerait son propre bouton. */
+.kael-panel[hidden] { display: none; }
+.kael-panel {
+  position: fixed;
+  right: 1.4rem;
+  bottom: 1.4rem;
+  z-index: 61;
+  width: min(24rem, calc(100vw - 2.8rem));
+  max-height: min(34rem, calc(100vh - 2.8rem));
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: 0 18px 50px rgba(22, 20, 18, 0.18);
+  animation: rise 0.35s ease both;
+}
+.kael-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 1.1rem 0.7rem;
+  border-bottom: 1px solid var(--line);
+}
+.kael-name {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  letter-spacing: 0.06em;
+}
+.kael-tag { margin: 0.15rem 0 0; font-size: 0.78rem; color: var(--quiet); }
+.kael-close {
+  border: 0;
+  background: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--quiet);
+  cursor: pointer;
+  min-width: 32px;
+  min-height: 32px;
+}
+.kael-context {
+  padding: 0.5rem 1.1rem;
+  background: var(--wall);
+  border-bottom: 1px solid var(--line);
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bronze);
+}
+.kael-stream {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.kael-hello { margin: 0; color: var(--quiet); font-size: 0.9rem; line-height: 1.6; }
+.kael-line p { margin: 0; font-size: 0.9rem; line-height: 1.6; }
+.kael-me {
+  align-self: flex-end;
+  max-width: 85%;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0.5rem 0.75rem;
+}
+.kael-kael { align-self: flex-start; max-width: 95%; }
+.kael-kael > p { border-left: 2px solid var(--bronze); padding-left: 0.7rem; }
+.kael-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.6rem;
+  color: var(--quiet);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+.kael-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.7rem 1.1rem;
+  border-top: 1px solid var(--line);
+}
+.kael-actions button {
+  border: 1px solid var(--line);
+  background: var(--wall);
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.45rem 0.7rem;
+  min-height: 36px;
+  cursor: pointer;
+}
+.kael-actions button:hover { border-color: var(--ink); }
+.kael-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+  padding: 0.7rem 1.1rem 1rem;
+  border-top: 1px solid var(--line);
+}
+.kael-form textarea {
+  flex: 1;
+  border: 1px solid var(--line);
+  background: var(--wall);
+  padding: 0.5rem 0.6rem;
+  font: inherit;
+  font-size: 0.9rem;
+  resize: none;
+  margin: 0;
+}
+.kael-form .btn { padding: 0.6rem 0.9rem; }
+.kael-note {
+  margin: 0;
+  padding: 0 1.1rem 1rem;
+  font-size: 0.78rem;
+  color: var(--quiet);
+  line-height: 1.5;
+}
+
+/* Console d'administration de K.A.E.L. */
+.kael-secret { border: 1px solid var(--bronze); padding: 1.2rem; background: var(--paper); }
+.kael-token {
+  display: block;
+  margin: 0.6rem 0 1rem;
+  padding: 0.8rem;
+  background: var(--wall);
+  border: 1px solid var(--line);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.82rem;
+  word-break: break-all;
+}
+.scope-chip {
+  display: inline-block;
+  margin: 0 0.25rem 0.25rem 0;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--line);
+  background: var(--wall);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+}
+.up { color: var(--ok); }
+.down { color: #8a2d2d; }
+
+@media (max-width: 620px) {
+  .kael-open { right: 1rem; bottom: 1rem; padding-right: 0.8rem; }
+  .kael-open-label { display: none; }
+  .kael-panel {
+    right: 0.7rem;
+    left: 0.7rem;
+    bottom: 0.7rem;
+    width: auto;
+    max-height: min(30rem, calc(100vh - 1.4rem));
+  }
+  .kael-actions { padding: 0.6rem 0.9rem; }
+}
+
+/* ------------------------------------------------------------------
    Responsive — une seule échelle, du 27 pouces au petit téléphone
    ------------------------------------------------------------------ */
 

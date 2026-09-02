@@ -32,13 +32,16 @@ def create_app(config_class=Config) -> Flask:
     from artworks.blueprints.atelier import atelier_bp
     from artworks.blueprints.auth import auth_bp
     from artworks.blueprints.billing import billing_bp
+    from artworks.blueprints.kael import kael_bp
     from artworks.blueprints.public import public_bp
+    from artworks.kael import tools as kael_tools  # noqa: F401 — enregistre les outils
 
     app.register_blueprint(public_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(atelier_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(billing_bp)
+    app.register_blueprint(kael_bp)
 
     from artworks.gate import enforce_gate
 
@@ -53,12 +56,22 @@ def create_app(config_class=Config) -> Flask:
             "static_url": static_url,
             "default_og_image": default_og_image(),
             "site_contact_email": app.config.get("SITE_CONTACT_EMAIL", ""),
+            "kael_ready": bool(
+                app.config.get("KAEL_ENABLED")
+                and app.config.get("KAEL_API_URL")
+                and app.config.get("KAEL_API_TOKEN")
+            ),
         }
 
     @app.after_request
     def track_and_headers(response):
         endpoint = request.endpoint or ""
-        if endpoint.startswith("atelier.") or endpoint.startswith("admin.") or endpoint.startswith("auth."):
+        if (
+            endpoint.startswith("atelier.")
+            or endpoint.startswith("admin.")
+            or endpoint.startswith("auth.")
+            or endpoint.startswith("kael.")
+        ):
             response.headers["X-Robots-Tag"] = "noindex, nofollow"
         if response.status_code == 200 and should_track(request):
             artist_id = getattr(g, "track_artist_id", None)

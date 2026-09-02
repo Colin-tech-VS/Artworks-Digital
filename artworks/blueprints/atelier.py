@@ -224,6 +224,53 @@ def ai_apply_note():
     return redirect(url_for("atelier.gallery"))
 
 
+@atelier_bp.route("/kael", methods=["POST"])
+@login_required
+def kael_panel():
+    """K.A.E.L. dans l’atelier — sur cet atelier-là, et rien d’autre.
+
+    L’artiste ne parle pas au centre de commande de la plateforme : il
+    déclenche les mêmes outils K.A.E.L., forcés sur son propre périmètre.
+    Ce que voit un artiste ne peut jamais être celui d’un autre."""
+    from artworks.kael import permissions
+    from artworks.kael.registry import PermissionDenied
+    from artworks.kael.runner import run
+    from artworks.kael.tokens import Grant
+    from artworks.models import KaelToken
+
+    payload = request.get_json(silent=True) or {}
+    action = str(payload.get("action") or "").strip()
+    params = payload.get("params") if isinstance(payload.get("params"), dict) else {}
+
+    scopes = {permissions.READ, permissions.ANALYZE}
+    if current_user.has_feature("ai"):
+        scopes.add(permissions.WRITE)
+    grant = Grant(
+        token=KaelToken(id=None, label=f"Atelier {current_user.display_name}"),
+        scopes=permissions.expand(scopes),
+        artist_id=current_user.id,
+    )
+
+    allowed = {
+        "analyze_portfolio": {"artist": str(current_user.id)},
+        "analyze_artwork": {},
+        "get_artist_stats": {"artist": str(current_user.id)},
+        "update_artwork": {},
+    }
+    if action not in allowed:
+        return jsonify({"ok": False, "error": "Action inconnue."}), 400
+    if action == "update_artwork" and not current_user.has_feature("ai"):
+        return jsonify({"ok": False, "error": "L’écriture assistée est incluse dans Pro et Studio."}), 403
+
+    merged = {**params, **allowed[action]}
+    try:
+        return jsonify(run(action, merged, grant))
+    except PermissionDenied as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 403
+    except Exception as exc:  # noqa: BLE001 — message rendu tel quel au panneau
+        return jsonify({"ok": False, "error": str(exc)}), 400
+
+
 @atelier_bp.route("/collections")
 @login_required
 def collections():
@@ -443,11 +490,23 @@ def edit_work(work_id: int):
                 work.image_path, work.image_w, work.image_h = save_image_sized(form.image.data)
             except ValueError as exc:
                 form.image.errors.append(str(exc))
-                return render_template("atelier/work.html", form=form, work=work, unread=current_user.unread_count)
+                return render_template(
+                    "atelier/work.html",
+                    form=form,
+                    work=work,
+                    unread=current_user.unread_count,
+                    kael_work_id=work.id,
+                )
         db.session.commit()
         flash("Cartel mis à jour.", "ok")
         return redirect(url_for("atelier.studio"))
-    return render_template("atelier/work.html", form=form, work=work, unread=current_user.unread_count)
+    return render_template(
+        "atelier/work.html",
+        form=form,
+        work=work,
+        unread=current_user.unread_count,
+        kael_work_id=work.id,
+    )
 
 
 @atelier_bp.route("/oeuvres/<int:work_id>/retirer", methods=["POST"])

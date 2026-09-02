@@ -52,6 +52,61 @@ Sans clé Mistral — ou si l’API tombe — un brouillon est composé quand m�
 Les artistes des offres Pro et Studio disposent du même générateur dans
 `/atelier/ia`, pour leurs propres œuvres, en téléchargement.
 
+## K.A.E.L. — l’intelligence d’Artworks Digital
+
+K.A.E.L. vit dans le centre de commande, pas ici. Artworks Digital ne
+rejoue pas son cerveau : il lui ouvre une porte, et cette porte a des
+serrures.
+
+### La porte
+
+```
+GET  /api/kael/health                  état, sans jeton
+GET  /api/kael/manifest                les outils, filtrés sur ce que le jeton peut faire
+GET  /api/kael/context                 qui parle, d’où, sur quelle œuvre
+POST /api/kael/tools/<nom>             exécute un outil
+```
+
+Authentification : `Authorization: Bearer kael_<préfixe>_<secret>`. Le secret
+n’est jamais stocké en clair — seule son empreinte l’est — et n’apparaît
+qu’une fois, à la création.
+
+### Les serrures
+
+| Portée | Ce qu’elle ouvre |
+|---|---|
+| `KAEL_READ` | lire artistes, œuvres, catalogue, audience, messages, offres |
+| `KAEL_ANALYZE` | diagnostics d’œuvre, de portfolio, anomalies de plateforme |
+| `KAEL_WRITE` | corriger un cartel, une note, l’ordre d’accrochage, la visibilité |
+| `KAEL_PUBLISH` | composer et publier sur les réseaux, ouvrir une salle, envoyer un e-mail |
+| `KAEL_ADMIN` | offres, suppressions, journal |
+
+Un jeton peut être **limité à un seul atelier** : K.A.E.L. ne voit alors
+que celui-là, quelles que soient ses portées.
+
+### La main humaine
+
+Cinq outils ne s’exécutent jamais seuls : `publish_social_post`,
+`set_gallery_published`, `send_platform_email`, `assign_plan`,
+`delete_artwork`. Ils répondent `409` avec une carte qui dit ce qui va se
+passer, ce qui est irréversible, et un `confirm_token` valable dix minutes,
+lié à ces paramètres-là. Changer un paramètre invalide la confirmation.
+
+### La trace
+
+Chaque appel laisse une ligne : outil, portée, paramètres (secrets masqués),
+résultat, durée, confirmation éventuelle. `/admin/kael` affiche les accès,
+le catalogue d’outils et le journal.
+
+### Dans le site
+
+Un panneau K.A.E.L. est présent dans l’atelier et dans l’admin.
+Dans l’admin, il relaie vers le `/chat` du centre de commande, avec le
+contexte de la page — le jeton reste côté serveur. Dans l’atelier, il
+déclenche les mêmes outils, forcés sur l’atelier de l’artiste connecté.
+
+Variables : `KAEL_API_URL`, `KAEL_API_TOKEN`, `KAEL_AGENT`, `KAEL_ENABLED`.
+
 ## Reprendre une ancienne base
 
 ```bash

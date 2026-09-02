@@ -55,6 +55,12 @@ class Config:
     PINTEREST_CLIENT_SECRET = os.environ.get("PINTEREST_CLIENT_SECRET", "")
     PINTEREST_REDIRECT_URI = os.environ.get("PINTEREST_REDIRECT_URI", "")
     PINTEREST_DEFAULT_BOARD_ID = os.environ.get("PINTEREST_DEFAULT_BOARD_ID", "")
+    # K.A.E.L. — le centre de commande. Artworks Digital lui parle, il ne
+    # l'héberge pas : l'URL et le jeton restent côté serveur.
+    KAEL_API_URL = os.environ.get("KAEL_API_URL", "")
+    KAEL_API_TOKEN = os.environ.get("KAEL_API_TOKEN", "")
+    KAEL_AGENT = os.environ.get("KAEL_AGENT", "")
+    KAEL_ENABLED = os.environ.get("KAEL_ENABLED", "1") != "0"
     MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY", "")
     MISTRAL_MODEL = os.environ.get("MISTRAL_MODEL", "mistral-small-latest")
     MISTRAL_MODEL_HEAVY = os.environ.get("MISTRAL_MODEL_HEAVY", "mistral-large-latest")
@@ -106,6 +112,8 @@ def ensure_schema() -> None:
     _add_column("social_post", "alt_text", "VARCHAR(400) DEFAULT ''")
     _add_column("social_post", "prompt", "TEXT")
     _add_column("social_post", "design_json", "TEXT")
+    _add_column("kael_token", "artist_id", "INTEGER")
+    _add_column("kael_token", "use_count", "INTEGER DEFAULT 0")
     try:
         db.session.execute(text("UPDATE artist SET updated_at = created_at WHERE updated_at IS NULL"))
         db.session.execute(text("UPDATE work SET updated_at = created_at WHERE updated_at IS NULL"))

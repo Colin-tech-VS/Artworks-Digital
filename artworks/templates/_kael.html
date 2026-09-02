@@ -1,0 +1,63 @@
+{# Le panneau K.A.E.L. — présent dans l'atelier et dans l'admin. #}
+<button class="kael-open" type="button" aria-expanded="false" aria-controls="kael-panel" title="K.A.E.L.">
+  <span class="kael-mark" aria-hidden="true">K</span>
+  <span class="kael-open-label">K.A.E.L.</span>
+</button>
+
+<aside class="kael-panel" id="kael-panel" hidden
+       data-mode="{{ kael_mode }}"
+       data-endpoint="{{ kael_endpoint }}"
+       data-page="{{ request.path }}"
+       {% if kael_work_id %}data-work-id="{{ kael_work_id }}"{% endif %}>
+  <header class="kael-head">
+    <div>
+      <p class="kael-name">K.A.E.L.</p>
+      <p class="kael-tag">L’intelligence d’Artworks&nbsp;Digital.</p>
+    </div>
+    <button class="kael-close" type="button" aria-label="Fermer le panneau">×</button>
+  </header>
+
+  <div class="kael-context">
+    <span>{{ kael_context_label }}</span>
+  </div>
+
+  <div class="kael-stream" role="log" aria-live="polite">
+    <p class="kael-hello">
+      {% if kael_mode == 'admin' %}
+        Je vois la plateforme : ateliers, œuvres, audience, offres, réseaux.
+        Demandez, ou lancez une analyse.
+      {% else %}
+        Je regarde votre atelier — vos œuvres, vos cartels, votre audience.
+        Rien de ce qui appartient à un autre artiste ne m’est visible.
+      {% endif %}
+    </p>
+  </div>
+
+  <div class="kael-actions">
+    {% if kael_mode == 'admin' %}
+      <button type="button" data-tool="find_anomalies">Chercher les anomalies</button>
+      <button type="button" data-tool="get_platform_stats">État de la plateforme</button>
+      <button type="button" data-tool="get_service_health">Santé des services</button>
+    {% else %}
+      <button type="button" data-tool="analyze_portfolio">Analyser mon portfolio</button>
+      {% if kael_work_id %}
+        <button type="button" data-tool="analyze_artwork" data-params='{"work_id": {{ kael_work_id }}}'>Analyser cette œuvre</button>
+      {% endif %}
+      <button type="button" data-tool="get_artist_stats">Mon audience</button>
+    {% endif %}
+  </div>
+
+  {% if kael_mode == 'admin' %}
+    <form class="kael-form" autocomplete="off">
+      <label class="sr-only" for="kael-input">Message pour K.A.E.L.</label>
+      <textarea id="kael-input" rows="2" placeholder="Demandez à K.A.E.L. — il connaît la page où vous êtes."></textarea>
+      <button class="btn btn-ink" type="submit">Envoyer</button>
+    </form>
+    {% if not kael_ready %}
+      <p class="kael-note">
+        K.A.E.L. n’est pas encore branché : renseignez <code>KAEL_API_URL</code> et
+        <code>KAEL_API_TOKEN</code>. Les analyses ci-dessus fonctionnent sans lui.
+      </p>
+    {% endif %}
+  {% endif %}
+</aside>

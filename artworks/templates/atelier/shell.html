@@ -66,4 +66,10 @@
     {% block atelier %}{% endblock %}
   </div>
 </div>
+
+{% set kael_mode = 'atelier' %}
+{% set kael_endpoint = url_for('atelier.kael_panel') %}
+{% set kael_context_label = 'Atelier de ' ~ current_user.display_name %}
+{% set kael_work_id = kael_work_id | default(none) %}
+{% include '_kael.html' %}
 {% endblock %}

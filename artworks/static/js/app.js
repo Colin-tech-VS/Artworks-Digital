@@ -160,3 +160,170 @@ document.querySelectorAll(".link-copy").forEach((button) => {
     window.setTimeout(() => { button.textContent = said; }, 2200);
   });
 });
+
+/* ------------------------------------------------------------------
+   K.A.E.L. — le panneau. Il ne pense pas ici : il appelle le serveur,
+   qui parle à K.A.E.L. ou déclenche un outil. Aucun jeton côté page.
+   ------------------------------------------------------------------ */
+(() => {
+  const panel = document.getElementById("kael-panel");
+  const opener = document.querySelector(".kael-open");
+  if (!panel || !opener) return;
+
+  const stream = panel.querySelector(".kael-stream");
+  const endpoint = panel.dataset.endpoint;
+  const mode = panel.dataset.mode;
+  let conversationId = null;
+  let busy = false;
+
+  const setOpen = (open) => {
+    panel.hidden = !open;
+    opener.setAttribute("aria-expanded", String(open));
+    document.body.classList.toggle("kael-is-open", open);
+    if (open) panel.querySelector("textarea, button:not(.kael-close)")?.focus();
+  };
+  opener.addEventListener("click", () => setOpen(panel.hidden));
+  panel.querySelector(".kael-close")?.addEventListener("click", () => setOpen(false));
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !panel.hidden) setOpen(false);
+  });
+
+  const bubble = (who, text, extra) => {
+    const line = document.createElement("div");
+    line.className = `kael-line kael-${who}`;
+    const body = document.createElement("p");
+    body.textContent = text;
+    line.appendChild(body);
+    if (extra) line.appendChild(extra);
+    stream.appendChild(line);
+    stream.scrollTop = stream.scrollHeight;
+    return line;
+  };
+
+  const list = (items) => {
+    const ul = document.createElement("ul");
+    ul.className = "kael-list";
+    items.slice(0, 8).forEach((item) => {
+      const li = document.createElement("li");
+      li.textContent = item;
+      ul.appendChild(li);
+    });
+    return ul;
+  };
+
+  /* Un résultat d'outil est une donnée, pas une phrase : on le raconte. */
+  const tell = (tool, data) => {
+    if (tool === "analyze_portfolio") {
+      const weak = data.works_to_improve || [];
+      const head = `J’ai regardé ${data.works_total} œuvre${data.works_total > 1 ? "s" : ""}. `
+        + (weak.length
+          ? `${weak.length} mériterai${weak.length > 1 ? "ent" : "t"} d’être reprise${weak.length > 1 ? "s" : ""}.`
+          : "Les cartels sont complets.");
+      const lines = weak.map((w) => `${w.title} — ${w.findings[0]}`).concat(data.remarks || []);
+      return bubble("kael", head, lines.length ? list(lines) : null);
+    }
+    if (tool === "analyze_artwork") {
+      const findings = (data.findings || []).map((f) => f.detail);
+      return bubble(
+        "kael",
+        `« ${data.artwork.title} » — ${data.score}/100. ${data.verdict}`,
+        findings.length ? list(findings) : null,
+      );
+    }
+    if (tool === "get_artist_stats") {
+      const top = (data.top_works || []).map((w) => `${w.title} — ${w.views} vue(s)`);
+      return bubble(
+        "kael",
+        `${data.views_total_period} vue(s) sur ${data.days} jours, ${data.views_all_time} depuis l’ouverture.`,
+        top.length ? list(top) : null,
+      );
+    }
+    if (tool === "find_anomalies") {
+      const rows = (data.anomalies || []).map((a) => a.detail);
+      return bubble(
+        "kael",
+        rows.length ? `${data.count} anomalie(s) sur ${data.days} jours.` : "Rien à signaler.",
+        rows.length ? list(rows) : null,
+      );
+    }
+    if (tool === "get_platform_stats") {
+      return bubble("kael", `${data.artists} atelier(s), ${data.published_rooms} salle(s) ouverte(s), `
+        + `${data.works} œuvre(s), ${data.total_views} vue(s). Revenu récurrent : ${data.mrr_label}.`);
+    }
+    if (tool === "get_service_health") {
+      const rows = Object.entries(data)
+        .filter(([key]) => ["smtp", "imap", "stripe", "mistral"].includes(key))
+        .map(([key, value]) => `${key} — ${value ? "branché" : "absent"}`);
+      return bubble("kael", `Base ${data.database}.`, list(rows));
+    }
+    return bubble("kael", JSON.stringify(data).slice(0, 600));
+  };
+
+  const post = async (body) => {
+    if (busy) return null;
+    busy = true;
+    const waiting = bubble("kael", "…");
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": csrf },
+        body: JSON.stringify(body),
+      });
+      const payload = await response.json();
+      waiting.remove();
+      return payload;
+    } catch (error) {
+      waiting.remove();
+      bubble("kael", `Je n’ai pas pu joindre le serveur : ${error}`);
+      return null;
+    } finally {
+      busy = false;
+    }
+  };
+
+  panel.querySelectorAll(".kael-actions button").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const tool = button.dataset.tool;
+      bubble("me", button.textContent.trim());
+      const params = button.dataset.params ? JSON.parse(button.dataset.params) : {};
+      if (mode === "admin") {
+        const payload = await post({ message: `Utilise l’outil ${tool} sur Artworks Digital et résume-moi le résultat.`, page: panel.dataset.page, conversation_id: conversationId });
+        if (!payload) return;
+        if (payload.ok) {
+          conversationId = payload.conversation_id || conversationId;
+          bubble("kael", payload.reply);
+        } else {
+          bubble("kael", payload.error);
+        }
+        return;
+      }
+      const payload = await post({ action: tool, params });
+      if (!payload) return;
+      if (payload.ok) tell(tool, payload.data);
+      else bubble("kael", payload.error);
+    });
+  });
+
+  const form = panel.querySelector(".kael-form");
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const field = form.querySelector("textarea");
+    const message = field.value.trim();
+    if (!message) return;
+    bubble("me", message);
+    field.value = "";
+    const payload = await post({
+      message,
+      page: panel.dataset.page,
+      work_id: panel.dataset.workId || null,
+      conversation_id: conversationId,
+    });
+    if (!payload) return;
+    if (payload.ok) {
+      conversationId = payload.conversation_id || conversationId;
+      bubble("kael", payload.reply);
+    } else {
+      bubble("kael", payload.error);
+    }
+  });
+})();

@@ -20,6 +20,7 @@
       <a href="{{ url_for('admin.offers') }}" class="{% if request.endpoint in ['admin.offers', 'admin.offer_edit'] %}is-on{% endif %}">Offres</a>
       <a href="{{ url_for('admin.subscriptions') }}" class="{% if request.endpoint == 'admin.subscriptions' %}is-on{% endif %}">Abonnements</a>
       <a href="{{ url_for('admin.social') }}" class="{% if request.endpoint == 'admin.social' %}is-on{% endif %}">Réseaux</a>
+      <a href="{{ url_for('admin.kael') }}" class="{% if request.endpoint in ['admin.kael'] %}is-on{% endif %}">K.A.E.L.</a>
     </nav>
     <div class="side-foot">
       <a href="{{ url_for('public.home') }}">Site public</a>
@@ -30,4 +31,10 @@
     {% block admin %}{% endblock %}
   </div>
 </div>
+
+{% set kael_mode = 'admin' %}
+{% set kael_endpoint = url_for('admin.kael_chat') %}
+{% set kael_context_label = 'Administration — toute la plateforme' %}
+{% set kael_work_id = kael_work_id | default(none) %}
+{% include '_kael.html' %}
 {% endblock %}

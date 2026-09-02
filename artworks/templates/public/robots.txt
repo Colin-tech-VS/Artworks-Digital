@@ -8,5 +8,6 @@ Disallow: /deconnexion
 Disallow: /mot-de-passe
 Disallow: /mot-de-passe-oublie
 Disallow: /stripe
+Disallow: /api/kael
 
 Sitemap: {{ sitemap }}

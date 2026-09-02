@@ -111,6 +111,22 @@ class AdminLoginForm(FlaskForm):
     password = PasswordField("Mot de passe", validators=[DataRequired(), Length(max=128)])
 
 
+class KaelTokenForm(FlaskForm):
+    """Créer un accès pour K.A.E.L. — portées explicites, jamais implicites."""
+
+    label = StringField("Libellé", validators=[DataRequired(), Length(min=2, max=120)])
+    artist_id = SelectField("Limiter à un atelier", validators=[Optional()])
+    scope_read = BooleanField("KAEL_READ — lire", default=True)
+    scope_analyze = BooleanField("KAEL_ANALYZE — analyser")
+    scope_write = BooleanField("KAEL_WRITE — modifier")
+    scope_publish = BooleanField("KAEL_PUBLISH — publier")
+    scope_admin = BooleanField("KAEL_ADMIN — administrer")
+
+
+class KaelChatForm(FlaskForm):
+    message = TextAreaField("Message", validators=[DataRequired(), Length(min=1, max=4000)])
+
+
 class ContactForm(FlaskForm):
     name = StringField("Votre nom", validators=[DataRequired(), Length(max=120)])
     email = StringField(

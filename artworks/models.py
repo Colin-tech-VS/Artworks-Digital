@@ -303,6 +303,57 @@ class MailMessage(db.Model):
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
 
 
+class KaelToken(db.Model):
+    """Un jeton d'accès de K.A.E.L. à Artworks Digital.
+
+    Le secret n'est jamais stocké en clair : seule son empreinte l'est, et
+    le préfixe sert à retrouver la ligne sans révéler le reste. Les portées
+    sont attachées au jeton, pas à K.A.E.L. — révoquer un jeton suffit à
+    refermer une porte."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    label = db.Column(db.String(120), nullable=False)
+    prefix = db.Column(db.String(16), unique=True, nullable=False, index=True)
+    secret_hash = db.Column(db.String(255), nullable=False)
+    scopes_text = db.Column(db.String(255), default="", nullable=False)
+    # Un jeton peut être limité à un seul atelier : K.A.E.L. ne voit alors
+    # que cet artiste, quelles que soient ses portées.
+    artist_id = db.Column(db.Integer, db.ForeignKey("artist.id"), nullable=True, index=True)
+    active = db.Column(db.Boolean, default=True, nullable=False)
+    last_used_at = db.Column(db.DateTime, nullable=True)
+    use_count = db.Column(db.Integer, default=0, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+    @property
+    def scopes(self) -> list[str]:
+        return [part for part in (self.scopes_text or "").split(",") if part]
+
+    @scopes.setter
+    def scopes(self, values) -> None:
+        self.scopes_text = ",".join(values or [])
+
+
+class KaelAuditLog(db.Model):
+    """Tout ce que K.A.E.L. a tenté sur la plateforme, réussi ou non."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    token_id = db.Column(db.Integer, db.ForeignKey("kael_token.id"), nullable=True, index=True)
+    token_label = db.Column(db.String(120), default="")
+    tool = db.Column(db.String(80), nullable=False, index=True)
+    permission = db.Column(db.String(30), default="")
+    params_json = db.Column(db.Text, default="")
+    ok = db.Column(db.Boolean, default=True, nullable=False, index=True)
+    summary = db.Column(db.String(400), default="")
+    error = db.Column(db.Text, default="")
+    confirmed = db.Column(db.Boolean, default=False, nullable=False)
+    actor = db.Column(db.String(120), default="")
+    subject_kind = db.Column(db.String(30), default="")
+    subject_id = db.Column(db.String(40), default="")
+    duration_ms = db.Column(db.Integer, default=0, nullable=False)
+    remote_addr = db.Column(db.String(60), default="")
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
+
+
 @login_manager.user_loader
 def load_artist(artist_id: str):
     return db.session.get(Artist, int(artist_id))

@@ -46,7 +46,8 @@ def enforce_gate():
     if request.endpoint in OPEN_ENDPOINTS:
         return None
     if request.endpoint and (
-        request.endpoint.startswith("atelier.")
+        request.endpoint.startswith("kael.")
+        or request.endpoint.startswith("atelier.")
         or request.endpoint.startswith("admin.")
         or request.endpoint in ("auth.login", "auth.logout", "auth.forgot_password", "auth.reset_password")
     ):
