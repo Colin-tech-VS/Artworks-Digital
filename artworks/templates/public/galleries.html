@@ -1,18 +1,43 @@
 {% extends "base.html" %}
 {% block title %}Galeries d’artistes — Artworksdigital{% endblock %}
 {% block description %}Salles ouvertes sur Artworksdigital. Chaque artiste a sa galerie : un accrochage, une adresse, une note d’intention.{% endblock %}
+{% block og_image_width %}1200{% endblock %}
+{% block og_image_height %}630{% endblock %}
 {% block body_class %}rooms-page{% endblock %}
 {% block jsonld %}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "CollectionPage",
-  "name": "Galeries Artworksdigital",
-  "url": {{ canonical_url() | tojson }},
-  "hasPart": [
-    {% for artist in rooms %}
-    {"@type": "ArtGallery", "name": {{ artist.display_name | tojson }}, "url": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }}}{% if not loop.last %},{% endif %}
-    {% endfor %}
+  "@graph": [
+    {
+      "@type": "CollectionPage",
+      "@id": {{ canonical_url() | tojson }},
+      "name": "Galeries Artworksdigital",
+      "url": {{ canonical_url() | tojson }},
+      "inLanguage": "fr-FR",
+      "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
+      "mainEntity": {
+        "@type": "ItemList",
+        "numberOfItems": {{ rooms | length }},
+        "itemListElement": [
+          {% for artist in rooms %}
+          {
+            "@type": "ListItem",
+            "position": {{ loop.index }},
+            "url": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }},
+            "name": {{ artist.display_name | tojson }}
+          }{% if not loop.last %},{% endif %}
+          {% endfor %}
+        ]
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Accueil", "item": {{ canonical_url('/') | tojson }}},
+        {"@type": "ListItem", "position": 2, "name": "Galeries", "item": {{ canonical_url() | tojson }}}
+      ]
+    }
   ]
 }
 </script>

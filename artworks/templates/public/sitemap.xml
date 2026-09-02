@@ -1,11 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-{% for page in pages %}
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+{%- for page in pages %}
   <url>
     <loc>{{ page.loc }}</loc>
-    {% if page.lastmod %}<lastmod>{{ page.lastmod.strftime('%Y-%m-%d') }}</lastmod>{% endif %}
+    {%- if page.lastmod %}
+    <lastmod>{{ page.lastmod.strftime('%Y-%m-%d') }}</lastmod>
+    {%- endif %}
     <changefreq>{{ page.changefreq }}</changefreq>
     <priority>{{ page.priority }}</priority>
+    {%- for image in page.images %}
+    <image:image>
+      <image:loc>{{ image.loc }}</image:loc>
+      {%- if image.title %}
+      <image:title>{{ image.title }}</image:title>
+      {%- endif %}
+    </image:image>
+    {%- endfor %}
   </url>
-{% endfor %}
+{%- endfor %}
 </urlset>

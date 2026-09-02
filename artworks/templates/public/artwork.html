@@ -1,36 +1,56 @@
 {% extends "base.html" %}
 {% block title %}{{ work.title }} — {{ artist.display_name }}{% endblock %}
 {% block description %}{{ work.seo_description }}{% endblock %}
-{% block og_type %}article{% endblock %}
 {% block og_image %}{{ absolute_media(work.image_path) }}{% endblock %}
 {% block body_class %}work-view{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_image_alt %}{{ work.title }}, œuvre de {{ artist.display_name }}{% endblock %}
+{% block og_image_width %}{% if (work.image_w or 0) > 0 %}{{ work.image_w }}{% endif %}{% endblock %}
+{% block og_image_height %}{% if (work.image_h or 0) > 0 %}{{ work.image_h }}{% endif %}{% endblock %}
 {% block jsonld %}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "VisualArtwork",
-  "name": {{ work.title | tojson }},
-  "url": {{ canonical_url() | tojson }},
-  "image": {{ absolute_media(work.image_path) | tojson }},
-  "creator": {
-    "@type": "Person",
-    "name": {{ artist.display_name | tojson }},
-    "url": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }}
-  }{% if work.year %},
-  "dateCreated": {{ work.year | tojson }}{% endif %}{% if work.medium %},
-  "artMedium": {{ work.medium | tojson }}{% endif %}{% if work.dimensions %},
-  "artform": {{ work.dimensions | tojson }}{% endif %},
-  "description": {{ work.seo_description | tojson }}
-}
-</script>
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {"@type": "ListItem", "position": 1, "name": "Accueil", "item": {{ canonical_url('/') | tojson }}},
-    {"@type": "ListItem", "position": 2, "name": {{ artist.display_name | tojson }}, "item": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }}},
-    {"@type": "ListItem", "position": 3, "name": {{ work.title | tojson }}, "item": {{ canonical_url() | tojson }}}
+  "@graph": [
+    {
+      "@type": "VisualArtwork",
+      "@id": {{ (canonical_url() ~ '#oeuvre') | tojson }},
+      "name": {{ work.title | tojson }},
+      "url": {{ canonical_url() | tojson }},
+      "inLanguage": "fr-FR",
+      "image": {
+        "@type": "ImageObject",
+        "url": {{ absolute_media(work.image_path) | tojson }},
+        "contentUrl": {{ absolute_media(work.image_path) | tojson }}{% if (work.image_w or 0) > 0 %},
+        "width": {{ work.image_w }},
+        "height": {{ work.image_h }}{% endif %},
+        "caption": {{ (work.title ~ ' — ' ~ artist.display_name) | tojson }}
+      },
+      "creator": {
+        "@type": "Person",
+        "name": {{ artist.display_name | tojson }},
+        "url": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }}
+      },
+      "copyrightHolder": {
+        "@type": "Person",
+        "name": {{ artist.display_name | tojson }}
+      }{% if work.year %},
+      "dateCreated": {{ work.year | tojson }}{% endif %}{% if work.medium %},
+      "artMedium": {{ work.medium | tojson }}{% endif %}{% if artist.discipline %},
+      "artform": {{ artist.discipline | tojson }}{% endif %}{% if work.dimensions %},
+      "size": {{ work.dimensions | tojson }}{% endif %},
+      "isPartOf": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }},
+      "description": {{ work.seo_description | tojson }}
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Accueil", "item": {{ canonical_url('/') | tojson }}},
+        {"@type": "ListItem", "position": 2, "name": "Galeries", "item": {{ canonical_url(url_for('public.galleries')) | tojson }}},
+        {"@type": "ListItem", "position": 3, "name": {{ artist.display_name | tojson }}, "item": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }}},
+        {"@type": "ListItem", "position": 4, "name": {{ work.title | tojson }}, "item": {{ canonical_url() | tojson }}}
+      ]
+    }
   ]
 }
 </script>
@@ -43,7 +63,7 @@
 
 <article class="solo">
   <figure class="solo-frame">
-    <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}{% if work.year %}, {{ work.year }}{% endif %}" fetchpriority="high" decoding="async"{% if work.image_w %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
+    <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}{% if work.year %}, {{ work.year }}{% endif %}" fetchpriority="high" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
   </figure>
   <aside class="cartel">
     <p class="eyebrow">{{ artist.display_name }}</p>
@@ -52,8 +72,10 @@
     {% if work.note %}<p class="note">{{ work.note }}</p>{% endif %}
     {% if artist.has_feature('share') %}
       <p class="share-row">
-        <a href="https://www.facebook.com/sharer/sharer.php?u={{ canonical_url() | urlencode }}" target="_blank" rel="noopener">Partager</a>
-        <a href="https://twitter.com/intent/tweet?url={{ canonical_url() | urlencode }}&text={{ work.title | urlencode }}" target="_blank" rel="noopener">X</a>
+        <a href="https://www.facebook.com/sharer/sharer.php?u={{ canonical_url() | urlencode }}" target="_blank" rel="noopener nofollow">Facebook</a>
+        <a href="https://twitter.com/intent/tweet?url={{ canonical_url() | urlencode }}&text={{ work.title | urlencode }}" target="_blank" rel="noopener nofollow">X</a>
+        <a href="https://www.pinterest.com/pin/create/button/?url={{ canonical_url() | urlencode }}&media={{ absolute_media(work.image_path) | urlencode }}&description={{ work.seo_description | urlencode }}" target="_blank" rel="noopener nofollow">Pinterest</a>
+        <button class="link-copy" type="button" data-copy="{{ canonical_url() }}">Copier le lien</button>
       </p>
     {% endif %}
     <p class="walk">

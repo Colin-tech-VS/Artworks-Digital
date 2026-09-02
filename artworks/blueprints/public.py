@@ -158,29 +158,41 @@ def artwork(slug: str, work_id: int):
 
 @public_bp.route("/sitemap.xml")
 def sitemap():
+    """Plan du site, images comprises : les œuvres méritent d’être indexées
+    comme images, pas seulement comme pages."""
+    from artworks.seo import absolute_media
+
     pages = [
-        {"loc": canonical_url("/"), "changefreq": "weekly", "priority": "1.0", "lastmod": utcnow()},
-        {"loc": canonical_url("/galeries"), "changefreq": "daily", "priority": "0.9", "lastmod": utcnow()},
-        {"loc": canonical_url("/offres"), "changefreq": "weekly", "priority": "0.8", "lastmod": utcnow()},
-        {"loc": canonical_url("/contact"), "changefreq": "monthly", "priority": "0.5", "lastmod": utcnow()},
+        {"loc": canonical_url("/"), "changefreq": "weekly", "priority": "1.0", "lastmod": utcnow(), "images": []},
+        {"loc": canonical_url("/galeries"), "changefreq": "daily", "priority": "0.9", "lastmod": utcnow(), "images": []},
+        {"loc": canonical_url("/offres"), "changefreq": "weekly", "priority": "0.8", "lastmod": utcnow(), "images": []},
+        {"loc": canonical_url("/contact"), "changefreq": "monthly", "priority": "0.5", "lastmod": utcnow(), "images": []},
     ]
-    for artist in Artist.query.filter_by(published=True).all():
-        lastmod = artist.updated_at or artist.created_at
+    for artist in Artist.query.filter_by(published=True).order_by(Artist.updated_at.desc()).all():
+        works = artist.public_works()
+        room_images = []
+        if artist.cover_path:
+            room_images.append({"loc": absolute_media(artist.cover_path), "title": f"Salle de {artist.display_name}"})
+        room_images.extend(
+            {"loc": absolute_media(work.image_path), "title": work.title} for work in works[:20]
+        )
         pages.append({
             "loc": canonical_url(url_for("public.gallery", slug=artist.slug)),
             "changefreq": "weekly",
             "priority": "0.8",
-            "lastmod": lastmod,
+            "lastmod": artist.updated_at or artist.created_at,
+            "images": room_images,
         })
-        for work in artist.public_works():
+        for work in works:
             pages.append({
                 "loc": canonical_url(url_for("public.artwork", slug=artist.slug, work_id=work.id)),
                 "changefreq": "monthly",
                 "priority": "0.7",
                 "lastmod": work.updated_at or work.created_at,
+                "images": [{"loc": absolute_media(work.image_path), "title": work.title}],
             })
-    response = render_template("public/sitemap.xml", pages=pages)
-    return response, 200, {"Content-Type": "application/xml; charset=utf-8"}
+    body = render_template("public/sitemap.xml", pages=pages)
+    return body, 200, {"Content-Type": "application/xml; charset=utf-8"}
 
 
 @public_bp.route("/robots.txt")

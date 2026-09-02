@@ -1,7 +1,34 @@
 {% extends "base.html" %}
 {% block title %}Contact — Artworksdigital{% endblock %}
 {% block description %}Écrire à Artworksdigital. Une question, un atelier, une galerie.{% endblock %}
+{% block og_image_width %}1200{% endblock %}
+{% block og_image_height %}630{% endblock %}
 {% block body_class %}contact-page{% endblock %}
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "ContactPage",
+      "@id": {{ canonical_url() | tojson }},
+      "name": "Contact — Artworksdigital",
+      "url": {{ canonical_url() | tojson }},
+      "inLanguage": "fr-FR",
+      "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
+      "about": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}}
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Accueil", "item": {{ canonical_url('/') | tojson }}},
+        {"@type": "ListItem", "position": 2, "name": "Contact", "item": {{ canonical_url() | tojson }}}
+      ]
+    }
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <section class="room-head">

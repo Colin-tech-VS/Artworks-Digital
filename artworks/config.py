@@ -24,7 +24,9 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
     MAX_CONTENT_LENGTH = 8 * 1024 * 1024
     UPLOAD_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+    SEND_FILE_MAX_AGE_DEFAULT = 60 * 60 * 24 * 365
     CANONICAL_HOST = os.environ.get("CANONICAL_HOST", "www.artworksdigital.fr")
+    CANONICAL_REDIRECT = os.environ.get("CANONICAL_REDIRECT", "1") != "0"
     CANONICAL_SCHEME = os.environ.get("CANONICAL_SCHEME", "https")
     ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "").strip().lower()
     ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "")
@@ -120,3 +122,45 @@ def ensure_schema() -> None:
         seed_examples()
     except SQLAlchemyError:
         db.session.rollback()
+
+    backfill_image_sizes()
+
+
+def backfill_image_sizes(limit: int = 200) -> int:
+    """Mesure les visuels enregistrés avant que les dimensions soient stockées.
+
+    Sans elles, le gabarit ne peut pas réserver la place de l’image, et
+    Open Graph annonce une taille fausse. Par lots, pour ne pas alourdir
+    le démarrage."""
+    from io import BytesIO
+
+    from PIL import Image
+
+    from artworks.models import Asset, Work
+
+    try:
+        rows = Work.query.filter((Work.image_w == 0) | (Work.image_w.is_(None))).limit(limit).all()
+    except SQLAlchemyError:
+        db.session.rollback()
+        return 0
+
+    done = 0
+    for work in rows:
+        asset = db.session.get(Asset, work.image_path) if work.image_path else None
+        if asset is None:
+            # Aucun visuel lisible : on marque pour ne pas repasser à chaque démarrage.
+            work.image_w, work.image_h = -1, -1
+            continue
+        try:
+            with Image.open(BytesIO(asset.data)) as image:
+                work.image_w, work.image_h = image.width, image.height
+            done += 1
+        except Exception:
+            work.image_w, work.image_h = -1, -1
+    if rows:
+        try:
+            db.session.commit()
+        except SQLAlchemyError:
+            db.session.rollback()
+            return 0
+    return done

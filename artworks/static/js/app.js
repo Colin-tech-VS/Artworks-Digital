@@ -144,3 +144,19 @@ document.addEventListener("keydown", (event) => {
     }
   }
 });
+
+// Copier l’adresse d’une œuvre — Instagram ne prend pas de lien cliquable.
+document.querySelectorAll(".link-copy").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const url = button.dataset.copy;
+    const said = button.textContent;
+    try {
+      await navigator.clipboard.writeText(url);
+      button.textContent = "Lien copié";
+    } catch {
+      window.prompt("Copiez ce lien :", url);
+      return;
+    }
+    window.setTimeout(() => { button.textContent = said; }, 2200);
+  });
+});

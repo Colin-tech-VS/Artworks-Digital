@@ -8,7 +8,7 @@ from artworks.analytics import attach_session_cookie, record_view, should_track
 from artworks.config import Config, ensure_schema
 from artworks.extensions import csrf, db, login_manager
 from artworks.images import asset_bytes
-from artworks.seo import absolute_media, canonical_url, default_og_image
+from artworks.seo import absolute_media, canonical_redirect, canonical_url, default_og_image, static_url
 
 
 def create_app(config_class=Config) -> Flask:
@@ -42,6 +42,7 @@ def create_app(config_class=Config) -> Flask:
 
     from artworks.gate import enforce_gate
 
+    app.before_request(canonical_redirect)
     app.before_request(enforce_gate)
 
     @app.context_processor
@@ -49,7 +50,9 @@ def create_app(config_class=Config) -> Flask:
         return {
             "canonical_url": canonical_url,
             "absolute_media": absolute_media,
+            "static_url": static_url,
             "default_og_image": default_og_image(),
+            "site_contact_email": app.config.get("SITE_CONTACT_EMAIL", ""),
         }
 
     @app.after_request

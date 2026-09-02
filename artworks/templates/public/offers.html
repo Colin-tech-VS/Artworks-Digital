@@ -1,24 +1,50 @@
 {% extends "base.html" %}
 {% block title %}Offres — Artworksdigital{% endblock %}
 {% block description %}Quatre offres pour composer votre galerie : Découverte, Artiste, Pro et Studio. À partir de 0 €/mois.{% endblock %}
+{% block og_image_width %}1200{% endblock %}
+{% block og_image_height %}630{% endblock %}
 {% block body_class %}offers-page{% endblock %}
 {% block jsonld %}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "OfferCatalog",
-  "name": "Offres Artworksdigital",
-  "url": {{ canonical_url() | tojson }},
-  "itemListElement": [
-    {% for offer in offers %}
+  "@graph": [
     {
-      "@type": "Offer",
-      "name": {{ offer.name | tojson }},
-      "description": {{ offer.audience | tojson }},
-      "price": {{ (offer.price_cents / 100) | tojson }},
-      "priceCurrency": "EUR"
-    }{% if not loop.last %},{% endif %}
-    {% endfor %}
+      "@type": "ItemList",
+      "name": "Offres Artworksdigital",
+      "url": {{ canonical_url() | tojson }},
+      "numberOfItems": {{ offers | length }},
+      "itemListElement": [
+        {% for offer in offers %}
+        {
+          "@type": "ListItem",
+          "position": {{ loop.index }},
+          "item": {
+            "@type": "Product",
+            "name": {{ ('Artworksdigital ' ~ offer.name) | tojson }},
+            "description": {{ (offer.audience or offer.name) | tojson }},
+            "brand": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}},
+            "url": {{ canonical_url() | tojson }},
+            "offers": {
+              "@type": "Offer",
+              "price": {{ ('%.2f' % (offer.price_cents / 100)) | tojson }},
+              "priceCurrency": "EUR",
+              "availability": "https://schema.org/InStock",
+              "url": {{ canonical_url() | tojson }},
+              "category": "Abonnement mensuel"
+            }
+          }
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Accueil", "item": {{ canonical_url('/') | tojson }}},
+        {"@type": "ListItem", "position": 2, "name": "Offres", "item": {{ canonical_url() | tojson }}}
+      ]
+    }
   ]
 }
 </script>
