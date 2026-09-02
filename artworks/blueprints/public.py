@@ -1,20 +1,31 @@
-from flask import Blueprint, abort, render_template
+from flask import Blueprint, abort, redirect, render_template, request, url_for
 
 from artworks.extensions import db
+from artworks.gate import site_is_open, try_unlock
 from artworks.models import Artist, Work
 
 public_bp = Blueprint("public", __name__)
 
 
-@public_bp.route("/")
-def home():
-    rooms = (
+def _open_rooms():
+    return (
         Artist.query.filter_by(published=True)
         .order_by(Artist.created_at.desc())
         .limit(8)
         .all()
     )
-    return render_template("public/home.html", rooms=rooms)
+
+
+@public_bp.route("/", methods=["GET", "POST"])
+def home():
+    if not site_is_open():
+        error = False
+        if request.method == "POST":
+            if try_unlock(request.form.get("key") or ""):
+                return redirect(url_for("public.home"))
+            error = True
+        return render_template("public/coming_soon.html", gate_error=error)
+    return render_template("public/home.html", rooms=_open_rooms())
 
 
 @public_bp.route("/galerie/<slug>")

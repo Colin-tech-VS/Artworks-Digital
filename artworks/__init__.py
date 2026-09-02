@@ -32,6 +32,10 @@ def create_app(config_class=Config) -> Flask:
     app.register_blueprint(auth_bp)
     app.register_blueprint(atelier_bp)
 
+    from artworks.gate import enforce_gate
+
+    app.before_request(enforce_gate)
+
     @app.route("/media/<path:filename>")
     def media(filename: str):
         if ".." in filename or "/" in filename or "\\" in filename:

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Artworksdigital revient</title>
+  <meta name="description" content="Artworksdigital revient. Une nouvelle version est en préparation.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Outfit:wght@300;400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</head>
+<body class="letter-page">
+  <main class="letter">
+    <p class="eyebrow">Artworksdigital</p>
+    <h1>🎨 Artworksdigital revient</h1>
+
+    <p>Nous vous devons une petite explication.</p>
+    <p>Il y a quelques mois, Artworksdigital a été temporairement fermé.</p>
+    <p>Nous avons pris cette décision pour prendre du recul, écouter les retours de nos artistes et surtout réfléchir à une question simple :</p>
+    <p class="emphasis">Comment faire d’Artworksdigital un outil réellement utile aux artistes ?</p>
+    <p>Nous aurions pu simplement remettre l’ancienne version en ligne.</p>
+    <p>Mais nous avons préféré prendre le temps de repenser le projet.</p>
+    <p>Aujourd’hui, Artworksdigital est donc de retour en préparation, avec une nouvelle vision, une nouvelle expérience et surtout une version beaucoup plus ambitieuse.</p>
+
+    <h2>❤️ Merci d’être restés là</h2>
+    <p>Vous étiez déjà nombreux à nous avoir fait confiance avant la fermeture.</p>
+    <p>Vos œuvres, vos retours et vos messages nous ont montré qu’Artworksdigital avait sa place.</p>
+    <p>Nous sommes désolés pour cette interruption et pour le manque de communication pendant cette période.</p>
+    <p>Merci à celles et ceux qui nous ont écrit pour demander si Artworksdigital allait revenir.</p>
+    <p>La réponse est maintenant claire :</p>
+    <p class="emphasis">Oui. Artworksdigital revient.</p>
+    <p>Nous travaillons actuellement sur la nouvelle version.</p>
+    <p>On revient bientôt.</p>
+
+    <p class="sign">
+      <button type="button" class="gate-dot" id="gate-dot" aria-label="Accès">—</button>
+      L’équipe Artworksdigital
+    </p>
+
+    <form class="gate{% if gate_error %} is-on{% endif %}" id="gate" method="post" {% if not gate_error %}hidden{% endif %}>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="password" name="key" autocomplete="off" aria-label="Accès" {% if gate_error %}autofocus{% endif %}>
+    </form>
+  </main>
+</body>
+</html>

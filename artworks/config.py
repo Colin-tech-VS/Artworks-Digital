@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 
 from sqlalchemy import inspect, text
 
@@ -14,6 +15,8 @@ def database_uri() -> str:
 
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-artworks-digital")
+    SITE_UNLOCK_PASSWORD = os.environ.get("SITE_UNLOCK_PASSWORD", "")
+    PERMANENT_SESSION_LIFETIME = timedelta(days=30)
     SQLALCHEMY_DATABASE_URI = database_uri()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
