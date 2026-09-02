@@ -153,6 +153,27 @@ def call_tool(name: str):
         return jsonify({"ok": False, "error": str(exc)}), 400
 
 
+@kael_bp.route("/chat", methods=["POST"])
+@csrf.exempt
+def public_chat():
+    """Visitors talk to K.A.E.L. The Scalingo secret never leaves this server."""
+    from artworks.kael import bridge
+
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return jsonify({"ok": False, "error": "Corps JSON attendu."}), 400
+    message = str(body.get("message") or "").strip()
+    if not message:
+        return jsonify({"ok": False, "error": "Message vide."}), 400
+    result = bridge.ask(message, conversation_id=body.get("conversation_id") or None)
+    if not result.get("ok"):
+        return jsonify({"ok": False, "error": result.get("error")}), 503
+    return jsonify({
+        "reply": result.get("reply") or "",
+        "conversation_id": result.get("conversation_id"),
+    })
+
+
 @kael_bp.route("/health")
 def health():
     """Vivant, et combien d'outils sont déclarés — sans jeton, rien d'autre."""

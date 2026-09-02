@@ -116,5 +116,8 @@
     <p>Artworksdigital — la galerie appartient à l’artiste. · <a href="{{ url_for('public.offers') }}">Offres</a> · <a href="{{ url_for('public.contact') }}">Contact</a></p>
   </footer>
   {% endblock %}
+  {%- if request.endpoint and not request.endpoint.startswith('admin.') and not request.endpoint.startswith('atelier.') %}
+  <script src="https://ai-command-center.osc-fr1.scalingo.io/widget/kael.js" data-title="Artworks Digital" defer></script>
+  {%- endif %}
 </body>
 </html>
