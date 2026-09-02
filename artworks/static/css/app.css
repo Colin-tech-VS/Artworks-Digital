@@ -1104,7 +1104,8 @@ form small { display: block; color: var(--alerte); margin-top: 0.3rem; }
   border: 1px solid var(--line);
   min-height: 36rem;
 }
-.mail-letter iframe {
+.mail-letter iframe,
+.mail-letter-frame {
   display: block;
   width: 100%;
   height: 46rem;

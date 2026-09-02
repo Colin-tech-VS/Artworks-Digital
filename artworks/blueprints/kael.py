@@ -32,7 +32,7 @@ def _grant_or_error():
             jsonify({
                 "ok": False,
                 "error": "Jeton K.A.E.L. absent, révoqué ou invalide.",
-                "hint": "En-tête Authorization: Bearer kael_<préfixe>_<secret>.",
+                "hint": "En-tête Authorization: Bearer <KAEL_API_KEY>.",
             }),
             401,
         )

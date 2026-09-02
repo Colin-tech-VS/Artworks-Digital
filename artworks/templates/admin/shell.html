@@ -16,7 +16,6 @@
       <p class="nav-label">Pilotage</p>
       <a href="{{ url_for('admin.overview') }}" class="{% if request.endpoint == 'admin.overview' %}is-on{% endif %}">Vue d’ensemble</a>
       <a href="{{ url_for('admin.analytics') }}" class="{% if request.endpoint == 'admin.analytics' %}is-on{% endif %}">Analytics</a>
-      <a href="{{ url_for('admin.kael') }}" class="{% if request.endpoint == 'admin.kael' %}is-on{% endif %}">K.A.E.L.</a>
       <p class="nav-label">Maison</p>
       <a href="{{ url_for('admin.artists') }}" class="{% if request.endpoint == 'admin.artists' %}is-on{% endif %}">Ateliers</a>
       <a href="{{ url_for('admin.offers') }}" class="{% if request.endpoint in ['admin.offers', 'admin.offer_edit'] %}is-on{% endif %}">Offres</a>
@@ -42,10 +41,4 @@
     {% block admin %}{% endblock %}
   </div>
 </div>
-
-{% set kael_mode = 'admin' %}
-{% set kael_endpoint = url_for('admin.kael_chat') %}
-{% set kael_context_label = 'Administration — toute la plateforme' %}
-{% set kael_work_id = kael_work_id | default(none) %}
-{% include '_kael.html' %}
 {% endblock %}

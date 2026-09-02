@@ -21,7 +21,7 @@ TIMEOUT = 90
 
 def configured() -> bool:
     cfg = current_app.config
-    return bool(cfg.get("KAEL_API_URL") and cfg.get("KAEL_API_TOKEN"))
+    return bool(cfg.get("KAEL_API_URL") and (cfg.get("KAEL_API_KEY") or cfg.get("KAEL_API_TOKEN")))
 
 
 def _endpoint() -> str:
@@ -59,7 +59,7 @@ def ask(message: str, *, context: dict | None = None, conversation_id=None) -> d
             "ok": False,
             "error": (
                 "K.A.E.L. n’est pas branché : renseignez KAEL_API_URL et "
-                "KAEL_API_TOKEN dans l’environnement."
+                "KAEL_API_KEY dans l’environnement."
             ),
         }
 
@@ -84,7 +84,9 @@ def ask(message: str, *, context: dict | None = None, conversation_id=None) -> d
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {current_app.config['KAEL_API_TOKEN']}",
+            "Authorization": (
+                f"Bearer {current_app.config.get('KAEL_API_KEY') or current_app.config.get('KAEL_API_TOKEN')}"
+            ),
         },
         method="POST",
     )

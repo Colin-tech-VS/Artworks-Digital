@@ -6,7 +6,6 @@ from artworks.analytics import artist_series, sparkline_svg
 from artworks.emails import (
     compose_letter,
     deliver as deliver_email,
-    letter_embed,
     reading_html,
     send_email_changed,
     send_gallery_published,
@@ -244,7 +243,6 @@ def kael_panel():
     from artworks.kael.registry import PermissionDenied
     from artworks.kael.runner import run
     from artworks.kael.tokens import Grant
-    from artworks.models import KaelToken
 
     payload = request.get_json(silent=True) or {}
     action = str(payload.get("action") or "").strip()
@@ -254,9 +252,9 @@ def kael_panel():
     if current_user.has_feature("ai"):
         scopes.add(permissions.WRITE)
     grant = Grant(
-        token=KaelToken(id=None, label=f"Atelier {current_user.display_name}"),
         scopes=permissions.expand(scopes),
         artist_id=current_user.id,
+        label=f"Atelier {current_user.display_name}",
     )
 
     allowed = {
@@ -444,7 +442,8 @@ def message_detail(message_id: int):
         message=message,
         form=form,
         unread=current_user.unread_count,
-        letter=letter_embed(message),
+        letter_html=reading_html(message),
+        title=message.subject,
     )
 
 

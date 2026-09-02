@@ -21,12 +21,11 @@ from artworks.extensions import db
 from artworks.forms import (
     AdminLoginForm,
     ComposeForm,
-    KaelTokenForm,
     OfferForm,
     SocialComposeForm,
     SocialPublishForm,
 )
-from artworks.emails import compose_letter, deliver as deliver_email, letter_embed, reading_html
+from artworks.emails import compose_letter, deliver as deliver_email, reading_html
 from artworks.mailer import contact_inbox, fetch_inbox, mail_configured
 from artworks.mistral import mistral_ready
 from artworks.models import Artist, MailMessage, Offer, PageView, SocialPost, SubscriptionEvent, Work
@@ -301,7 +300,8 @@ def email_detail(message_id: int):
         message=message,
         form=form,
         mail_ok=mail_configured(),
-        letter=letter_embed(message),
+        letter_html=reading_html(message),
+        title=message.subject,
     )
 
 
@@ -334,7 +334,15 @@ EMAIL_PREVIEWS = {
 @admin_bp.route("/emails/modeles")
 @admin_required
 def email_previews():
-    return render_template("admin/email_previews.html", previews=EMAIL_PREVIEWS)
+    from artworks.emails import preview_html
+
+    pages = {}
+    for kind in EMAIL_PREVIEWS:
+        try:
+            pages[kind] = preview_html(kind) or ""
+        except Exception:
+            pages[kind] = ""
+    return render_template("admin/email_previews.html", previews=EMAIL_PREVIEWS, pages=pages)
 
 
 @admin_bp.route("/emails/modeles/<kind>")
@@ -479,92 +487,6 @@ def assign_plan(artist_id: int):
     apply_plan(artist, offer.key, status="active", note="Assigné par admin")
     flash(f"{artist.display_name} est désormais sur {offer.name}.", "ok")
     return redirect(url_for("admin.subscriptions"))
-
-
-@admin_bp.route("/kael", methods=["GET", "POST"])
-@admin_required
-def kael():
-    """La console K.A.E.L. : ses accès, ses outils, son journal."""
-    from artworks.kael import audit, permissions as perm, tokens as kael_tokens
-    from artworks.kael.registry import manifest
-    from artworks.models import KaelToken
-
-    form = KaelTokenForm()
-    form.artist_id.choices = [("", "— toute la plateforme —")] + [
-        (str(a.id), f"{a.display_name} ({a.slug})")
-        for a in Artist.query.order_by(Artist.display_name.asc()).all()
-    ]
-    fresh_secret = session.pop("kael_fresh_secret", None)
-
-    if form.validate_on_submit():
-        scopes = [
-            scope
-            for scope, on in (
-                (perm.READ, form.scope_read.data),
-                (perm.ANALYZE, form.scope_analyze.data),
-                (perm.WRITE, form.scope_write.data),
-                (perm.PUBLISH, form.scope_publish.data),
-                (perm.ADMIN, form.scope_admin.data),
-            )
-            if on
-        ]
-        if not scopes:
-            flash("Choisissez au moins une portée.", "info")
-        else:
-            artist_id = int(form.artist_id.data) if form.artist_id.data else None
-            _, secret = kael_tokens.issue(form.label.data, scopes, artist_id=artist_id)
-            # Le secret n'existe qu'ici : il est montré une fois, puis oublié.
-            session["kael_fresh_secret"] = secret
-            flash("Jeton créé. Copiez-le maintenant : il ne sera plus affiché.", "ok")
-            return redirect(url_for("admin.kael"))
-
-    return render_template(
-        "admin/kael.html",
-        form=form,
-        fresh_secret=fresh_secret,
-        tokens=KaelToken.query.order_by(KaelToken.created_at.desc()).all(),
-        catalogue=manifest()["tools"],
-        entries=audit.recent(60),
-        failures=audit.recent(10, only_failures=True),
-        scope_labels=perm.LABELS,
-        base_url=canonical_url("/api/kael"),
-    )
-
-
-@admin_bp.route("/kael/tokens/<int:token_id>/revoquer", methods=["POST"])
-@admin_required
-def kael_revoke(token_id: int):
-    from artworks.kael.tokens import revoke
-
-    flash("Jeton révoqué." if revoke(token_id) else "Jeton introuvable.", "ok")
-    return redirect(url_for("admin.kael"))
-
-
-@admin_bp.route("/kael/chat", methods=["POST"])
-@admin_required
-def kael_chat():
-    """Relaie un message vers K.A.E.L., avec le contexte de la page.
-
-    Le jeton du centre de commande reste côté serveur : le navigateur ne
-    l'approche jamais."""
-    from artworks.kael.bridge import ask
-
-    payload = request.get_json(silent=True) or {}
-    message = str(payload.get("message") or "").strip()
-    if not message:
-        return jsonify({"ok": False, "error": "Message vide."}), 400
-    return jsonify(
-        ask(
-            message,
-            context={
-                "current_page": str(payload.get("page") or "")[:200],
-                "current_artwork": payload.get("work_id"),
-                "artist": payload.get("artist"),
-                "user_role": "admin",
-            },
-            conversation_id=payload.get("conversation_id"),
-        )
-    )
 
 
 @admin_bp.route("/social", methods=["GET", "POST"])

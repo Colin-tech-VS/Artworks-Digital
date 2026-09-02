@@ -19,7 +19,11 @@
       <h2>{{ label }}</h2>
       <p class="quiet">{{ kind }}</p>
       <div class="preview-frame">
-        <iframe src="{{ url_for('admin.email_preview', kind=kind) }}" title="Aperçu {{ label }}" loading="lazy"></iframe>
+        <iframe
+          title="Aperçu {{ label }}"
+          sandbox="allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
+          srcdoc="{{ pages[kind] | e }}"
+        ></iframe>
       </div>
       <div class="preview-actions">
         <a class="btn btn-ghost" href="{{ url_for('admin.email_preview', kind=kind) }}" target="_blank" rel="noopener">Plein écran</a>

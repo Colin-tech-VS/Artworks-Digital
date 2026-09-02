@@ -1,16 +1,16 @@
-"""Jetons d'accès de K.A.E.L.
+"""Accès de K.A.E.L. à Artworks Digital.
 
-Un jeton se présente sous la forme ``kael_<préfixe>_<secret>``. Seul le
-préfixe est indexé ; le secret n'existe en clair qu'au moment où on le crée
-et l'affiche une fois. Ensuite, seule son empreinte reste.
+K.A.E.L. présente ``KAEL_API_KEY`` (Scalingo). Artworks ne crée pas ce
+secret : il le vérifie, puis ouvre toute la plateforme.
 """
 
 from __future__ import annotations
 
-import secrets
+import hmac
 from dataclasses import dataclass
 
-from werkzeug.security import check_password_hash, generate_password_hash
+from flask import current_app
+from werkzeug.security import check_password_hash
 
 from artworks.extensions import db
 from artworks.kael import permissions
@@ -21,15 +21,12 @@ PREFIX = "kael"
 
 @dataclass(frozen=True)
 class Grant:
-    """Ce qu'un jeton présenté autorise réellement, une fois vérifié."""
+    """Ce que la clé présentée autorise réellement, une fois vérifiée."""
 
-    token: KaelToken
     scopes: frozenset[str]
     artist_id: int | None
-
-    @property
-    def label(self) -> str:
-        return self.token.label
+    label: str = "K.A.E.L."
+    token: KaelToken | None = None
 
     def allows(self, required: str) -> bool:
         return required in self.scopes
@@ -41,30 +38,20 @@ class Grant:
         return db.session.get(Artist, self.artist_id)
 
 
-def issue(label: str, scopes, *, artist_id: int | None = None) -> tuple[KaelToken, str]:
-    """Crée un jeton et rend le secret en clair — la seule et unique fois."""
-    prefix = secrets.token_hex(4)
-    secret = secrets.token_urlsafe(32)
-    row = KaelToken(
-        label=(label or "K.A.E.L.").strip()[:120],
-        prefix=prefix,
-        secret_hash=generate_password_hash(secret),
-        artist_id=artist_id,
-        active=True,
-    )
-    row.scopes = permissions.normalize(scopes)
-    db.session.add(row)
-    db.session.commit()
-    return row, f"{PREFIX}_{prefix}_{secret}"
+def _env_keys() -> list[str]:
+    cfg = current_app.config
+    keys = []
+    for name in ("KAEL_API_KEY", "KAEL_API_TOKEN"):
+        value = (cfg.get(name) or "").strip()
+        if value and value not in keys:
+            keys.append(value)
+    return keys
 
 
-def revoke(token_id: int) -> bool:
-    row = db.session.get(KaelToken, token_id)
-    if row is None:
+def _same_secret(presented: str, expected: str) -> bool:
+    if not presented or not expected or len(presented) != len(expected):
         return False
-    row.active = False
-    db.session.commit()
-    return True
+    return hmac.compare_digest(presented.encode("utf-8"), expected.encode("utf-8"))
 
 
 def parse(raw: str) -> tuple[str, str] | None:
@@ -79,8 +66,18 @@ def parse(raw: str) -> tuple[str, str] | None:
 
 
 def verify(raw: str) -> Grant | None:
-    """Rend les droits du jeton présenté, ou rien du tout."""
-    parsed = parse(raw)
+    """Rend les droits de la clé présentée, ou rien du tout."""
+    presented = (raw or "").strip()
+    if presented.lower().startswith("bearer "):
+        presented = presented[7:].strip()
+    for key in _env_keys():
+        if _same_secret(presented, key):
+            return Grant(
+                scopes=frozenset(permissions.ALL),
+                artist_id=None,
+                label="K.A.E.L.",
+            )
+    parsed = parse(presented)
     if parsed is None:
         return None
     prefix, secret = parsed
@@ -96,7 +93,8 @@ def verify(raw: str) -> Grant | None:
     except Exception:
         db.session.rollback()
     return Grant(
-        token=row,
         scopes=permissions.expand(row.scopes),
         artist_id=row.artist_id,
+        label=row.label,
+        token=row,
     )

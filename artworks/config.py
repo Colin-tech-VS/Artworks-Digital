@@ -56,9 +56,10 @@ class Config:
     PINTEREST_CLIENT_SECRET = os.environ.get("PINTEREST_CLIENT_SECRET", "")
     PINTEREST_REDIRECT_URI = os.environ.get("PINTEREST_REDIRECT_URI", "")
     PINTEREST_DEFAULT_BOARD_ID = os.environ.get("PINTEREST_DEFAULT_BOARD_ID", "")
-    # K.A.E.L. — le centre de commande. Artworks Digital lui parle, il ne
-    # l'héberge pas : l'URL et le jeton restent côté serveur.
+    # K.A.E.L. — le centre de commande. La clé est créée chez lui ;
+    # Artworks la lit dans l'environnement Scalingo, il ne l'émet pas.
     KAEL_API_URL = os.environ.get("KAEL_API_URL", "")
+    KAEL_API_KEY = os.environ.get("KAEL_API_KEY", "")
     KAEL_API_TOKEN = os.environ.get("KAEL_API_TOKEN", "")
     KAEL_AGENT = os.environ.get("KAEL_AGENT", "")
     KAEL_ENABLED = os.environ.get("KAEL_ENABLED", "1") != "0"

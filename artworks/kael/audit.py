@@ -48,7 +48,7 @@ def record(
     duration_ms: int = 0,
 ) -> None:
     row = KaelAuditLog(
-        token_id=grant.token.id if grant else None,
+        token_id=grant.token.id if grant and grant.token else None,
         token_label=(grant.label if grant else "")[:120],
         tool=tool[:80],
         permission=permission[:30],

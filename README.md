@@ -67,9 +67,9 @@ GET  /api/kael/context                 qui parle, d’où, sur quelle œuvre
 POST /api/kael/tools/<nom>             exécute un outil
 ```
 
-Authentification : `Authorization: Bearer kael_<préfixe>_<secret>`. Le secret
-n’est jamais stocké en clair — seule son empreinte l’est — et n’apparaît
-qu’une fois, à la création.
+Authentification : `Authorization: Bearer <KAEL_API_KEY>`. La clé est
+créée par K.A.E.L. et lue dans l’environnement Scalingo — Artworks ne
+l’émet pas.
 
 ### Les serrures
 
@@ -95,17 +95,14 @@ lié à ces paramètres-là. Changer un paramètre invalide la confirmation.
 ### La trace
 
 Chaque appel laisse une ligne : outil, portée, paramètres (secrets masqués),
-résultat, durée, confirmation éventuelle. `/admin/kael` affiche les accès,
-le catalogue d’outils et le journal.
+résultat, durée, confirmation éventuelle.
 
 ### Dans le site
 
-Un panneau K.A.E.L. est présent dans l’atelier et dans l’admin.
-Dans l’admin, il relaie vers le `/chat` du centre de commande, avec le
-contexte de la page — le jeton reste côté serveur. Dans l’atelier, il
-déclenche les mêmes outils, forcés sur l’atelier de l’artiste connecté.
+Un panneau K.A.E.L. reste dans l’atelier : il déclenche les outils, forcés
+sur l’atelier de l’artiste connecté. L’admin n’héberge plus K.A.E.L.
 
-Variables : `KAEL_API_URL`, `KAEL_API_TOKEN`, `KAEL_AGENT`, `KAEL_ENABLED`.
+Variables : `KAEL_API_URL`, `KAEL_API_KEY`, `KAEL_AGENT`, `KAEL_ENABLED`.
 
 ## Reprendre une ancienne base
 

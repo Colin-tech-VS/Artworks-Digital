@@ -59,7 +59,7 @@ def create_app(config_class=Config) -> Flask:
             "kael_ready": bool(
                 app.config.get("KAEL_ENABLED")
                 and app.config.get("KAEL_API_URL")
-                and app.config.get("KAEL_API_TOKEN")
+                and (app.config.get("KAEL_API_KEY") or app.config.get("KAEL_API_TOKEN"))
             ),
         }
 
