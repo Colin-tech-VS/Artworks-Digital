@@ -124,6 +124,15 @@ python scripts/import_legacy.py --source postgresql://… \
 L’essai à blanc rapatrie les visuels sans rien écrire : c’est le seul moyen
 de savoir, avant l’import, si les adresses répondent encore.
 
+Quand le port 5432 n’est pas joignable — réseau fermé, machine qui ne sort
+qu’en HTTPS — la base se lit par son API :
+
+```bash
+python scripts/export_supabase.py --url https://<ref>.supabase.co \
+    --key <clé service_role> --out export.json
+python scripts/import_legacy.py --source export.json --dry-run
+```
+
 Les deux anciens schémas sont reconnus (`portfolio_artists`/`portfolio_paintings`
 et `artists`/`artworks`). Les empreintes de mot de passe viennent de Werkzeug
 des deux côtés : les artistes se reconnectent avec leur mot de passe. Les

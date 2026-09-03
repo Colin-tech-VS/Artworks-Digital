@@ -36,6 +36,11 @@ Ou directement le tableau de bord : si un projet Artworks y apparaît,
 même grisé, tout est récupérable — et `scripts/import_legacy.py` reprend la
 base telle quelle (voir §5). S'il n'apparaît nulle part, c'est réglé.
 
+**Si le port 5432 est fermé** (réseau restreint, conteneur qui ne sort qu’en
+HTTPS), `scripts/export_supabase.py` lit la base par PostgREST sur 443 et
+produit le JSON que l’import attend. Il faut la clé `service_role` : la clé
+anon ne traverse pas les politiques RLS.
+
 **Attention au piège des visuels** : une base restaurée garde les URLs
 qu'elle avait. Si le projet a changé de référence en route, elles pointent
 toutes dans le vide et l'import passerait chaque œuvre faute d'image.
