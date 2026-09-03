@@ -1,11 +1,18 @@
 {% extends "base.html" %}
-{% block title %}{{ artist.display_name }} — Galerie Artworksdigital{% endblock %}
+{% block title %}{{ artist.display_name }}{% if artist.discipline %} — {{ artist.discipline }}{% endif %}{% if artist.location %} à {{ artist.location }}{% endif %} — galerie Artworksdigital{% endblock %}
 {% block description %}{{ artist.seo_description }}{% endblock %}
 {% block og_type %}profile{% endblock %}
 {% block og_image %}{% if artist.cover_path %}{{ absolute_media(artist.cover_path) }}{% elif works %}{{ absolute_media(works[0].image_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
 {% block author %}{{ artist.display_name }}{% endblock %}
 {% block body_class %}room{% endblock %}
 {% block og_image_alt %}Galerie de {{ artist.display_name }}{% endblock %}
+{% block extra_head %}
+  {%- if artist.location %}
+  <meta name="geo.placename" content="{{ artist.location }}">
+  <meta name="geo.region" content="FR">
+  {%- endif %}
+  <link rel="author" href="{{ canonical_url() }}">
+{% endblock %}
 {% block jsonld %}
 <script type="application/ld+json">
 {
@@ -21,7 +28,20 @@
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
       "primaryImageOfPage": {{ self.og_image() | tojson }},
       "dateModified": {{ (artist.updated_at or artist.created_at).strftime('%Y-%m-%d') | tojson }},
-      "mainEntity": {"@id": {{ (canonical_url() ~ '#artiste') | tojson }}}
+      "mainEntity": {"@id": {{ (canonical_url() ~ '#artiste') | tojson }}},
+      "speakable": {
+        "@type": "SpeakableSpecification",
+        "cssSelector": [".room-intro h1", ".statement", ".where"]
+      }
+    },
+    {
+      "@type": "ArtGallery",
+      "@id": {{ (canonical_url() ~ '#salle') | tojson }},
+      "name": {{ ('Galerie de ' ~ artist.display_name) | tojson }},
+      "url": {{ canonical_url() | tojson }},
+      "founder": {"@id": {{ (canonical_url() ~ '#artiste') | tojson }}},
+      "description": {{ artist.seo_description | tojson }}{% if artist.location %},
+      "address": {"@type": "PostalAddress", "addressLocality": {{ artist.location | tojson }}, "addressCountry": "FR"}{% endif %}
     },
     {
       "@type": "Person",
@@ -130,7 +150,7 @@
 
 {% if groups %}
   {% for name, items in groups.items() %}
-    <section class="collection-block">
+    <section class="collection-block wall">
       <h2>{{ name }}</h2>
       <ul class="hang {% if artist.hang_style == 'salon' and artist.has_feature('present') %}salon{% endif %}">
         {% for work in items %}
@@ -151,6 +171,7 @@
     </section>
   {% endfor %}
 {% elif works %}
+<section class="wall" aria-label="Accrochage">
   <ul class="hang {% if artist.hang_style == 'salon' and artist.has_feature('present') %}salon{% endif %}">
     {% for work in works %}
       <li>
@@ -167,6 +188,7 @@
       </li>
     {% endfor %}
   </ul>
+</section>
 {% elif not spotlight %}
   <p class="empty-room">L’accrochage n’a pas encore commencé.</p>
 {% endif %}

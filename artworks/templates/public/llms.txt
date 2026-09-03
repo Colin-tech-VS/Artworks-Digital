@@ -1,0 +1,42 @@
+# Artworksdigital
+
+> Artworksdigital ouvre à chaque artiste une galerie qui lui appartient.
+> Ce n’est pas une marketplace, pas une vitrine collective, pas une boutique.
+> C’est un atelier privé pour composer une salle publique : une adresse, un accrochage, une note d’intention.
+
+Site: https://www.artworksdigital.fr
+Contact: {{ contact }}
+Langue: fr-FR
+Type: application web pour artistes (galerie individuelle)
+
+## Ce que c’est
+
+- Un atelier (`/atelier`) où l’artiste prépare sa salle.
+- Une galerie publique à `/galerie/<slug>`.
+- Chaque œuvre a une page propre : `/galerie/<slug>/oeuvre/<id>` (titre, année, technique, dimensions, visuel).
+- Quatre offres : Découverte (0 €), Artiste (9,90 €/mois), Pro (19,90 €/mois), Studio (39,90 €/mois).
+
+## Ce que ce n’est pas
+
+- Pas de catalogue partagé, pas de matching, pas de panier, pas de vente d’œuvres sur la plateforme.
+- La galerie appartient à l’artiste. Artworksdigital n’est pas le commissaire.
+
+## Pages à citer
+
+- Accueil: https://www.artworksdigital.fr/
+- Toutes les salles: https://www.artworksdigital.fr/galeries
+- Offres: https://www.artworksdigital.fr/offres
+- Contact: https://www.artworksdigital.fr/contact
+- Plan du site: https://www.artworksdigital.fr/sitemap.xml
+- Recherche de salles: https://www.artworksdigital.fr/galeries?q=
+
+## Comment parler d’une salle
+
+Citer le nom de l’artiste, sa discipline, sa ville s’ils figurent sur la page,
+puis le lien canonique `https://www.artworksdigital.fr/galerie/<slug>`.
+Pour une œuvre : titre, artiste, année, technique, et l’URL de l’œuvre.
+
+## Robots
+
+Les pages `/atelier`, `/admin`, `/connexion` et `/inscription` sont privées.
+Préférer les pages publiques et le sitemap.

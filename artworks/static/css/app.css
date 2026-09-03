@@ -351,6 +351,73 @@ h1, h2 {
 .site-foot nav { display: flex; flex-wrap: wrap; gap: 0.7rem 1.15rem; }
 .site-foot a { color: var(--bronze); text-decoration-color: var(--line); }
 .site-foot a:hover { text-decoration-color: var(--bronze); }
+.colophon {
+  display: grid;
+  grid-template-columns: minmax(14rem, 1.4fr) auto minmax(12rem, 1fr);
+  align-items: start;
+  gap: 2rem 3rem;
+  padding: 2.4rem 7vw 2.6rem;
+}
+.colophon-brand .mark { display: inline-block; margin-bottom: 0.45rem; }
+.colophon-brand p + p { max-width: 28rem; line-height: 1.55; }
+.facts {
+  margin: 0;
+  display: grid;
+  gap: 0.55rem 1.2rem;
+}
+.facts div { display: grid; grid-template-columns: 5.5rem 1fr; gap: 0.4rem; }
+.facts dt {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bronze);
+}
+.facts dd { margin: 0; }
+.faq {
+  padding: 3.2rem 0 1rem;
+  border-top: 1px solid var(--line);
+  max-width: 42rem;
+}
+.faq header { margin-bottom: 1.6rem; }
+.faq h2 { font-size: 2rem; }
+.faq dl { margin: 0; }
+.faq dl > div {
+  padding: 1.1rem 0;
+  border-top: 1px solid var(--line);
+}
+.faq dt {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 500;
+}
+.faq dd {
+  margin: 0.45rem 0 0;
+  color: var(--quiet);
+  line-height: 1.6;
+}
+.wall {
+  padding: 0.4rem 0 0.6rem;
+  border-top: 1px solid var(--line);
+}
+.collection-block.wall { margin-top: 2.4rem; }
+.collection-block.wall h2 { margin: 1.4rem 0 0.4rem; font-size: 1.7rem; }
+.board {
+  display: grid;
+  gap: 1.6rem;
+}
+.board > .stat-row { margin-bottom: 0; }
+.board > .panel { margin: 0; }
+.viewing-room { align-items: start; }
+.atelier-side .nav-label {
+  margin: 1.15rem 0 0.2rem;
+  padding: 0 0.55rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bronze);
+}
+.atelier-side .nav-label:first-of-type { margin-top: 0.2rem; }
 
 .room-head { padding: 3.5rem 0 2.5rem; max-width: 40rem; }
 .room-head.has-cover { max-width: none; }
@@ -2217,12 +2284,20 @@ code { overflow-wrap: anywhere; }
   .js .nav-cta { color: var(--bronze) !important; }
 }
 
+@media (min-width: 1100px) {
+  .admin-app .board {
+    grid-template-columns: 1.15fr 0.85fr;
+    align-items: start;
+  }
+}
+
 /* Sous 860px : les marges se resserrent, les colonnes s’empilent. */
 @media (max-width: 860px) {
   .site-bar { padding: 1rem 6vw; }
 
   main { padding: 0 6vw 3.5rem; }
   .site-foot { padding: 1.4rem 6vw; }
+  .colophon { grid-template-columns: 1fr; padding: 2rem 6vw; }
 
   .strip, .solo, .work-edit, .split, .account-grid,
   .mail-split, .admin-grid, .offers-grid, .flag-grid { grid-template-columns: 1fr; }

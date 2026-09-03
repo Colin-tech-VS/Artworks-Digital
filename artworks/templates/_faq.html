@@ -1,0 +1,14 @@
+<section class="faq" id="faq" aria-labelledby="faq-title">
+  <header>
+    <p class="eyebrow">À retenir</p>
+    <h2 id="faq-title">{{ faq_title|default('Questions fréquentes') }}</h2>
+  </header>
+  <dl>
+    {% for item in faq %}
+      <div>
+        <dt>{{ item.q }}</dt>
+        <dd>{{ item.a }}</dd>
+      </div>
+    {% endfor %}
+  </dl>
+</section>

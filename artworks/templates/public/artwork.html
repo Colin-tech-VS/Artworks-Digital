@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ work.title }} — {{ artist.display_name }}{% endblock %}
+{% block title %}{{ work.title }}{% if work.year %} ({{ work.year }}){% endif %} — {{ artist.display_name }} | Artworksdigital{% endblock %}
 {% block description %}{{ work.seo_description }}{% endblock %}
 {% block og_image %}{{ absolute_media(work.image_path) }}{% endblock %}
 {% block author %}{{ artist.display_name }}{% endblock %}
@@ -8,6 +8,12 @@
 {% block og_image_alt %}{{ work.title }}, œuvre de {{ artist.display_name }}{% endblock %}
 {% block og_image_width %}{% if (work.image_w or 0) > 0 %}{{ work.image_w }}{% endif %}{% endblock %}
 {% block og_image_height %}{% if (work.image_h or 0) > 0 %}{{ work.image_h }}{% endif %}{% endblock %}
+{% block extra_head %}
+  {%- if artist.location %}
+  <meta name="geo.placename" content="{{ artist.location }}">
+  {%- endif %}
+  <link rel="author" href="{{ canonical_url(url_for('public.gallery', slug=artist.slug)) }}">
+{% endblock %}
 {% block jsonld %}
 <script type="application/ld+json">
 {
@@ -47,8 +53,24 @@
       "artMedium": {{ work.medium | tojson }}{% endif %}{% if artist.discipline %},
       "artform": {{ artist.discipline | tojson }}{% endif %}{% if work.dimensions %},
       "size": {{ work.dimensions | tojson }}{% endif %},
-      "isPartOf": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }},
-      "description": {{ work.seo_description | tojson }}
+      "isPartOf": {"@id": {{ (canonical_url(url_for('public.gallery', slug=artist.slug)) ~ '#salle') | tojson }}},
+      "description": {{ work.seo_description | tojson }},
+      "creditText": {{ artist.display_name | tojson }}
+    },
+    {
+      "@type": "WebPage",
+      "@id": {{ (canonical_url() ~ '#page') | tojson }},
+      "url": {{ canonical_url() | tojson }},
+      "name": {{ (work.title ~ ' — ' ~ artist.display_name) | tojson }},
+      "description": {{ work.seo_description | tojson }},
+      "inLanguage": "fr-FR",
+      "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
+      "mainEntity": {"@id": {{ (canonical_url() ~ '#oeuvre') | tojson }}},
+      "author": {
+        "@type": "Person",
+        "name": {{ artist.display_name | tojson }},
+        "url": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }}
+      }
     },
     {
       "@type": "BreadcrumbList",
@@ -73,7 +95,7 @@
 ] %}
 {% include "_crumbs.html" %}
 
-<article class="solo">
+<article class="solo viewing-room">
   <figure class="solo-frame">
     <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}, {{ artist.display_name }}{% if work.year %}, {{ work.year }}{% endif %}{% if work.medium %} — {{ work.medium }}{% endif %}" fetchpriority="high" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
   </figure>

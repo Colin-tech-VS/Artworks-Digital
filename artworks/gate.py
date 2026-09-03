@@ -18,6 +18,7 @@ OPEN_ENDPOINTS = {
     "public.opensearch",
     "public.sitemap",
     "public.robots",
+    "public.llms",
     "public.offers",
     "public.contact",
     "billing.stripe_webhook",

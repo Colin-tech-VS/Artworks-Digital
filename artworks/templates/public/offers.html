@@ -39,6 +39,36 @@
       ]
     },
     {
+      "@type": "FAQPage",
+      "@id": {{ (canonical_url() ~ '#faq') | tojson }},
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Quelle offre Artworksdigital choisir ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Découverte est gratuit (5 œuvres). Artiste ajoute statistiques et personnalisation. Pro ouvre l’IA et la mise en avant. Studio ajoute collections et priorité."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Peut-on commencer gratuitement ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui. L’offre Découverte est à 0 €/mois : atelier privé, page publique, jusqu’à cinq œuvres."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Artworksdigital prélève-t-il une commission sur les ventes ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non. Il n’y a pas de boutique. L’abonnement paie l’atelier et la salle, pas une vente."
+          }
+        }
+      ]
+    },
+    {
       "@type": "BreadcrumbList",
       "itemListElement": [
         {"@type": "ListItem", "position": 1, "name": "Accueil", "item": {{ canonical_url('/') | tojson }}},
@@ -83,4 +113,11 @@
     </article>
   {% endfor %}
 </div>
+
+{% set faq = [
+  {"q": "Quelle offre choisir ?", "a": "Découverte est gratuit (5 œuvres). Artiste ajoute statistiques et personnalisation. Pro ouvre l’IA et la mise en avant. Studio ajoute collections et priorité."},
+  {"q": "Peut-on commencer gratuitement ?", "a": "Oui. Découverte est à 0 €/mois : atelier privé, page publique, jusqu’à cinq œuvres."},
+  {"q": "Y a-t-il une commission sur les ventes ?", "a": "Non. Pas de boutique. L’abonnement paie l’atelier et la salle, pas une vente."}
+] %}
+{% include "_faq.html" %}
 {% endblock %}

@@ -22,6 +22,7 @@
       </div>
     </div>
     <nav class="side-nav">
+      <p class="nav-label">Préparer</p>
       <a href="{{ url_for('atelier.overview') }}" class="{% if request.endpoint == 'atelier.overview' %}is-on{% endif %}">
         <span>Vue d’ensemble</span>
       </a>
@@ -31,12 +32,17 @@
       <a href="{{ url_for('atelier.gallery') }}" class="{% if request.endpoint == 'atelier.gallery' %}is-on{% endif %}">
         <span>La salle</span>
       </a>
+      {% if current_user.has_feature('collections') %}
+        <a href="{{ url_for('atelier.collections') }}" class="{% if request.endpoint == 'atelier.collections' %}is-on{% endif %}">
+          <span>Collections</span>
+        </a>
+      {% else %}
+        <a class="is-locked" href="{{ url_for('atelier.billing') }}"><span>Collections</span><em>Studio</em></a>
+      {% endif %}
+      <p class="nav-label">Diffusion</p>
       <a href="{{ url_for('atelier.messages') }}" class="{% if request.endpoint in ['atelier.messages', 'atelier.message_detail'] %}is-on{% endif %}">
         <span>Messages</span>
         {% if unread %}<em class="badge">{{ unread }}</em>{% endif %}
-      </a>
-      <a href="{{ url_for('atelier.billing') }}" class="{% if request.endpoint in ['atelier.billing', 'atelier.billing_return'] %}is-on{% endif %}">
-        <span>Offre</span>
       </a>
       {% if current_user.has_feature('stats') %}
         <a href="{{ url_for('atelier.stats') }}" class="{% if request.endpoint == 'atelier.stats' %}is-on{% endif %}">
@@ -52,13 +58,10 @@
       {% else %}
         <a class="is-locked" href="{{ url_for('atelier.billing') }}"><span>IA</span><em>Pro</em></a>
       {% endif %}
-      {% if current_user.has_feature('collections') %}
-        <a href="{{ url_for('atelier.collections') }}" class="{% if request.endpoint == 'atelier.collections' %}is-on{% endif %}">
-          <span>Collections</span>
-        </a>
-      {% else %}
-        <a class="is-locked" href="{{ url_for('atelier.billing') }}"><span>Collections</span><em>Studio</em></a>
-      {% endif %}
+      <p class="nav-label">Maison</p>
+      <a href="{{ url_for('atelier.billing') }}" class="{% if request.endpoint in ['atelier.billing', 'atelier.billing_return'] %}is-on{% endif %}">
+        <span>Offre</span>
+      </a>
       <a href="{{ url_for('atelier.account') }}" class="{% if request.endpoint == 'atelier.account' %}is-on{% endif %}">
         <span>Compte</span>
       </a>

@@ -63,14 +63,35 @@
         },
         "image": {{ default_og_image | tojson }},
         "email": {{ site_contact_email | tojson }},
-        "description": "Artworksdigital ouvre à chaque artiste une galerie qui lui appartient : une adresse, un accrochage, une note d’intention.",
-        "areaServed": "FR",
+        "description": "Artworksdigital ouvre à chaque artiste une galerie qui lui appartient : une adresse, un accrochage, une note d’intention. Ce n’est pas une marketplace.",
+        "slogan": "Votre salle. Vos œuvres. Rien d’autre.",
+        "knowsAbout": ["galerie d'artiste", "portfolio artiste", "accrochage", "atelier d'artiste"],
+        "audience": {"@type": "Audience", "audienceType": "Artistes"},
+        "areaServed": {"@type": "Country", "name": "France"},
+        "brand": {"@type": "Brand", "name": "Artworksdigital"},
         "contactPoint": {
           "@type": "ContactPoint",
           "email": {{ site_contact_email | tojson }},
           "contactType": "customer support",
           "availableLanguage": ["French"]
         }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": {{ (canonical_url('/') ~ '#application') | tojson }},
+        "name": "Artworksdigital",
+        "url": {{ canonical_url('/') | tojson }},
+        "applicationCategory": "DesignApplication",
+        "applicationSubCategory": "Galerie d’artiste en ligne",
+        "operatingSystem": "Web",
+        "inLanguage": "fr-FR",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR",
+          "description": "Offre Découverte — atelier et page publique, jusqu’à 5 œuvres"
+        },
+        "publisher": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}}
       },
       {
         "@type": "WebSite",
@@ -139,14 +160,23 @@
   </main>
 
   {% block footer %}
-  <footer class="site-foot">
-    <p>Artworksdigital — la galerie appartient à l’artiste.</p>
+  <footer class="site-foot colophon">
+    <div class="colophon-brand">
+      <p class="mark">Artworks <em>Digital</em></p>
+      <p>La galerie appartient à l’artiste. Atelier privé, salle publique — pas de marketplace, pas de catalogue partagé.</p>
+    </div>
     <nav aria-label="Pied de page">
       <a href="{{ url_for('public.home') }}">Accueil</a>
       <a href="{{ url_for('public.galleries') }}">Galeries</a>
       <a href="{{ url_for('public.offers') }}">Offres</a>
       <a href="{{ url_for('public.contact') }}">Contact</a>
     </nav>
+    <dl class="facts">
+      <div><dt>Quoi</dt><dd>Galerie en ligne individuelle</dd></div>
+      <div><dt>Pour qui</dt><dd>Artistes</dd></div>
+      <div><dt>Où</dt><dd>France, sur le web</dd></div>
+      <div><dt>Écrire</dt><dd><a href="mailto:{{ site_contact_email }}">{{ site_contact_email }}</a></dd></div>
+    </dl>
   </footer>
   {% endblock %}
   {%- if request.endpoint and not request.endpoint.startswith('admin.') and not request.endpoint.startswith('atelier.') %}

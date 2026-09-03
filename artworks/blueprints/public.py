@@ -224,6 +224,7 @@ def sitemap():
         {"loc": canonical_url("/galeries"), "changefreq": "daily", "priority": "0.9", "lastmod": freshest, "images": []},
         {"loc": canonical_url("/offres"), "changefreq": "weekly", "priority": "0.8", "lastmod": utcnow(), "images": []},
         {"loc": canonical_url("/contact"), "changefreq": "monthly", "priority": "0.5", "lastmod": utcnow(), "images": []},
+        {"loc": canonical_url("/llms.txt"), "changefreq": "monthly", "priority": "0.3", "lastmod": utcnow(), "images": []},
     ]
     for artist in rooms:
         works = hung.get(artist.id, [])
@@ -269,5 +270,19 @@ def sitemap():
 
 @public_bp.route("/robots.txt")
 def robots():
-    body = render_template("public/robots.txt", sitemap=canonical_url("/sitemap.xml"))
+    body = render_template(
+        "public/robots.txt",
+        sitemap=canonical_url("/sitemap.xml"),
+        llms=canonical_url("/llms.txt"),
+    )
     return body, 200, {"Content-Type": "text/plain; charset=utf-8"}
+
+
+@public_bp.route("/llms.txt")
+def llms():
+    """Fichier pour les moteurs génératifs : qui nous sommes, sans jargon."""
+    body = render_template("public/llms.txt", contact=contact_inbox())
+    return body, 200, {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "public, max-age=3600",
+    }

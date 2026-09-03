@@ -17,8 +17,53 @@
       "description": {{ self.description() | tojson }},
       "inLanguage": "fr-FR",
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
-      "about": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}},
-      "primaryImageOfPage": {{ default_og_image | tojson }}
+      "about": [
+        {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}},
+        {"@id": {{ (canonical_url('/') ~ '#application') | tojson }}}
+      ],
+      "primaryImageOfPage": {{ default_og_image | tojson }},
+      "speakable": {
+        "@type": "SpeakableSpecification",
+        "cssSelector": [".hero h1", ".hero .lead", ".faq dt", ".faq dd"]
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": {{ (canonical_url('/') ~ '#faq') | tojson }},
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Qu’est-ce qu’Artworksdigital ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Un atelier pour composer votre galerie : une adresse, un accrochage, une note d’intention. Ce n’est pas une marketplace ni une vitrine collective."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Artworksdigital vend-il des œuvres ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non. Il n’y a pas de panier ni de catalogue partagé. La galerie appartient à l’artiste. Un visiteur lui écrit depuis la salle."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment ouvrir une galerie ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Créez un atelier, accrochez vos œuvres, écrivez la note d’intention, puis ouvrez la salle. L’adresse publique est /galerie/votre-nom."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Combien ça coûte ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "L’offre Découverte est gratuite (jusqu’à 5 œuvres). Artiste 9,90 €/mois, Pro 19,90 €/mois, Studio 39,90 €/mois."
+          }
+        }
+      ]
     }{% if rooms %},
     {
       "@type": "ItemList",
@@ -124,4 +169,12 @@
   <p class="room-contact"><a href="{{ url_for('public.galleries') }}">Toutes les galeries{% if rooms|length > 10 %} — {{ rooms|length }} salles{% endif %}</a></p>
 </section>
 {% endif %}
+
+{% set faq = [
+  {"q": "Qu’est-ce qu’Artworksdigital ?", "a": "Un atelier pour composer votre galerie : une adresse, un accrochage, une note d’intention. Ce n’est pas une marketplace ni une vitrine collective."},
+  {"q": "Artworksdigital vend-il des œuvres ?", "a": "Non. Pas de panier, pas de catalogue partagé. La galerie appartient à l’artiste. Un visiteur lui écrit depuis la salle."},
+  {"q": "Comment ouvrir une galerie ?", "a": "Créez un atelier, accrochez vos œuvres, écrivez la note d’intention, puis ouvrez la salle. L’adresse publique est /galerie/votre-nom."},
+  {"q": "Combien ça coûte ?", "a": "Découverte est gratuit (jusqu’à 5 œuvres). Artiste 9,90 €/mois, Pro 19,90 €/mois, Studio 39,90 €/mois."}
+] %}
+{% include "_faq.html" %}
 {% endblock %}
