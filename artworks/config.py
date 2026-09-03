@@ -130,11 +130,12 @@ def ensure_schema() -> None:
         db.session.rollback()
 
     from artworks.plans import seed_offers
-    from artworks.seed import seed_examples
+    from artworks.seed import purge_examples, write_og_image
 
     try:
         seed_offers()
-        seed_examples()
+        write_og_image()
+        purge_examples()
     except SQLAlchemyError:
         db.session.rollback()
 

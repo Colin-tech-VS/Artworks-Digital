@@ -19,6 +19,33 @@ La documentation Supabase est sans ambiguïté : la suppression d'un projet
 efface aussi les sauvegardes stockées en S3, l'opération est irréversible
 et le support ne restaure pas un projet supprimé. Aucun ticket à ouvrir.
 
+**La seule vérification qui reste, et qui demande le compte** : de
+l'extérieur, un projet supprimé et un projet mis en pause se ressemblent.
+Un projet en pause, lui, garde ses données et se relance d'un bouton.
+
+```bash
+supabase login && supabase projects list
+```
+
+Ou directement le tableau de bord : si `nxfkjsrgujboofnicxng` y apparaît,
+même grisé, tout est récupérable — et `scripts/import_legacy.py` reprend la
+base telle quelle (voir §5). S'il n'apparaît nulle part, c'est réglé.
+
+## 1 bis. Les galeries de démonstration
+
+Le site n'affiche plus de vitrine fabriquée. `artworks/seed.py` ne sème
+plus rien : il ne garde que l'image de partage, la promotion des
+administrateurs, et `purge_examples()`, appelé au démarrage, qui retire les
+salles d'exemple déjà présentes en base — leurs œuvres, visuels, vues,
+messages, abonnements et jetons compris. Le garde-fou est double : `is_example`
+**et** une adresse en `@galerie.artworksdigital.fr`, pour qu'aucune salle
+réelle ne parte avec. Le journal de K.A.E.L. est conservé : ses lignes
+perdent leur jeton, pas leur trace. La fonction est idempotente et ne coûte
+rien quand il n'y a rien à retirer.
+
+Tant qu'aucun artiste réel ne s'est inscrit, `/galeries` affiche « Aucune
+salle n'est encore ouverte. »
+
 ## 2. Ce que contenait la V1
 
 Inventaire relevé en lecture seule le 23 mai 2026, avant la migration.

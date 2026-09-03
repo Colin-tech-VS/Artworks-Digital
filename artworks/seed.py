@@ -1,174 +1,26 @@
-from datetime import timedelta
 from io import BytesIO
-import os
 from pathlib import Path
-from random import Random
-from secrets import token_urlsafe
 
 from PIL import Image, ImageDraw, ImageFont
+from sqlalchemy import or_
 
 from artworks.extensions import db
-from artworks.images import save_bytes
-from artworks.models import Artist, PageView, Work, utcnow
-
-
-DEMO_DIR = Path(__file__).resolve().parent / "static" / "demo"
-
-
-# Les galeries d’exemple viennent du catalogue de la V3 : sept artistes, leurs
-# mots, leurs œuvres et leurs visuels. Un artiste tient une salle, et une seule.
-EXAMPLES = (
-    {
-        "display_name": "Camille Vasseur",
-        "slug": "camille-vasseur",
-        "email": "camille.vasseur@galerie.artworksdigital.fr",
-        "discipline": "Peinture abstraite · Huile",
-        "location": "Marseille",
-        "cover": "collection-abstraction.jpg",
-        "statement": (
-            "Je peins ce qui brûle juste avant de disparaître. La couleur n’est pas un décor : "
-            "c’est une température, une matière qui se souvient du feu et de la terre. Chaque toile "
-            "commence par un effacement — j’applique, je gratte, je recommence, jusqu’à ce que la "
-            "surface respire d’elle-même."
-        ),
-        "works": (
-            ("Embrasement", "2024", "Huile sur toile de lin", "120 × 90 × 4 cm",
-             "Le rouge n’éclaire pas : il chauffe.", "art-01.jpg", "Abstraction"),
-            ("Aube rouge", "2023", "Huile sur toile de lin", "70 × 95 cm",
-             "Ce qui reste du feu au matin.", "oeuvre-main.jpg", "Abstraction"),
-        ),
-    },
-    {
-        "display_name": "Théo Lambert",
-        "slug": "theo-lambert",
-        "email": "theo.lambert@galerie.artworksdigital.fr",
-        "discipline": "Color field · Acrylique",
-        "location": "Nantes",
-        "cover": "cover-color-field.jpg",
-        "statement": (
-            "Je cherche l’horizon : cette ligne où deux couleurs se rencontrent sans jamais se "
-            "toucher. De grands aplats où la lumière semble retenue, et la lenteur d’une transition "
-            "qui ne veut pas finir."
-        ),
-        "works": (
-            ("Marée basse", "2023", "Acrylique sur toile", "100 × 140 cm",
-             "Deux bleus qui se cèdent le passage.", "art-02.jpg", "Color field"),
-        ),
-    },
-    {
-        "display_name": "Inès Caron",
-        "slug": "ines-caron",
-        "email": "ines.caron@galerie.artworksdigital.fr",
-        "discipline": "Photographie argentique",
-        "location": "Paris",
-        "cover": "collection-photographie.jpg",
-        "statement": (
-            "Le silence a une texture. Je la cherche dans le grain de l’argentique. Je photographie "
-            "le vide et la matière en noir et blanc ; chaque tirage est fait à la main, à l’atelier."
-        ),
-        "works": (
-            ("Silence n°7", "2024", "Tirage argentique sur papier baryté", "60 × 80 cm",
-             "Le grain tient lieu de sujet.", "art-03.jpg", "Argentique"),
-            ("Horizon", "2024", "Tirage argentique sur papier baryté", "50 × 70 cm",
-             "Une ligne, et beaucoup de patience.", "art-10.jpg", "Argentique"),
-        ),
-    },
-    {
-        "display_name": "Marius Hadi",
-        "slug": "marius-hadi",
-        "email": "marius.hadi@galerie.artworksdigital.fr",
-        "discipline": "Abstraction géométrique",
-        "location": "Lyon",
-        "cover": "cover-geometrie.jpg",
-        "statement": (
-            "La géométrie est une émotion qui a trouvé sa forme. Je compose des architectures de "
-            "couleurs où l’équilibre tient à un fil, avec un vocabulaire puisé dans le Bauhaus et "
-            "dans la musique."
-        ),
-        "works": (
-            ("Géométrie douce", "2023", "Acrylique sur bois", "80 × 80 cm",
-             "L’angle s’excuse presque.", "art-04.jpg", "Géométrie"),
-            ("Contrepoint", "2023", "Acrylique sur toile", "75 × 100 cm",
-             "Deux voix, une seule mesure.", "art-11.jpg", "Géométrie"),
-            ("Carnaval", "2024", "Acrylique sur toile", "80 × 80 cm",
-             "La règle prend un jour de congé.", "art-08.jpg", "Abstraction"),
-        ),
-    },
-    {
-        "display_name": "Salomé Drift",
-        "slug": "salome-drift",
-        "email": "salome.drift@galerie.artworksdigital.fr",
-        "discipline": "Peinture abstraite · Huile",
-        "location": "Arles",
-        "cover": "banner.jpg",
-        "statement": (
-            "Je laboure la toile comme on retourne une terre : pour ce qu’elle garde en mémoire. "
-            "Matière épaisse, pigments, sillons — des paysages abstraits qui viennent de la "
-            "campagne provençale."
-        ),
-        "works": (
-            ("Terres labourées", "2022", "Huile et pigments sur toile", "90 × 130 cm",
-             "Le sillon avant la récolte.", "art-05.jpg", "Terres"),
-            ("Sillage", "2024", "Huile sur toile", "60 × 40 cm",
-             "Le petit format, là où la main se voit.", "art-12.jpg", "Terres"),
-        ),
-    },
-    {
-        "display_name": "Élena Roux",
-        "slug": "elena-roux",
-        "email": "elena.roux@galerie.artworksdigital.fr",
-        "discipline": "Figuration",
-        "location": "Bordeaux",
-        "cover": "collection-emergents.jpg",
-        "statement": (
-            "Je peins des présences à la lisière de la lumière. Des intérieurs, des portraits, et "
-            "le clair-obscur pour seule intimité."
-        ),
-        "works": (
-            ("Femme à la fenêtre", "2024", "Huile sur toile", "65 × 80 cm",
-             "Elle regarde dehors ; nous, dedans.", "art-06.jpg", "Figuration"),
-        ),
-    },
-    {
-        "display_name": "Atelier Nova",
-        "slug": "atelier-nova",
-        "email": "nova@galerie.artworksdigital.fr",
-        "discipline": "Sculpture · Bronze",
-        "location": "Genève",
-        "cover": "collection-sculpture.jpg",
-        "statement": (
-            "Le bronze est une attente qui prend forme. Deux sculpteurs, des formes organiques "
-            "patinées, quelque part entre la figure et l’abstraction."
-        ),
-        "works": (
-            ("Veille", "2023", "Bronze patiné, pièce unique", "H. 48 cm",
-             "Debout, sans rien attendre de précis.", "art-07.jpg", "Bronzes"),
-        ),
-    },
+from artworks.images import remove_image
+from artworks.models import (
+    Artist,
+    KaelAuditLog,
+    KaelToken,
+    MailMessage,
+    PageView,
+    SocialPost,
+    SubscriptionEvent,
+    Work,
 )
 
 
-def _photo(filename: str, max_side: int = 2000) -> tuple[str, int, int] | None:
-    """Range un visuel de démonstration dans le magasin d’images du site.
-
-    Les fichiers vivent dans ``static/demo``. Le seed les fait passer par le
-    même chemin que les téléversements d’artistes : ils sont donc servis par
-    ``/media`` comme le reste, et survivent au disque éphémère de Scalingo.
-    Un fichier manquant ne fait pas tomber le seed — l’œuvre est simplement
-    passée."""
-    source = DEMO_DIR / filename
-    if not source.is_file() or source.stat().st_size == 0:
-        return None
-    try:
-        image = Image.open(source)
-        if image.mode not in ("RGB", "L"):
-            image = image.convert("RGB")
-        image.thumbnail((max_side, max_side))
-        buffer = BytesIO()
-        image.save(buffer, format="JPEG", quality=86, optimize=True)
-    except OSError:
-        return None
-    return save_bytes(buffer.getvalue()), image.width, image.height
+# Les galeries d’exemple portaient toutes cette adresse : elle sert de garde-fou
+# au ménage, pour qu’aucune salle d’artiste réel ne soit emportée par erreur.
+EXAMPLE_DOMAIN = "@galerie.artworksdigital.fr"
 
 
 def _og_default() -> bytes:
@@ -190,8 +42,6 @@ def _og_default() -> bytes:
 
 
 def write_og_image() -> None:
-    from pathlib import Path
-
     dest = Path(__file__).resolve().parent / "static" / "og-default.jpg"
     if dest.exists() and dest.stat().st_size > 1000:
         return
@@ -217,183 +67,66 @@ def promote_admins() -> None:
         db.session.commit()
 
 
-def seed_examples() -> None:
-    write_og_image()
-    created = False
+def purge_examples() -> int:
+    """Retire les galeries de démonstration et tout ce qui s’y rattache.
+
+    Le site n’affiche plus de vitrine fabriquée : seules les salles d’artistes
+    réels s’ouvrent. Le ménage tourne à chaque démarrage — il ne coûte rien
+    quand il n’y a rien à retirer, et il nettoie les bases déjà semées, sur
+    Scalingo comme en local.
+
+    Le journal de K.A.E.L. est conservé : ses lignes perdent leur jeton, pas
+    leur trace. Rend le nombre de salles retirées."""
+    artists = Artist.query.filter(
+        Artist.is_example.is_(True),
+        Artist.email.like(f"%{EXAMPLE_DOMAIN}"),
+    ).all()
+    if not artists:
+        return 0
+
+    artist_ids = [artist.id for artist in artists]
+    works = Work.query.filter(Work.artist_id.in_(artist_ids)).all()
+    work_ids = [work.id for work in works]
+    visuals = {artist.cover_path for artist in artists}
+    visuals.update(work.image_path for work in works)
+    visuals.discard(None)
+    visuals.discard("")
+
+    def _touching(model):
+        """Les lignes qui pointent vers ces salles, directement ou par une œuvre."""
+        clauses = [model.artist_id.in_(artist_ids)]
+        if work_ids and hasattr(model, "work_id"):
+            clauses.append(model.work_id.in_(work_ids))
+        return or_(*clauses)
+
     try:
-        for spec in EXAMPLES:
-            if Artist.query.filter((Artist.slug == spec["slug"]) | (Artist.email == spec["email"])).first():
-                continue
-            artist = Artist(
-                email=spec["email"],
-                display_name=spec["display_name"],
-                slug=spec["slug"],
-                statement=spec["statement"],
-                location=spec["location"],
-                discipline=spec["discipline"],
-                contact_email=spec["email"],
-                published=True,
-                is_example=True,
-                is_admin=False,
-                plan_key="studio",
+        PageView.query.filter(_touching(PageView)).delete(synchronize_session=False)
+        SocialPost.query.filter(_touching(SocialPost)).delete(synchronize_session=False)
+        MailMessage.query.filter(_touching(MailMessage)).delete(synchronize_session=False)
+        SubscriptionEvent.query.filter(_touching(SubscriptionEvent)).delete(synchronize_session=False)
+
+        token_ids = [
+            row.id for row in KaelToken.query.filter(KaelToken.artist_id.in_(artist_ids)).all()
+        ]
+        if token_ids:
+            KaelAuditLog.query.filter(KaelAuditLog.token_id.in_(token_ids)).update(
+                {KaelAuditLog.token_id: None}, synchronize_session=False
             )
-            artist.set_password(token_urlsafe(24))
-            db.session.add(artist)
-            db.session.flush()
-            cover = _photo(spec["cover"])
-            if cover:
-                artist.cover_path = cover[0]
-            position = 0
-            for title, year, medium, dimensions, note, photo, collection in spec["works"]:
-                visual = _photo(photo)
-                if visual is None:
-                    continue
-                image_path, width, height = visual
-                db.session.add(
-                    Work(
-                        artist_id=artist.id,
-                        title=title,
-                        year=year,
-                        medium=medium,
-                        dimensions=dimensions,
-                        note=note,
-                        image_path=image_path,
-                        image_w=width,
-                        image_h=height,
-                        collection_name=collection,
-                        visible=True,
-                        position=position,
-                    )
-                )
-                position += 1
-            created = True
-        if created:
-            db.session.commit()
-        for artist in Artist.query.filter_by(is_example=True).all():
-            if artist.plan_key != "studio":
-                artist.plan_key = "studio"
-                artist.plan_status = "active"
-                created = True
-        if created:
-            db.session.commit()
+            KaelToken.query.filter(KaelToken.id.in_(token_ids)).delete(synchronize_session=False)
+
+        Work.query.filter(Work.artist_id.in_(artist_ids)).delete(synchronize_session=False)
+        Artist.query.filter(Artist.id.in_(artist_ids)).delete(synchronize_session=False)
+        db.session.commit()
     except Exception:
         db.session.rollback()
-    seed_demo_traffic()
+        return 0
 
-
-def seed_demo_traffic() -> None:
-    from flask import current_app
-
-    if not current_app.debug and os.environ.get("SEED_DEMO_TRAFFIC") != "1":
-        return
-    if PageView.query.count() > 0:
-        paint_demo_geo()
-        return
-    artists = Artist.query.filter_by(is_example=True, published=True).all()
-    if not artists:
-        return
-    rng = Random("traffic")
-    now = utcnow()
-    rows = []
-    for _ in range(72):
-        artist = rng.choice(artists)
-        works = artist.hung_works
-        work = rng.choice(works) if works and rng.random() > 0.45 else None
-        path = f"/galerie/{artist.slug}"
-        title = artist.display_name
-        work_id = None
-        if work:
-            path = f"/galerie/{artist.slug}/oeuvre/{work.id}"
-            title = f"{work.title} — {artist.display_name}"
-            work_id = work.id
-        referrer = rng.choice(("", "https://www.google.fr/", "https://instagram.com/", "https://www.bing.com/"))
-        city, country, code = rng.choice((
-            ("Paris", "France", "FR"),
-            ("Lyon", "France", "FR"),
-            ("Marseille", "France", "FR"),
-            ("Bordeaux", "France", "FR"),
-            ("Bruxelles", "Belgique", "BE"),
-            ("Genève", "Suisse", "CH"),
-        ))
-        host = ""
-        if "google" in referrer:
-            host = "google.fr"
-        elif "instagram" in referrer:
-            host = "instagram.com"
-        elif "bing" in referrer:
-            host = "bing.com"
-        rows.append(
-            PageView(
-                path=path,
-                title=title,
-                referrer=referrer,
-                referrer_host=host,
-                source=rng.choice(("direct", "organic", "social", "referral")),
-                device=rng.choice(("desktop", "mobile", "tablet")),
-                city=city,
-                country=country,
-                country_code=code,
-                session_id=token_urlsafe(8),
-                artist_id=artist.id,
-                work_id=work_id,
-                is_bot=False,
-                created_at=now - timedelta(days=rng.randint(0, 20), hours=rng.randint(0, 23)),
-            )
-        )
-    db.session.add_all(rows)
+    # Les visuels ne partent qu’une fois les lignes tombées : si le ménage
+    # échoue, les salles restent entières plutôt qu’amputées de leurs images.
+    for name in visuals:
+        try:
+            remove_image(name)
+        except Exception:
+            db.session.rollback()
     db.session.commit()
-    paint_demo_geo()
-
-
-def paint_demo_geo() -> None:
-    """En local, les anciennes vues n’ont pas de ville : on leur en donne une."""
-    from flask import current_app
-
-    if not current_app.debug:
-        return
-    vacant = PageView.query.filter((PageView.city == "") | (PageView.city.is_(None))).all()
-    if not vacant and PageView.query.filter(PageView.created_at >= utcnow() - timedelta(minutes=5)).count():
-        return
-    rng = Random("geo")
-    places = (
-        ("Paris", "France", "FR"),
-        ("Lyon", "France", "FR"),
-        ("Lille", "France", "FR"),
-        ("Nantes", "France", "FR"),
-        ("Bruxelles", "Belgique", "BE"),
-    )
-    for row in vacant:
-        city, country, code = rng.choice(places)
-        row.city = city
-        row.country = country
-        row.country_code = code
-        if row.referrer and not row.referrer_host:
-            if "google" in row.referrer:
-                row.referrer_host = "google.fr"
-            elif "instagram" in row.referrer:
-                row.referrer_host = "instagram.com"
-            elif "bing" in row.referrer:
-                row.referrer_host = "bing.com"
-    if not PageView.query.filter(PageView.created_at >= utcnow() - timedelta(minutes=5)).count():
-        artists = Artist.query.filter_by(is_example=True, published=True).all()
-        if artists:
-            artist = rng.choice(artists)
-            city, country, code = rng.choice(places)
-            db.session.add(
-                PageView(
-                    path=f"/galerie/{artist.slug}",
-                    title=artist.display_name,
-                    source="organic",
-                    referrer="https://www.google.fr/",
-                    referrer_host="google.fr",
-                    device="mobile",
-                    city=city,
-                    country=country,
-                    country_code=code,
-                    session_id=token_urlsafe(8),
-                    artist_id=artist.id,
-                    is_bot=False,
-                    created_at=utcnow() - timedelta(seconds=rng.randint(20, 180)),
-                )
-            )
-    db.session.commit()
+    return len(artist_ids)
