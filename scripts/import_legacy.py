@@ -118,6 +118,27 @@ def load(source: str) -> tuple[list[dict], list[dict], str]:
     return read_sqlite(source)
 
 
+# Les offres d’avant n’ont pas les mêmes noms ni les mêmes plafonds. Par
+# défaut on reprend ce que l’artiste avait : une reprise qui masquerait la
+# moitié d’une salle serait une perte, pas une restitution. Le plafond de
+# l’offre choisie s’applique ensuite aux envois suivants.
+DEFAULT_PLANS = {"portfolio": "pro", "pro_monthly": "pro", "pro": "pro"}
+
+
+def parse_plans(text: str) -> dict:
+    """Lit « source=cible,source=cible » et rend la table de correspondance."""
+    table = dict(DEFAULT_PLANS)
+    for pair in (text or "").split(","):
+        pair = pair.strip()
+        if not pair:
+            continue
+        source, _, target = pair.partition("=")
+        if not target:
+            raise SystemExit(f"Correspondance d’offre mal formée : « {pair} » (attendu source=cible).")
+        table[source.strip()] = target.strip()
+    return table
+
+
 def pick(row: dict, *names: str, default=""):
     for name in names:
         value = row.get(name)
@@ -169,7 +190,7 @@ def fetch_image(url: str, timeout: int = 25) -> bytes | None:
         return None
 
 
-def as_jpeg(payload: bytes, max_side: int = 2400) -> bytes | None:
+def as_jpeg(payload: bytes, max_side: int = 1800, quality: int = 85) -> bytes | None:
     """Ramène un visuel au format que le site sert.
 
     Les bases d’avant stockent du WebP, parfois servi sous une étiquette qui
@@ -182,14 +203,23 @@ def as_jpeg(payload: bytes, max_side: int = 2400) -> bytes | None:
             image = image.convert("RGB")
         image.thumbnail((max_side, max_side))
         buffer = BytesIO()
-        image.save(buffer, format="JPEG", quality=88, optimize=True)
+        image.save(buffer, format="JPEG", quality=quality, optimize=True)
     except Exception:
         return None
     return buffer.getvalue()
 
 
 def import_all(
-    source: str, *, with_images: bool, limit: int, dry_run: bool, plan: str, media_base: str = ""
+    source: str,
+    *,
+    with_images: bool,
+    limit: int,
+    dry_run: bool,
+    plan: str,
+    media_base: str = "",
+    max_side: int = 1800,
+    quality: int = 85,
+    plans: dict | None = None,
 ) -> dict:
     artists_raw, works_raw, shape = load(source)
     print(f"Source lue — schéma « {shape} » : {len(artists_raw)} artistes, {len(works_raw)} œuvres.")
@@ -221,7 +251,7 @@ def import_all(
             location=str(pick(row, "location"))[:120],
             discipline=str(pick(row, "art_style", "artistic_style", "headline"))[:120],
             contact_email=email,
-            plan_key=plan,
+            plan_key=(plans or {}).get(str(pick(row, "subscription_plan")), plan),
             published=str(pick(row, "status", default="active")).lower() == "active",
         )
         # L’empreinte Werkzeug traverse : le mot de passe de l’artiste reste valable.
@@ -234,7 +264,7 @@ def import_all(
         cover = rewrite_media(str(pick(row, "profile_photo_url", "profile_photo", "cover_path")), media_base)
         if with_images and cover:
             payload = fetch_image(cover)
-            payload = as_jpeg(payload) if payload else None
+            payload = as_jpeg(payload, max_side, quality) if payload else None
             if payload:
                 # À blanc, on vérifie que le visuel répond sans rien écrire.
                 if not dry_run:
@@ -258,7 +288,7 @@ def import_all(
             # L’essai à blanc rapatrie aussi les visuels : c’est le seul moyen
             # de savoir, avant d’écrire, si les URLs de la base répondent encore.
             payload = fetch_image(image_url)
-            payload = as_jpeg(payload) if payload else None
+            payload = as_jpeg(payload, max_side, quality) if payload else None
             if payload is None:
                 report["images_lost"] += 1
                 print(f"      · {title} — visuel introuvable, œuvre ignorée")
@@ -297,7 +327,25 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=0, help="n’importer que les N premiers artistes")
     parser.add_argument("--dry-run", action="store_true", help="afficher sans rien écrire")
     parser.add_argument("--no-images", action="store_true", help="ne pas retélécharger les visuels")
-    parser.add_argument("--plan", default="decouverte", help="offre attribuée aux comptes importés")
+    parser.add_argument(
+        "--plan", default="decouverte", help="offre des comptes dont l’offre d’origine est inconnue"
+    )
+    parser.add_argument(
+        "--plans",
+        default="",
+        help="correspondance des offres, « source=cible » séparées par des virgules. "
+        f"Par défaut : {', '.join(f'{k}={v}' for k, v in DEFAULT_PLANS.items())}. "
+        "Le plafond de l’offre décide du nombre d’œuvres visibles : en abaisser "
+        "une masque le reste de la salle.",
+    )
+    parser.add_argument(
+        "--max-side",
+        type=int,
+        default=1800,
+        help="côté le plus long des visuels, en pixels (défaut 1800). Les "
+        "visuels vivent dans la base : c’est ce réglage qui décide de son poids.",
+    )
+    parser.add_argument("--quality", type=int, default=85, help="qualité JPEG (défaut 85)")
     parser.add_argument(
         "--media-base",
         default="",
@@ -316,6 +364,9 @@ def main() -> None:
             dry_run=args.dry_run,
             plan=args.plan,
             media_base=args.media_base,
+            max_side=args.max_side,
+            quality=args.quality,
+            plans=parse_plans(args.plans),
         )
     print(
         "\nRésultat — "
