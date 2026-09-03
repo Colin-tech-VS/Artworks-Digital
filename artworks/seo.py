@@ -2,6 +2,46 @@ from pathlib import Path
 
 from flask import current_app, redirect, request, url_for
 
+# Nom tel qu’on le cherche, et tel que la barre l’écrit. L’extrait Google
+# a soixante signes : autant que la marque tienne entière, avec les mots
+# qui disent la galerie.
+SITE_NAME = "Artworks Digital"
+SITE_SLOGAN = "chaque artiste ouvre sa galerie"
+TITLE_LIMIT = 58
+DESC_LIMIT = 158
+ALT_LIMIT = 125
+
+
+def meta_trim(text: str, limit: int = DESC_LIMIT) -> str:
+    """Coupe une description au dernier mot entier : les moteurs n’affichent
+    qu’environ 160 signes, autant choisir où la phrase s’arrête."""
+    text = " ".join((text or "").split())
+    if len(text) <= limit:
+        return text
+    cut = text[: limit - 1]
+    space = cut.rfind(" ")
+    if space > limit * 0.6:
+        cut = cut[:space]
+    return cut.rstrip(" ,;:–—-") + "…"
+
+
+def page_title(primary: str, suffix: str | None = SITE_NAME, limit: int = TITLE_LIMIT) -> str:
+    """Titre d’onglet : l’essentiel d’abord, la marque ensuite, jamais trop long."""
+    primary = " ".join((primary or "").split())
+    suffix = " ".join((suffix or "").split())
+    if not primary:
+        return meta_trim(suffix or SITE_NAME, limit)
+    if not suffix:
+        return meta_trim(primary, limit)
+    combined = f"{primary} — {suffix}"
+    if len(combined) <= limit:
+        return combined
+    extra = f" — {suffix}"
+    budget = limit - len(extra)
+    if budget >= 12:
+        return meta_trim(primary, budget) + extra
+    return meta_trim(primary, limit)
+
 
 def canonical_url(path: str | None = None) -> str:
     host = current_app.config.get("CANONICAL_HOST") or request.host

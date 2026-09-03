@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}{{ work.title }} — {{ artist.display_name }}{% endblock %}
+{% block title %}{{ work.seo_title }}{% endblock %}
 {% block description %}{{ work.seo_description }}{% endblock %}
 {% block og_image %}{{ absolute_media(work.image_path) }}{% endblock %}
 {% block author %}{{ artist.display_name }}{% endblock %}
 {% block body_class %}work-view{% endblock %}
 {% block og_type %}article{% endblock %}
-{% block og_image_alt %}{{ work.title }}, œuvre de {{ artist.display_name }}{% endblock %}
+{% block og_image_alt %}{{ work.image_alt }}{% endblock %}
 {% block og_image_width %}{% if (work.image_w or 0) > 0 %}{{ work.image_w }}{% endif %}{% endblock %}
 {% block og_image_height %}{% if (work.image_h or 0) > 0 %}{{ work.image_h }}{% endif %}{% endblock %}
 {% block jsonld %}
@@ -25,7 +25,7 @@
         "contentUrl": {{ absolute_media(work.image_path) | tojson }}{% if (work.image_w or 0) > 0 %},
         "width": {{ work.image_w }},
         "height": {{ work.image_h }}{% endif %},
-        "caption": {{ (work.title ~ ' — ' ~ artist.display_name) | tojson }}
+        "caption": {{ work.image_alt | tojson }}
       },
       "creator": {
         "@type": "Person",
@@ -64,7 +64,7 @@
 
 <article class="solo">
   <figure class="solo-frame">
-    <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}{% if work.year %}, {{ work.year }}{% endif %}" fetchpriority="high" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
+    <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.image_alt }}" fetchpriority="high" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
   </figure>
   <aside class="cartel">
     <p class="eyebrow">{{ artist.display_name }}</p>

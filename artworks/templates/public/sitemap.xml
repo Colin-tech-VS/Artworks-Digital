@@ -15,6 +15,9 @@
       {%- if image.title %}
       <image:title>{{ image.title }}</image:title>
       {%- endif %}
+      {%- if image.caption %}
+      <image:caption>{{ image.caption }}</image:caption>
+      {%- endif %}
     </image:image>
     {%- endfor %}
   </url>

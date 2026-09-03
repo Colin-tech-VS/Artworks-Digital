@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Galeries d’artistes — Artworksdigital{% endblock %}
-{% block description %}Salles ouvertes sur Artworksdigital. Chaque artiste a sa galerie : un accrochage, une adresse, une note d’intention.{% endblock %}
+{% block title %}Galeries d’artistes en ligne — {{ site_name }}{% endblock %}
+{% block description %}Parcourez les galeries d’artistes ouvertes sur {{ site_name }}. Chaque salle a son accrochage, son adresse, sa note d’intention.{% endblock %}
 {% block og_image_width %}1200{% endblock %}
 {% block og_image_height %}630{% endblock %}
 {% block body_class %}rooms-page{% endblock %}
@@ -12,7 +12,7 @@
     {
       "@type": "CollectionPage",
       "@id": {{ canonical_url() | tojson }},
-      "name": "Galeries Artworksdigital",
+      "name": {{ ("Galeries d’artistes en ligne — " ~ site_name) | tojson }},
       "url": {{ canonical_url() | tojson }},
       "inLanguage": "fr-FR",
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
@@ -55,7 +55,7 @@
       <li>
         <a href="{{ url_for('public.gallery', slug=artist.slug) }}">
           {% if artist.cover_path %}
-            <img src="{{ url_for('media', filename=artist.cover_path) }}" alt="" loading="lazy">
+            <img src="{{ url_for('media', filename=artist.cover_path) }}" alt="{{ artist.cover_alt }}" loading="lazy">
           {% endif %}
           <div>
             <span class="room-name">{{ artist.display_name }}{% if artist.has_feature('featured') %} <em class="tag">mise en avant</em>{% endif %}{% if artist.has_feature('priority') %} <em class="tag">prioritaire</em>{% endif %}</span>

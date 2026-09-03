@@ -3,25 +3,71 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Artworksdigital revient</title>
-  <meta name="description" content="Artworksdigital revient. Une nouvelle version est en préparation, avec une nouvelle vision et une nouvelle expérience pour les artistes.">
-  <meta name="robots" content="index, follow">
+  <title>{{ site_name }} revient — galerie d’artistes</title>
+  <meta name="description" content="{{ site_name }} revient : chaque artiste ouvre sa galerie en ligne. Nouvelle version en préparation — une adresse, un accrochage.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
   <meta name="google-site-verification" content="Usy-kI0kuCwbbEphmFS_o3AZxK5DXDNBS-vwwdpPSVk">
   <link rel="canonical" href="{{ canonical_url('/') }}">
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Artworksdigital">
+  <meta property="og:site_name" content="{{ site_name }}">
   <meta property="og:locale" content="fr_FR">
-  <meta property="og:title" content="Artworksdigital revient">
-  <meta property="og:description" content="Nous travaillons actuellement sur la nouvelle version. On revient bientôt.">
+  <meta property="og:title" content="{{ site_name }} revient — galerie d’artistes">
+  <meta property="og:description" content="{{ site_name }} revient : chaque artiste ouvre sa galerie en ligne. Nouvelle version en préparation — une adresse, un accrochage.">
   <meta property="og:url" content="{{ canonical_url('/') }}">
   <meta property="og:image" content="{{ default_og_image }}">
+  <meta property="og:image:secure_url" content="{{ default_og_image }}">
+  <meta property="og:image:alt" content="{{ site_name }} — {{ site_slogan }}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ site_name }} revient — galerie d’artistes">
+  <meta name="twitter:description" content="{{ site_name }} revient : chaque artiste ouvre sa galerie en ligne. Nouvelle version en préparation — une adresse, un accrochage.">
+  <meta name="twitter:image" content="{{ default_og_image }}">
+  <meta name="twitter:image:alt" content="{{ site_name }} — {{ site_slogan }}">
   <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Outfit:wght@300;400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": {{ (canonical_url('/') ~ '#organisation') | tojson }},
+        "name": {{ site_name | tojson }},
+        "alternateName": "Artworksdigital",
+        "url": {{ canonical_url('/') | tojson }},
+        "logo": {{ default_og_image | tojson }},
+        "email": {{ site_contact_email | tojson }},
+        "slogan": "Chaque artiste ouvre sa galerie",
+        "description": {{ (site_name ~ " ouvre à chaque artiste une galerie qui lui appartient : une adresse, un accrochage, une note d’intention.") | tojson }},
+        "areaServed": "FR"
+      },
+      {
+        "@type": "WebSite",
+        "@id": {{ (canonical_url('/') ~ '#site') | tojson }},
+        "name": {{ site_name | tojson }},
+        "alternateName": "Artworksdigital",
+        "url": {{ canonical_url('/') | tojson }},
+        "inLanguage": "fr-FR",
+        "publisher": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}}
+      },
+      {
+        "@type": "WebPage",
+        "@id": {{ (canonical_url('/') ~ '#accueil') | tojson }},
+        "name": {{ (site_name ~ " revient — galerie d’artistes") | tojson }},
+        "url": {{ canonical_url('/') | tojson }},
+        "inLanguage": "fr-FR",
+        "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
+        "about": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}},
+        "description": {{ (site_name ~ " revient : chaque artiste ouvre sa galerie en ligne. Nouvelle version en préparation — une adresse, un accrochage.") | tojson }}
+      }
+    ]
+  }
+  </script>
 </head>
 <body class="letter-page">
   <main class="letter">

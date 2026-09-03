@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}{{ artist.display_name }} — Galerie Artworksdigital{% endblock %}
+{% block title %}{{ artist.seo_title }}{% endblock %}
 {% block description %}{{ artist.seo_description }}{% endblock %}
 {% block og_type %}profile{% endblock %}
 {% block og_image %}{% if artist.cover_path %}{{ absolute_media(artist.cover_path) }}{% elif works %}{{ absolute_media(works[0].image_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
 {% block author %}{{ artist.display_name }}{% endblock %}
 {% block body_class %}room{% endblock %}
-{% block og_image_alt %}Galerie de {{ artist.display_name }}{% endblock %}
+{% block og_image_alt %}{{ artist.cover_alt }}{% endblock %}
 {% block jsonld %}
 <script type="application/ld+json">
 {
@@ -15,7 +15,7 @@
       "@type": "ProfilePage",
       "@id": {{ canonical_url() | tojson }},
       "url": {{ canonical_url() | tojson }},
-      "name": {{ (artist.display_name ~ ' — Galerie Artworksdigital') | tojson }},
+      "name": {{ artist.seo_title | tojson }},
       "description": {{ artist.seo_description | tojson }},
       "inLanguage": "fr-FR",
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
@@ -77,7 +77,7 @@
 {% block content %}
 <article class="room-head {% if artist.cover_path %}has-cover{% endif %}">
   {% if artist.cover_path %}
-    <img class="room-cover" src="{{ url_for('media', filename=artist.cover_path) }}" alt="Salle de {{ artist.display_name }}" fetchpriority="high">
+    <img class="room-cover" src="{{ url_for('media', filename=artist.cover_path) }}" alt="{{ artist.cover_alt }}" fetchpriority="high">
   {% endif %}
   <div class="room-intro">
     <p class="eyebrow">{{ artist.discipline or "Galerie" }}</p>
@@ -98,7 +98,7 @@
           <li>
             <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=work.id) }}">
               <figure>
-                <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}{% if work.year %}, {{ work.year }}{% endif %}" loading="lazy" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
+                <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.image_alt }}" loading="lazy" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
                 <figcaption>
                   <strong>{{ work.title }}</strong>
                   {% if work.cartel %}<span>{{ work.cartel }}</span>{% endif %}
@@ -116,7 +116,7 @@
       <li>
         <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=work.id) }}">
           <figure>
-            <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}{% if work.year %}, {{ work.year }}{% endif %}" loading="lazy" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
+            <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.image_alt }}" loading="lazy" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
             <figcaption>
               <strong>{{ work.title }}</strong>
               {% if work.cartel %}<span>{{ work.cartel }}</span>{% endif %}

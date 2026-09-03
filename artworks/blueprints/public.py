@@ -172,9 +172,18 @@ def sitemap():
         works = artist.public_works()
         room_images = []
         if artist.cover_path:
-            room_images.append({"loc": absolute_media(artist.cover_path), "title": f"Salle de {artist.display_name}"})
+            room_images.append({
+                "loc": absolute_media(artist.cover_path),
+                "title": artist.cover_alt,
+                "caption": artist.cover_alt,
+            })
         room_images.extend(
-            {"loc": absolute_media(work.image_path), "title": work.title} for work in works[:20]
+            {
+                "loc": absolute_media(work.image_path),
+                "title": work.title,
+                "caption": work.image_alt,
+            }
+            for work in works[:20]
         )
         pages.append({
             "loc": canonical_url(url_for("public.gallery", slug=artist.slug)),
@@ -189,7 +198,11 @@ def sitemap():
                 "changefreq": "monthly",
                 "priority": "0.7",
                 "lastmod": work.updated_at or work.created_at,
-                "images": [{"loc": absolute_media(work.image_path), "title": work.title}],
+                "images": [{
+                    "loc": absolute_media(work.image_path),
+                    "title": work.title,
+                    "caption": work.image_alt,
+                }],
             })
     body = render_template("public/sitemap.xml", pages=pages)
     return body, 200, {"Content-Type": "application/xml; charset=utf-8"}

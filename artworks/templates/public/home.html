@@ -1,9 +1,24 @@
 {% extends "base.html" %}
-{% block title %}Artworksdigital — Votre salle. Vos œuvres.{% endblock %}
-{% block description %}Artworksdigital n’est pas une vitrine collective. C’est un atelier pour composer votre galerie : une adresse, un accrochage, une note d’intention.{% endblock %}
+{% block title %}{{ site_name }} — {{ site_slogan }}{% endblock %}
+{% block description %}Ouvrez votre galerie d’artiste en ligne. {{ site_name }} : une adresse, un accrochage, une note d’intention — pas une vitrine collective.{% endblock %}
 {% block og_image_width %}1200{% endblock %}
 {% block og_image_height %}630{% endblock %}
 {% block body_class %}home{% endblock %}
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": {{ (canonical_url('/') ~ '#accueil') | tojson }},
+  "name": {{ (site_name ~ ' — ' ~ site_slogan) | tojson }},
+  "url": {{ canonical_url('/') | tojson }},
+  "inLanguage": "fr-FR",
+  "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
+  "about": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}},
+  "description": {{ ("Ouvrez votre galerie d’artiste en ligne. " ~ site_name ~ " : une adresse, un accrochage, une note d’intention — pas une vitrine collective.") | tojson }}
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <section class="hero">
