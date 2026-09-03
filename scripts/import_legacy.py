@@ -313,11 +313,24 @@ def import_all(
                 )
             )
 
+        # Une salle à la fois. Reprendre une base entière est long : garder
+        # tout ouvert jusqu’au bout ferait d’une coupure au trente-neuvième
+        # minute une perte de trente-neuf minutes, et tiendrait une
+        # transaction ouverte sur la base tout ce temps. Ici, chaque salle
+        # posée est acquise — et comme un e-mail déjà présent est ignoré,
+        # relancer l’import reprend là où il s’était arrêté.
+        if not dry_run:
+            try:
+                db.session.commit()
+            except Exception as erreur:
+                db.session.rollback()
+                report["skipped"] += 1
+                report["artists"] -= 1
+                print(f"  ! {email} — non repris ({type(erreur).__name__}), on continue")
+
     if dry_run:
         db.session.rollback()
         print("\n— essai à blanc : rien n’a été écrit —")
-    else:
-        db.session.commit()
     return report
 
 
