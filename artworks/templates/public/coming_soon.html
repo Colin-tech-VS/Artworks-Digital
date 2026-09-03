@@ -1,74 +1,57 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Artworksdigital revient</title>
-  <meta name="description" content="Artworksdigital revient. Une nouvelle version est en préparation, avec une nouvelle vision et une nouvelle expérience pour les artistes.">
-  <meta name="robots" content="index, follow">
-  <meta name="google-site-verification" content="Usy-kI0kuCwbbEphmFS_o3AZxK5DXDNBS-vwwdpPSVk">
-  <link rel="canonical" href="{{ canonical_url('/') }}">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Artworksdigital">
-  <meta property="og:locale" content="fr_FR">
-  <meta property="og:title" content="Artworksdigital revient">
-  <meta property="og:description" content="Nous travaillons actuellement sur la nouvelle version. On revient bientôt.">
-  <meta property="og:url" content="{{ canonical_url('/') }}">
-  <meta property="og:image" content="{{ default_og_image }}">
-  <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Outfit:wght@300;400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
-  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
-</head>
-<body class="letter-page">
-  <main class="letter">
-    <header class="letter-head">
-      <p class="eyebrow">Artworksdigital</p>
-      <h1>Artworksdigital <em>revient</em></h1>
-    </header>
+{% extends "base.html" %}
+{% block title %}Artworksdigital revient{% endblock %}
+{% block description %}Artworksdigital revient. Une nouvelle version est en préparation, avec une nouvelle vision et une nouvelle expérience pour les artistes.{% endblock %}
+{% block robots %}index, follow{% endblock %}
+{% block og_title %}Artworksdigital revient{% endblock %}
+{% block og_description %}Nous travaillons actuellement sur la nouvelle version. On revient bientôt.{% endblock %}
+{% block og_image_width %}1200{% endblock %}
+{% block og_image_height %}630{% endblock %}
+{% block body_class %}letter-page{% endblock %}
 
-    <section class="letter-act" aria-label="L’explication">
-      <p class="letter-act-mark" aria-hidden="true">I</p>
-      <p class="letter-open">Nous vous devons une petite explication.</p>
-      <p>Il y a quelques mois, Artworksdigital a été temporairement fermé.</p>
-      <p>Nous avons pris cette décision pour prendre du recul, écouter les retours de nos artistes et surtout réfléchir à une question simple :</p>
-      <p class="emphasis emphasis-ask">Comment faire d’Artworksdigital un outil réellement utile aux artistes ?</p>
-      <p>Nous aurions pu simplement remettre l’ancienne version en ligne.</p>
-      <p>Mais nous avons préféré prendre le temps de repenser le projet.</p>
-      <p>Aujourd’hui, Artworksdigital est donc de retour en préparation, avec une nouvelle vision, une nouvelle expérience et surtout une version beaucoup plus ambitieuse.</p>
-    </section>
+{% block content %}
+<article class="letter">
+  <header class="letter-head">
+    <p class="eyebrow">Artworksdigital</p>
+    <h1>Artworksdigital <em>revient</em></h1>
+  </header>
 
-    <section class="letter-act" aria-labelledby="letter-thanks">
-      <p class="letter-act-mark" aria-hidden="true">II</p>
-      <h2 id="letter-thanks">Merci d’être restés là</h2>
-      <p>Vous étiez déjà nombreux à nous avoir fait confiance avant la fermeture.</p>
-      <p>Vos œuvres, vos retours et vos messages nous ont montré qu’Artworksdigital avait sa place.</p>
-      <p>Nous sommes désolés pour cette interruption et pour le manque de communication pendant cette période.</p>
-      <p>Merci à celles et ceux qui nous ont écrit pour demander si Artworksdigital allait revenir.</p>
-      <p>La réponse est maintenant claire :</p>
-      <p class="emphasis emphasis-return"><span class="oui">Oui.</span> Artworksdigital revient.</p>
-      <p>Nous travaillons actuellement sur la nouvelle version.</p>
-      <p>On revient bientôt.</p>
-    </section>
+  <section class="letter-act" aria-label="L’explication">
+    <p class="letter-act-mark" aria-hidden="true">I</p>
+    <p class="letter-open">Nous vous devons une petite explication.</p>
+    <p>Il y a quelques mois, Artworksdigital a été temporairement fermé.</p>
+    <p>Nous avons pris cette décision pour prendre du recul, écouter les retours de nos artistes et surtout réfléchir à une question simple :</p>
+    <p class="emphasis emphasis-ask">Comment faire d’Artworksdigital un outil réellement utile aux artistes ?</p>
+    <p>Nous aurions pu simplement remettre l’ancienne version en ligne.</p>
+    <p>Mais nous avons préféré prendre le temps de repenser le projet.</p>
+    <p>Aujourd’hui, Artworksdigital est donc de retour en préparation, avec une nouvelle vision, une nouvelle expérience et surtout une version beaucoup plus ambitieuse.</p>
+  </section>
 
-    <footer class="letter-close">
-      <p class="letter-write">
-        <a href="{{ url_for('public.contact') }}">Écrire à contact@artworksdigital.fr</a>
-      </p>
-      <p class="sign">
-        <button type="button" class="gate-dot" id="gate-dot" aria-label="Accès">—</button>
-        L’équipe Artworksdigital
-      </p>
-      <form class="gate{% if gate_error %} is-on{% endif %}" id="gate" method="post" {% if not gate_error %}hidden{% endif %}>
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="password" name="key" autocomplete="off" aria-label="Accès" {% if gate_error %}autofocus{% endif %}>
-        <button type="submit" class="gate-go">ok</button>
-      </form>
-    </footer>
-  </main>
-  <script src="https://ai-command-center.osc-fr1.scalingo.io/widget/kael.js" data-title="Artworks Digital" defer></script>
-</body>
-</html>
+  <section class="letter-act" aria-labelledby="letter-thanks">
+    <p class="letter-act-mark" aria-hidden="true">II</p>
+    <h2 id="letter-thanks">Merci d’être restés là</h2>
+    <p>Vous étiez déjà nombreux à nous avoir fait confiance avant la fermeture.</p>
+    <p>Vos œuvres, vos retours et vos messages nous ont montré qu’Artworksdigital avait sa place.</p>
+    <p>Nous sommes désolés pour cette interruption et pour le manque de communication pendant cette période.</p>
+    <p>Merci à celles et ceux qui nous ont écrit pour demander si Artworksdigital allait revenir.</p>
+    <p>La réponse est maintenant claire :</p>
+    <p class="emphasis emphasis-return"><span class="oui">Oui.</span> Artworksdigital revient.</p>
+    <p>Nous travaillons actuellement sur la nouvelle version.</p>
+    <p>On revient bientôt.</p>
+  </section>
+
+  <footer class="letter-close">
+    <p class="letter-write">
+      <a href="{{ url_for('public.contact') }}">Écrire à contact@artworksdigital.fr</a>
+    </p>
+    <p class="sign">
+      <button type="button" class="gate-dot" id="gate-dot" aria-label="Accès">—</button>
+      L’équipe Artworksdigital
+    </p>
+    <form class="gate{% if gate_error %} is-on{% endif %}" id="gate" method="post" {% if not gate_error %}hidden{% endif %}>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="password" name="key" autocomplete="off" aria-label="Accès" {% if gate_error %}autofocus{% endif %}>
+      <button type="submit" class="gate-go">ok</button>
+    </form>
+  </footer>
+</article>
+{% endblock %}

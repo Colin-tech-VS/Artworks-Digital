@@ -795,13 +795,23 @@ form small { display: block; color: var(--alerte); margin-top: 0.3rem; }
   overflow-x: hidden;
   min-height: 100vh;
   min-height: 100dvh;
-  align-items: center;
+  align-items: stretch;
   justify-content: flex-start;
-  padding: 5.5rem max(1.75rem, env(safe-area-inset-left)) 6rem max(1.75rem, env(safe-area-inset-right));
+  padding: 0;
   background:
     radial-gradient(ellipse 70% 46% at 100% 0%, color-mix(in srgb, var(--bronze) 11%, transparent), transparent 58%),
     radial-gradient(ellipse 55% 38% at 0% 100%, color-mix(in srgb, var(--ocre) 8%, transparent), transparent 52%),
     var(--wall);
+}
+.letter-page .site-bar,
+.letter-page .site-foot {
+  position: relative;
+  z-index: 2;
+}
+.letter-page main {
+  display: flex;
+  justify-content: center;
+  padding: 3.2rem 7vw 4.5rem;
 }
 .letter-page::before {
   content: "";
@@ -2366,7 +2376,7 @@ code { overflow-wrap: anywhere; }
   .mail-letter { min-height: 28rem; }
   .mail-letter iframe { height: 32rem; }
   .post-log img { width: 3.2rem; height: 3.2rem; }
-  .letter-page { padding: 2.8rem max(1.1rem, env(safe-area-inset-left)) 3.4rem max(1.1rem, env(safe-area-inset-right)); }
+  .letter-page main { padding: 2.8rem max(1.1rem, env(safe-area-inset-left)) 3.4rem max(1.1rem, env(safe-area-inset-right)); }
   .letter-page .letter { padding: 2.8rem 1.85rem 2.4rem; }
   table.data { font-size: 0.85rem; }
 }
@@ -2374,7 +2384,7 @@ code { overflow-wrap: anywhere; }
 /* Les plus petits écrans encore vendus (SE, Galaxy A0x). */
 @media (max-width: 420px) {
   main { padding: 0 5vw 3rem; }
-  .letter-page { padding: 1.5rem 0.95rem 2rem; }
+  .letter-page main { padding: 1.5rem 0.95rem 2rem; }
   .letter-page .letter {
     width: 100%;
     padding: 2.1rem 1.3rem 2rem;
