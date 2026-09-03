@@ -112,6 +112,18 @@ python scripts/import_legacy.py --source ancienne.db --dry-run
 python scripts/import_legacy.py --source export.json --no-images
 ```
 
+Si la base a survécu mais que son projet a changé d’adresse, les URLs des
+visuels pointent dans le vide et chaque œuvre serait passée faute d’image.
+`--media-base` les recolle sur l’hôte qui les sert aujourd’hui :
+
+```bash
+python scripts/import_legacy.py --source postgresql://… \
+    --media-base https://<ref>.supabase.co/storage/v1/object/public/uploads/
+```
+
+L’essai à blanc rapatrie les visuels sans rien écrire : c’est le seul moyen
+de savoir, avant l’import, si les adresses répondent encore.
+
 Les deux anciens schémas sont reconnus (`portfolio_artists`/`portfolio_paintings`
 et `artists`/`artworks`). Les empreintes de mot de passe viennent de Werkzeug
 des deux côtés : les artistes se reconnectent avec leur mot de passe. Les

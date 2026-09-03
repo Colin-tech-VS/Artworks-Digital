@@ -20,16 +20,27 @@ efface aussi les sauvegardes stockées en S3, l'opération est irréversible
 et le support ne restaure pas un projet supprimé. Aucun ticket à ouvrir.
 
 **La seule vérification qui reste, et qui demande le compte** : de
-l'extérieur, un projet supprimé et un projet mis en pause se ressemblent.
-Un projet en pause, lui, garde ses données et se relance d'un bouton.
+l'extérieur, un projet supprimé et un projet mis en pause se ressemblent —
+NXDOMAIN ne tranche pas. Supabase libère l'adresse d'un projet resté en
+pause, mais **garde ses données** : le tableau de bord le montre alors, et
+ses sauvegardes restent téléchargeables. En pause moins de 90 jours, un
+bouton « Restore » le relance entier, stockage compris ; au-delà, le bouton
+disparaît mais la sauvegarde `.sql` se télécharge encore et se recharge dans
+un projet neuf.
 
 ```bash
 supabase login && supabase projects list
 ```
 
-Ou directement le tableau de bord : si `nxfkjsrgujboofnicxng` y apparaît,
+Ou directement le tableau de bord : si un projet Artworks y apparaît,
 même grisé, tout est récupérable — et `scripts/import_legacy.py` reprend la
 base telle quelle (voir §5). S'il n'apparaît nulle part, c'est réglé.
+
+**Attention au piège des visuels** : une base restaurée garde les URLs
+qu'elle avait. Si le projet a changé de référence en route, elles pointent
+toutes dans le vide et l'import passerait chaque œuvre faute d'image.
+`--media-base` les recolle sur le bucket vivant. L'essai à blanc rapatrie
+les visuels sans rien écrire : il dit donc la vérité avant l'import.
 
 ## 1 bis. Les galeries de démonstration
 

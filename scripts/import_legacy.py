@@ -4,6 +4,13 @@
     python scripts/import_legacy.py --source /chemin/legacy.db --limit 20 --dry-run
     python scripts/import_legacy.py --source export.json --no-images
 
+Si la base a survécu mais que son projet a changé d’adresse, les URLs des
+visuels pointent dans le vide : ``--media-base`` les recolle sur l’hôte qui
+les sert aujourd’hui.
+
+    python scripts/import_legacy.py --source postgresql://… \
+        --media-base https://<ref>.supabase.co/storage/v1/object/public/uploads/
+
 La source peut être :
 
 * une URL Postgres — une restauration Supabase, un dump rechargé en local,
@@ -116,6 +123,31 @@ def pick(row: dict, *names: str, default=""):
     return default
 
 
+STORAGE_MARKER = "/storage/v1/object/public/"
+
+
+def rewrite_media(url: str, base: str) -> str:
+    """Recolle un visuel sur l’hôte qui le sert aujourd’hui.
+
+    Une base restaurée garde les URLs qu’elle avait : si le projet a changé de
+    référence en route — ce qui arrive quand un projet en pause doit être
+    recréé — elles pointent toutes dans le vide, et l’import perdrait chaque
+    œuvre faute de visuel. ``--media-base`` donne la nouvelle adresse du
+    bucket ; les chemins relatifs y sont raccrochés de la même façon."""
+    if not base or not url:
+        return url
+    base = base.rstrip("/") + "/"
+    if not url.startswith(("http://", "https://")):
+        return base + url.lstrip("/")
+    marker = url.find(STORAGE_MARKER)
+    if marker == -1:
+        return url
+    # Après le marqueur vient le nom du bucket, que la base fournie contient
+    # déjà : on ne garde que le chemin de l’objet.
+    _, _, path = url[marker + len(STORAGE_MARKER):].partition("/")
+    return base + path if path else url
+
+
 def fetch_image(url: str, timeout: int = 25) -> bytes | None:
     """Rapatrie un visuel. Une URL morte n’interrompt pas l’import."""
     if not url:
@@ -134,7 +166,9 @@ def fetch_image(url: str, timeout: int = 25) -> bytes | None:
         return None
 
 
-def import_all(source: str, *, with_images: bool, limit: int, dry_run: bool, plan: str) -> dict:
+def import_all(
+    source: str, *, with_images: bool, limit: int, dry_run: bool, plan: str, media_base: str = ""
+) -> dict:
     artists_raw, works_raw, shape = load(source)
     print(f"Source lue — schéma « {shape} » : {len(artists_raw)} artistes, {len(works_raw)} œuvres.")
 
@@ -175,11 +209,13 @@ def import_all(source: str, *, with_images: bool, limit: int, dry_run: bool, pla
         else:
             artist.set_password(os.urandom(16).hex())
 
-        cover = str(pick(row, "profile_photo_url", "profile_photo", "cover_path"))
-        if with_images and cover and not dry_run:
+        cover = rewrite_media(str(pick(row, "profile_photo_url", "profile_photo", "cover_path")), media_base)
+        if with_images and cover:
             payload = fetch_image(cover)
             if payload:
-                artist.cover_path = save_bytes(payload)
+                # À blanc, on vérifie que le visuel répond sans rien écrire.
+                if not dry_run:
+                    artist.cover_path = save_bytes(payload)
                 report["images"] += 1
             else:
                 report["images_lost"] += 1
@@ -192,22 +228,22 @@ def import_all(source: str, *, with_images: bool, limit: int, dry_run: bool, pla
 
         for position, work_row in enumerate(by_artist.get(str(pick(row, "id", default="")), [])):
             title = str(pick(work_row, "title", default="Sans titre"))[:180]
-            image_url = str(pick(work_row, "image_url", "image"))
-            image_name = ""
-            if with_images and not dry_run:
-                payload = fetch_image(image_url)
-                if payload:
-                    image_name = save_bytes(payload)
-                    report["images"] += 1
-                else:
-                    report["images_lost"] += 1
-            if not image_name and not dry_run:
+            if not with_images:
                 # Sans visuel, l’œuvre ne peut pas être accrochée : on la passe.
+                continue
+            image_url = rewrite_media(str(pick(work_row, "image_url", "image")), media_base)
+            # L’essai à blanc rapatrie aussi les visuels : c’est le seul moyen
+            # de savoir, avant d’écrire, si les URLs de la base répondent encore.
+            payload = fetch_image(image_url)
+            if payload is None:
+                report["images_lost"] += 1
                 print(f"      · {title} — visuel introuvable, œuvre ignorée")
                 continue
+            report["images"] += 1
             report["works"] += 1
             if dry_run:
                 continue
+            image_name = save_bytes(payload)
             db.session.add(
                 Work(
                     artist_id=artist.id,
@@ -238,6 +274,13 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="afficher sans rien écrire")
     parser.add_argument("--no-images", action="store_true", help="ne pas retélécharger les visuels")
     parser.add_argument("--plan", default="decouverte", help="offre attribuée aux comptes importés")
+    parser.add_argument(
+        "--media-base",
+        default="",
+        help="adresse du bucket qui sert les visuels aujourd’hui, quand la base "
+        "porte encore les URLs d’un projet disparu — ex. "
+        "https://<ref>.supabase.co/storage/v1/object/public/uploads/",
+    )
     args = parser.parse_args()
 
     app = create_app()
@@ -248,6 +291,7 @@ def main() -> None:
             limit=args.limit,
             dry_run=args.dry_run,
             plan=args.plan,
+            media_base=args.media_base,
         )
     print(
         "\nRésultat — "
