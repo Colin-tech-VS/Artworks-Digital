@@ -7,8 +7,12 @@
     <p class="eyebrow">{{ offer.name }}</p>
     <h1>Composer avec l’IA</h1>
     <p class="lead-sm">
-      Une consigne, et Mistral écrit — une note d’intention pour la salle, ou le
-      texte et le visuel d’un post prêt à partager.
+      {% if advanced %}
+        IA Studio : modèle plus ample, choix du réseau, et note de cartel sur une œuvre.
+      {% else %}
+        Une consigne, et Mistral écrit — une note d’intention pour la salle, ou le
+        texte et le visuel d’un post prêt à partager.
+      {% endif %}
       {% if not mistral_ok %} La clé Mistral n’est pas branchée : le visuel se compose quand même, sans rédaction.{% endif %}
     </p>
   </div>
@@ -31,10 +35,18 @@
       </label>
       <label>{{ form.fmt.label }}{{ form.fmt() }}</label>
     </div>
-    <label>{{ form.layout.label }}{{ form.layout() }}</label>
+    <div class="split">
+      <label>{{ form.layout.label }}{{ form.layout() }}</label>
+      {% if advanced %}
+        <label>{{ form.platform.label }}{{ form.platform() }}</label>
+      {% endif %}
+    </div>
     <div class="atelier-actions">
       <button class="btn btn-ink" type="submit" name="action" value="visuel" data-busy="Composition du visuel…">Composer un visuel</button>
       <button class="btn btn-ghost" type="submit" name="action" value="note" data-busy="Rédaction de la note…">Écrire une note d’intention</button>
+      {% if advanced %}
+        <button class="btn btn-ghost" type="submit" name="action" value="cartel" data-busy="Rédaction du cartel…">Écrire le cartel de l’œuvre</button>
+      {% endif %}
     </div>
   </form>
 </section>
@@ -46,6 +58,19 @@
     <form method="post" action="{{ url_for('atelier.ai_apply_note') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="note" value="{{ note }}">
+      <button class="btn btn-ink" type="submit">Utiliser cette note</button>
+    </form>
+  </section>
+{% endif %}
+
+{% if cartel and cartel_work_id %}
+  <section class="panel">
+    <header class="panel-head"><h2>Note de cartel proposée</h2></header>
+    <p class="mail-body">{{ cartel }}</p>
+    <form method="post" action="{{ url_for('atelier.ai_apply_cartel') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="cartel" value="{{ cartel }}">
+      <input type="hidden" name="work_id" value="{{ cartel_work_id }}">
       <button class="btn btn-ink" type="submit">Utiliser cette note</button>
     </form>
   </section>

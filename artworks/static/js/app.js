@@ -132,6 +132,174 @@ if (gateDot && gate) {
 
 const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
 
+(() => {
+  const fold = (text) =>
+    (text || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  const partsOf = (query) => fold(query).replace(/-/g, " ").split(/\s+/).filter(Boolean);
+  const matchHay = (hay, query) => partsOf(query).every((part) => hay.includes(part));
+
+  const list = document.querySelector("[data-room-list]");
+  const countEl = document.querySelector("[data-room-count]");
+  const emptyEl = document.querySelector("[data-room-empty]");
+  const chips = document.querySelector("[data-room-chips]");
+  const pageField = document.getElementById("room-q");
+  const headerForm = document.querySelector(".site-search");
+  const headerField = document.getElementById("site-q");
+  const suggest = document.getElementById("site-suggest");
+  const indexUrl = headerForm?.dataset.roomsIndex || "";
+  const roomsPage = headerForm?.dataset.roomsPage || "/galeries";
+
+  let discipline = "";
+  let cache = null;
+  let active = -1;
+
+  const rooms = () => [...(list?.querySelectorAll("[data-room]") || [])];
+  const options = () => [...(suggest?.querySelectorAll("a") || [])];
+
+  const paintCount = (n, q) => {
+    if (!countEl) return;
+    countEl.textContent = q
+      ? `${n} salle${n !== 1 ? "s" : ""} pour « ${q} »`
+      : `${n} salle${n !== 1 ? "s" : ""} ouverte${n !== 1 ? "s" : ""}`;
+  };
+
+  const filterPage = () => {
+    if (!list) return;
+    const q = (pageField?.value || headerField?.value || "").trim();
+    let visible = 0;
+    rooms().forEach((item) => {
+      const okQ = matchHay(item.dataset.hay || "", q);
+      const okD = !discipline || (item.dataset.discipline || "") === discipline;
+      item.hidden = !(okQ && okD);
+      if (!item.hidden) visible += 1;
+    });
+    if (emptyEl) emptyEl.hidden = visible > 0;
+    paintCount(visible, q);
+    const url = new URL(roomsPage, window.location.origin);
+    if (q) url.searchParams.set("q", q);
+    const next = `${url.pathname}${url.search}`;
+    if (next !== `${window.location.pathname}${window.location.search}`) {
+      history.replaceState(null, "", next);
+    }
+    if (headerField && headerField !== document.activeElement && headerField.value !== q) {
+      headerField.value = q;
+    }
+  };
+
+  const hideSuggest = () => {
+    if (!suggest || !headerField) return;
+    suggest.hidden = true;
+    suggest.replaceChildren();
+    headerField.setAttribute("aria-expanded", "false");
+    active = -1;
+  };
+
+  const mark = (index) => {
+    const links = options();
+    links.forEach((el, i) => el.classList.toggle("is-on", i === index));
+    active = index;
+    links[index]?.scrollIntoView({ block: "nearest" });
+  };
+
+  const drawSuggest = (hits) => {
+    if (!suggest || !headerField) return;
+    suggest.replaceChildren();
+    hits.slice(0, 8).forEach((room) => {
+      const item = document.createElement("li");
+      const link = document.createElement("a");
+      link.href = room.url;
+      const name = document.createElement("strong");
+      name.textContent = room.name;
+      const meta = document.createElement("span");
+      meta.textContent = [room.discipline || "Artiste", room.location].filter(Boolean).join(" · ");
+      link.append(name, meta);
+      item.append(link);
+      suggest.append(item);
+    });
+    const open = hits.length > 0;
+    suggest.hidden = !open;
+    headerField.setAttribute("aria-expanded", String(open));
+    active = -1;
+  };
+
+  const loadIndex = async () => {
+    if (cache || !indexUrl) return cache;
+    try {
+      const response = await fetch(indexUrl, { headers: { Accept: "application/json" } });
+      if (!response.ok) return null;
+      cache = (await response.json()).rooms || [];
+      return cache;
+    } catch {
+      return null;
+    }
+  };
+
+  const onHeaderInput = async () => {
+    const q = headerField?.value || "";
+    if (pageField && pageField !== document.activeElement) pageField.value = q;
+    if (list) {
+      hideSuggest();
+      filterPage();
+      return;
+    }
+    if (!q.trim()) {
+      hideSuggest();
+      return;
+    }
+    const found = await loadIndex();
+    if (!found) return;
+    drawSuggest(found.filter((room) => matchHay(room.hay, q)));
+  };
+
+  pageField?.addEventListener("input", () => {
+    if (headerField) headerField.value = pageField.value;
+    hideSuggest();
+    filterPage();
+  });
+
+  chips?.querySelectorAll("button").forEach((button) => {
+    button.addEventListener("click", () => {
+      discipline = button.dataset.discipline || "";
+      chips.querySelectorAll("button").forEach((el) => el.classList.toggle("is-on", el === button));
+      filterPage();
+    });
+  });
+
+  if (headerField) {
+    headerField.addEventListener("input", onHeaderInput);
+    headerField.addEventListener("keydown", (event) => {
+      const links = options();
+      if (event.key === "Escape") {
+        hideSuggest();
+        return;
+      }
+      if (!links.length) return;
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        mark(active < links.length - 1 ? active + 1 : 0);
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        mark(active > 0 ? active - 1 : links.length - 1);
+      } else if (event.key === "Enter" && active >= 0 && links[active]) {
+        event.preventDefault();
+        links[active].click();
+      }
+    });
+    headerForm?.addEventListener("submit", (event) => {
+      if (active >= 0 && options()[active]) {
+        event.preventDefault();
+        options()[active].click();
+      }
+    });
+    document.addEventListener("click", (event) => {
+      if (!headerForm.contains(event.target)) hideSuggest();
+    });
+  }
+})();
+
 const filter = document.getElementById("studio-filter");
 const board = document.getElementById("studio-board");
 if (filter && board) {

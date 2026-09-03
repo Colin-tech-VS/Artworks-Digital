@@ -57,6 +57,13 @@ class GalleryForm(FlaskForm):
         "Image de salle",
         validators=[Optional(), FileAllowed(["jpg", "jpeg", "png", "webp"], "Image uniquement.")],
     )
+    hang_style = SelectField(
+        "Accrochage",
+        choices=[("grille", "Grille"), ("salon", "Salon — plus d’air, plus grand")],
+        default="grille",
+        validators=[Optional()],
+    )
+    featured_work_id = SelectField("Œuvre en avant", validators=[Optional()])
     published = BooleanField("Publier la galerie")
 
 
@@ -204,6 +211,16 @@ class AtelierAIForm(FlaskForm):
             ("poster", "Affiche"),
         ],
         default="",
+        validators=[Optional()],
+    )
+    platform = SelectField(
+        "Réseau",
+        choices=[
+            ("instagram", "Instagram"),
+            ("facebook", "Facebook"),
+            ("pinterest", "Pinterest"),
+        ],
+        default="instagram",
         validators=[Optional()],
     )
 

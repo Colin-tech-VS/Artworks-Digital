@@ -1,9 +1,45 @@
 {% extends "base.html" %}
 {% block title %}Artworksdigital — Votre salle. Vos œuvres.{% endblock %}
-{% block description %}Artworksdigital n’est pas une vitrine collective. C’est un atelier pour composer votre galerie : une adresse, un accrochage, une note d’intention.{% endblock %}
+{% block description %}Artworksdigital n’est pas une vitrine collective. C’est un atelier pour composer votre galerie : une adresse, un accrochage, une note d’intention. Trouvez les salles d’artistes ouvertes.{% endblock %}
 {% block og_image_width %}1200{% endblock %}
 {% block og_image_height %}630{% endblock %}
 {% block body_class %}home{% endblock %}
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": {{ (canonical_url('/') ~ '#accueil') | tojson }},
+      "url": {{ canonical_url('/') | tojson }},
+      "name": "Artworksdigital — Votre salle. Vos œuvres.",
+      "description": {{ self.description() | tojson }},
+      "inLanguage": "fr-FR",
+      "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
+      "about": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}},
+      "primaryImageOfPage": {{ default_og_image | tojson }}
+    }{% if rooms %},
+    {
+      "@type": "ItemList",
+      "name": "Galeries publiées",
+      "url": {{ canonical_url('/galeries') | tojson }},
+      "numberOfItems": {{ rooms | length }},
+      "itemListElement": [
+        {% for artist in rooms[:12] %}
+        {
+          "@type": "ListItem",
+          "position": {{ loop.index }},
+          "url": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }},
+          "name": {{ artist.display_name | tojson }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ]
+    }{% endif %}
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <section class="hero">
@@ -15,8 +51,13 @@
   </p>
   <div class="hero-actions">
     <a class="btn btn-ink" href="{{ url_for('auth.register') }}">Ouvrir mon atelier</a>
-    <a class="btn btn-ghost" href="{{ url_for('public.offers') }}">Voir les offres</a>
+    <a class="btn btn-ghost" href="{{ url_for('public.galleries') }}">Parcourir les salles</a>
   </div>
+  <form class="hero-search" action="{{ url_for('public.galleries') }}" method="get" role="search">
+    <label class="sr-only" for="home-q">Rechercher une salle d’artiste</label>
+    <input id="home-q" class="studio-filter" type="search" name="q" placeholder="Rechercher une salle — nom, discipline, ville…" autocomplete="off" enterkeyhint="search">
+    <button class="btn btn-ghost" type="submit">Chercher</button>
+  </form>
 </section>
 
 <section class="strip" id="comment">
@@ -37,6 +78,29 @@
   </article>
 </section>
 
+{% if featured_rooms %}
+<section class="rooms featured-rooms">
+  <header>
+    <p class="eyebrow">Mise en avant</p>
+    <h2>Salles Pro et Studio</h2>
+  </header>
+  <ul class="room-list">
+    {% for artist in featured_rooms %}
+      <li>
+        <a href="{{ url_for('public.gallery', slug=artist.slug) }}">
+          <span class="room-name">{{ artist.display_name }} <em class="tag">mise en avant</em>{% if artist.has_feature('priority') %} <em class="tag">prioritaire</em>{% endif %}</span>
+          <span class="room-meta">
+            {{ artist.discipline or "Artiste" }}
+            {% if artist.location %} · {{ artist.location }}{% endif %}
+            · {{ room_counts.get(artist.id, 0) }} œuvre{% if room_counts.get(artist.id, 0) != 1 %}s{% endif %}
+          </span>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
 {% if rooms %}
 <section class="rooms">
   <header>
@@ -51,14 +115,13 @@
           <span class="room-meta">
             {{ artist.discipline or "Artiste" }}
             {% if artist.location %} · {{ artist.location }}{% endif %}
+            · {{ room_counts.get(artist.id, 0) }} œuvre{% if room_counts.get(artist.id, 0) != 1 %}s{% endif %}
           </span>
         </a>
       </li>
     {% endfor %}
   </ul>
-  {% if rooms|length > 10 %}
-    <p class="room-contact"><a href="{{ url_for('public.galleries') }}">Toutes les galeries</a></p>
-  {% endif %}
+  <p class="room-contact"><a href="{{ url_for('public.galleries') }}">Toutes les galeries{% if rooms|length > 10 %} — {{ rooms|length }} salles{% endif %}</a></p>
 </section>
 {% endif %}
 {% endblock %}

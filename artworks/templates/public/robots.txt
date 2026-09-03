@@ -9,5 +9,6 @@ Disallow: /mot-de-passe
 Disallow: /mot-de-passe-oublie
 Disallow: /stripe
 Disallow: /api/kael
+Disallow: /galeries.json
 
 Sitemap: {{ sitemap }}

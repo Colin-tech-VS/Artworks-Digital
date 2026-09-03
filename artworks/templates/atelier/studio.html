@@ -6,7 +6,12 @@
   <div>
     <p class="eyebrow">Accrochage</p>
     <h1>Les œuvres</h1>
-    <p class="lead-sm">{{ hung }} accrochées · {{ reserve }} en réserve · {{ offer.works_label }} · glissez pour réordonner</p>
+    <p class="lead-sm">
+      {{ hung }} accrochées · {{ reserve }} en réserve · {{ offer.works_label }} · glissez pour réordonner
+      {% if offer.max_works and hung > offer.max_works %}
+        — seules les {{ offer.max_works }} premières sont visibles au public.
+      {% endif %}
+    </p>
   </div>
   <div class="atelier-actions">
     <input class="studio-filter" type="search" id="studio-filter" placeholder="Filtrer une œuvre" autocomplete="off">
@@ -26,7 +31,7 @@
           <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}" loading="lazy" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
           <div>
             <strong>{{ work.title }}</strong>
-            <span>{{ work.cartel or "Sans cartel" }}{% if not work.visible %} · en réserve{% endif %} · {{ work.view_count }} vues</span>
+            <span>{{ work.cartel or "Sans cartel" }}{% if not work.visible %} · en réserve{% endif %}{% if current_user.has_feature('stats') %} · {{ work.view_count }} vues{% endif %}</span>
           </div>
         </a>
         <div class="work-tools">

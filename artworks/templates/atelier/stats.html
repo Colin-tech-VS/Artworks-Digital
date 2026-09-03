@@ -37,5 +37,45 @@
       {% endfor %}
     </ul>
   </section>
+  {% if sources %}
+    <section class="panel">
+      <header class="panel-head"><h2>Origines</h2></header>
+      <ul class="mini-table">
+        {% for row in sources %}
+          <li><strong>{{ row.label }}</strong><span>{{ row.value }}</span></li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+  {% if devices %}
+    <section class="panel">
+      <header class="panel-head"><h2>Appareils</h2></header>
+      <ul class="mini-table">
+        {% for row in devices %}
+          <li><strong>{{ row.label }}</strong><span>{{ row.value }}</span></li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+  {% if cities %}
+    <section class="panel">
+      <header class="panel-head"><h2>Villes</h2></header>
+      <ul class="mini-table">
+        {% for row in cities %}
+          <li><strong>{{ row.label }}</strong><span>{{ row.value }}</span></li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+  {% if top_works %}
+    <section class="panel">
+      <header class="panel-head"><h2>Œuvres les plus vues</h2></header>
+      <ul class="mini-table">
+        {% for row in top_works %}
+          <li><strong>{{ row.title }}</strong><span>{{ row.value }}</span></li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
 {% endif %}
 {% endblock %}

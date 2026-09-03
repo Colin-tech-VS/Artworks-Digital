@@ -2,7 +2,15 @@ from flask import Blueprint, current_app, flash, jsonify, redirect, render_templ
 from flask_login import current_user, login_required
 from markupsafe import Markup
 
-from artworks.analytics import artist_series, sparkline_svg
+from artworks.analytics import (
+    DEVICE_LABELS,
+    SOURCE_LABELS,
+    artist_breakdown,
+    artist_cities,
+    artist_series,
+    artist_top_works,
+    sparkline_svg,
+)
 from artworks.emails import (
     compose_letter,
     deliver as deliver_email,
@@ -14,7 +22,7 @@ from artworks.emails import (
 from artworks.extensions import db
 from artworks.forms import AccountForm, AtelierAIForm, ComposeForm, GalleryForm, PasswordForm, WorkForm
 from artworks.images import remove_image, save_image, save_image_sized
-from artworks.models import Artist, MailMessage, Work
+from artworks.models import Artist, MailMessage, PageView, Work
 from artworks.plans import active_offers, get_offer
 from artworks.slugs import unique_slug
 from artworks.mistral import mistral_ready
@@ -41,12 +49,14 @@ def _work_stats():
 def overview():
     stats = _work_stats()
     recent = stats["works"][:6]
-    trend = artist_series(current_user.id, 14)
+    show_stats = current_user.has_feature("stats")
+    trend = artist_series(current_user.id, 14) if show_stats else []
     return render_template(
         "atelier/overview.html",
         recent=recent,
-        spark=Markup(sparkline_svg(trend)),
-        trend_total=sum(trend),
+        spark=Markup(sparkline_svg(trend)) if show_stats else "",
+        trend_total=sum(trend) if show_stats else 0,
+        show_stats=show_stats,
         **stats,
     )
 
@@ -131,17 +141,23 @@ def stats():
     if not current_user.has_feature("stats"):
         flash("Les statistiques sont incluses à partir de l’offre Artiste.", "info")
         return redirect(url_for("atelier.billing"))
-    trend = artist_series(current_user.id, 28 if current_user.has_feature("advanced_stats") else 14)
+    advanced = current_user.has_feature("advanced_stats")
+    days = 28 if advanced else 14
+    trend = artist_series(current_user.id, days)
     return render_template(
         "atelier/stats.html",
         spark=Markup(sparkline_svg(trend, 520, 120)),
         trend=trend,
         trend_total=sum(trend),
-        advanced=current_user.has_feature("advanced_stats"),
+        advanced=advanced,
         unread=current_user.unread_count,
         offer=current_user.offer,
         views=current_user.views_total,
         hung=current_user.hung_count,
+        sources=artist_breakdown(current_user.id, PageView.source, days, labels=SOURCE_LABELS) if advanced else [],
+        devices=artist_breakdown(current_user.id, PageView.device, days, labels=DEVICE_LABELS) if advanced else [],
+        cities=artist_cities(current_user.id, days) if advanced else [],
+        top_works=artist_top_works(current_user.id, days) if advanced else [],
     )
 
 
@@ -153,14 +169,17 @@ def ai_tools():
         return redirect(url_for("atelier.billing"))
 
     from artworks.composer import compose
-    from artworks.mistral import generate_statement
+    from artworks.mistral import generate_cartel, generate_statement
 
     works = current_user.works.order_by(Work.position.asc()).limit(40).all()
     form = AtelierAIForm()
     form.work_id.choices = [("", "— sans œuvre —")] + [(str(work.id), work.title) for work in works]
+    advanced = current_user.has_feature("priority")
 
     draft = None
     note = None
+    cartel = None
+    cartel_work_id = None
     action = request.form.get("action", "")
 
     if action == "note" and form.validate_on_submit():
@@ -173,7 +192,27 @@ def ai_tools():
                     current_user.discipline,
                     [work.title for work in works],
                     form.prompt.data.strip(),
+                    heavy=advanced,
                 )
+            except Exception as exc:
+                flash(f"Génération impossible : {exc}", "info")
+    elif action == "cartel" and advanced and form.validate_on_submit():
+        work = current_user.works.filter_by(id=int(form.work_id.data)).first() if form.work_id.data else None
+        if work is None:
+            flash("Choisissez une œuvre pour le cartel.", "info")
+        elif not mistral_ready():
+            flash("La clé Mistral n’est pas encore branchée.", "info")
+        else:
+            try:
+                cartel = generate_cartel(
+                    work.title,
+                    work.medium,
+                    work.year,
+                    work.dimensions,
+                    form.prompt.data.strip(),
+                    heavy=True,
+                )
+                cartel_work_id = work.id
             except Exception as exc:
                 flash(f"Génération impossible : {exc}", "info")
     elif action == "visuel" and form.validate_on_submit():
@@ -181,12 +220,12 @@ def ai_tools():
         try:
             draft = compose(
                 form.prompt.data.strip(),
-                platforms=["instagram"],
+                platforms=[form.platform.data or "instagram"] if advanced else ["instagram"],
                 work=work,
                 artist_name=current_user.display_name,
                 fmt=form.fmt.data,
                 layout=form.layout.data or "",
-                heavy=current_user.has_feature("priority"),
+                heavy=advanced,
             )
         except Exception as exc:
             db.session.rollback()
@@ -211,6 +250,8 @@ def ai_tools():
         form=form,
         draft=draft,
         note=note,
+        cartel=cartel,
+        cartel_work_id=cartel_work_id,
         suggestion=suggestion,
         works=works,
         mistral_ok=mistral_ready(),
@@ -231,6 +272,23 @@ def ai_apply_note():
     return redirect(url_for("atelier.gallery"))
 
 
+@atelier_bp.route("/ia/cartel", methods=["POST"])
+@login_required
+def ai_apply_cartel():
+    if not current_user.has_feature("priority"):
+        return redirect(url_for("atelier.billing"))
+    work = current_user.works.filter_by(id=int(request.form.get("work_id") or 0)).first()
+    text = (request.form.get("cartel") or "").strip()
+    if work and text:
+        work.note = text[:2000]
+        work.touch()
+        current_user.touch()
+        db.session.commit()
+        flash("Note de cartel enregistrée.", "ok")
+        return redirect(url_for("atelier.edit_work", work_id=work.id))
+    return redirect(url_for("atelier.ai_tools"))
+
+
 @atelier_bp.route("/kael", methods=["POST"])
 @login_required
 def kael_panel():
@@ -248,23 +306,26 @@ def kael_panel():
     action = str(payload.get("action") or "").strip()
     params = payload.get("params") if isinstance(payload.get("params"), dict) else {}
 
-    scopes = {permissions.READ, permissions.ANALYZE}
+    scopes = {permissions.READ}
     if current_user.has_feature("ai"):
-        scopes.add(permissions.WRITE)
+        scopes.update({permissions.ANALYZE, permissions.WRITE})
+    if current_user.has_feature("stats"):
+        scopes.add(permissions.ANALYZE)
     grant = Grant(
         scopes=permissions.expand(scopes),
         artist_id=current_user.id,
         label=f"Atelier {current_user.display_name}",
     )
 
-    allowed = {
-        "analyze_portfolio": {"artist": str(current_user.id)},
-        "analyze_artwork": {},
-        "get_artist_stats": {"artist": str(current_user.id)},
-        "update_artwork": {},
-    }
+    allowed = {}
+    if current_user.has_feature("ai"):
+        allowed["analyze_portfolio"] = {"artist": str(current_user.id)}
+        allowed["analyze_artwork"] = {}
+        allowed["update_artwork"] = {}
+    if current_user.has_feature("stats"):
+        allowed["get_artist_stats"] = {"artist": str(current_user.id)}
     if action not in allowed:
-        return jsonify({"ok": False, "error": "Action inconnue."}), 400
+        return jsonify({"ok": False, "error": "Cette action n’est pas incluse dans votre offre."}), 403
     if action == "update_artwork" and not current_user.has_feature("ai"):
         return jsonify({"ok": False, "error": "L’écriture assistée est incluse dans Pro et Studio."}), 403
 
@@ -298,6 +359,11 @@ def collections():
 @login_required
 def gallery():
     form = GalleryForm(obj=current_user)
+    hung = current_user.hung_works
+    form.featured_work_id.choices = [("", "— aucune —")] + [(str(work.id), work.title) for work in hung]
+    if request.method == "GET":
+        form.hang_style.data = current_user.hang_style or "grille"
+        form.featured_work_id.data = str(current_user.featured_work_id or "")
     if form.validate_on_submit():
         was_published = current_user.published
         current_user.display_name = form.display_name.data.strip()
@@ -307,6 +373,13 @@ def gallery():
         current_user.contact_email = (form.contact_email.data or "").strip()
         current_user.statement = (form.statement.data or "").strip()
         current_user.published = bool(form.published.data)
+        if current_user.has_feature("present"):
+            style = form.hang_style.data if form.hang_style.data in {"grille", "salon"} else "grille"
+            current_user.hang_style = style
+            raw_featured = form.featured_work_id.data or ""
+            current_user.featured_work_id = int(raw_featured) if raw_featured.isdigit() else None
+            if current_user.featured_work_id and not any(work.id == current_user.featured_work_id for work in hung):
+                current_user.featured_work_id = None
         current_user.touch()
         if form.cover.data:
             if not current_user.has_feature("customize"):

@@ -34,15 +34,17 @@
     <span>{{ reserve }}</span>
     <em>En réserve</em>
   </li>
-  <li>
-    <span>{{ views }}</span>
-    <em>Vues œuvres</em>
-  </li>
-  <li class="stat-chart">
-    <span>{{ trend_total }}</span>
-    <em>Visites 14 jours</em>
-    {{ spark|safe }}
-  </li>
+  {% if show_stats %}
+    <li>
+      <span>{{ views }}</span>
+      <em>Vues œuvres</em>
+    </li>
+    <li class="stat-chart">
+      <span>{{ trend_total }}</span>
+      <em>Visites 14 jours</em>
+      {{ spark|safe }}
+    </li>
+  {% endif %}
 </ul>
 
 <section class="panel">
@@ -58,7 +60,7 @@
             <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}" loading="lazy">
             <div>
               <strong>{{ work.title }}</strong>
-              <span>{{ work.cartel or "Sans cartel" }} · {{ work.view_count }} vues</span>
+              <span>{{ work.cartel or "Sans cartel" }}{% if show_stats %} · {{ work.view_count }} vues{% endif %}</span>
             </div>
           </a>
         </li>

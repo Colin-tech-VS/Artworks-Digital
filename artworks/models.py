@@ -47,6 +47,8 @@ class Artist(UserMixin, db.Model):
     stripe_customer_id = db.Column(db.String(80), default="")
     stripe_subscription_id = db.Column(db.String(80), default="")
     plan_period_end = db.Column(db.DateTime, nullable=True)
+    hang_style = db.Column(db.String(20), default="grille")
+    featured_work_id = db.Column(db.Integer, nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=utcnow, nullable=False)
 
@@ -146,6 +148,8 @@ class Artist(UserMixin, db.Model):
 
     def has_feature(self, name: str) -> bool:
         offer = self.offer
+        if name == "present":
+            return bool(offer and (offer.allows("featured") or offer.allows("priority")))
         return bool(offer and offer.allows(name))
 
     def work_limit(self) -> int | None:
@@ -162,8 +166,19 @@ class Artist(UserMixin, db.Model):
         works = self.hung_works
         limit = self.work_limit()
         if limit:
-            return works[:limit]
+            works = works[:limit]
+        featured_id = self.featured_work_id if self.has_feature("present") else None
+        if featured_id:
+            pinned = [work for work in works if work.id == featured_id]
+            rest = [work for work in works if work.id != featured_id]
+            works = pinned + rest
         return works
+
+    def featured_work(self, works=None):
+        if not self.has_feature("present") or not self.featured_work_id:
+            return None
+        hung = works if works is not None else self.public_works()
+        return next((work for work in hung if work.id == self.featured_work_id), None)
 
     @property
     def plan_rank(self) -> int:

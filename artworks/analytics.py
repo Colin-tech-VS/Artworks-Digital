@@ -181,7 +181,7 @@ def should_track(req: Request) -> bool:
     if req.method != "GET":
         return False
     endpoint = req.endpoint or ""
-    if endpoint in ("static", "media", "public.sitemap", "public.robots") or endpoint.startswith("atelier.") or endpoint.startswith("admin.") or endpoint.startswith("billing."):
+    if endpoint in ("static", "media", "public.sitemap", "public.robots", "public.rooms_feed", "public.opensearch") or endpoint.startswith("atelier.") or endpoint.startswith("admin.") or endpoint.startswith("billing."):
         return False
     if req.path.startswith("/static") or req.path.startswith("/media"):
         return False
@@ -391,6 +391,66 @@ def top_paths(days: int = 28, limit: int = 10):
         .all()
     )
     return [{"path": path, "title": title or path, "value": int(count)} for path, title, count in rows]
+
+
+def artist_breakdown(artist_id: int, column, days: int = 28, limit: int = 8, hide_empty: bool = False, labels: dict | None = None):
+    start = since(days)
+    filters = [PageView.artist_id == artist_id, PageView.created_at >= start, public_filter()]
+    if hide_empty:
+        filters.extend([column.isnot(None), column != ""])
+    rows = (
+        db.session.query(column, func.count(PageView.id))
+        .filter(*filters)
+        .group_by(column)
+        .order_by(func.count(PageView.id).desc())
+        .limit(limit)
+        .all()
+    )
+    out = []
+    for label, count in rows:
+        key = label or ""
+        shown = (labels or {}).get(key, key) if labels is not None else (key or "—")
+        out.append({"key": key, "label": shown or "—", "value": int(count)})
+    return out
+
+
+def artist_cities(artist_id: int, days: int = 28, limit: int = 8) -> list[dict]:
+    start = since(days)
+    rows = (
+        db.session.query(PageView.city, PageView.country, func.count(PageView.id))
+        .filter(
+            PageView.artist_id == artist_id,
+            PageView.created_at >= start,
+            public_filter(),
+            PageView.city != "",
+        )
+        .group_by(PageView.city, PageView.country)
+        .order_by(func.count(PageView.id).desc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        {"label": place_label(city, country), "value": int(count)}
+        for city, country, count in rows
+    ]
+
+
+def artist_top_works(artist_id: int, days: int = 28, limit: int = 8) -> list[dict]:
+    start = since(days)
+    rows = (
+        db.session.query(PageView.work_id, PageView.title, func.count(PageView.id))
+        .filter(
+            PageView.artist_id == artist_id,
+            PageView.work_id.isnot(None),
+            PageView.created_at >= start,
+            public_filter(),
+        )
+        .group_by(PageView.work_id, PageView.title)
+        .order_by(func.count(PageView.id).desc())
+        .limit(limit)
+        .all()
+    )
+    return [{"title": title or "Œuvre", "value": int(count)} for _work_id, title, count in rows]
 
 
 def artist_series(artist_id: int, days: int = 14) -> list[int]:

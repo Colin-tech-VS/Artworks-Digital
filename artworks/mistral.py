@@ -179,7 +179,7 @@ def generate_social(
     }
 
 
-def generate_statement(artist_name: str, discipline: str, works: list[str], intent: str = "") -> str:
+def generate_statement(artist_name: str, discipline: str, works: list[str], intent: str = "", heavy: bool = False) -> str:
     """Note d’intention pour l’atelier — un texte, pas du JSON."""
     lines = ", ".join(works[:8]) or "un accrochage en cours"
     ask = intent.strip() or "Écris une note d’intention pour la salle."
@@ -191,4 +191,19 @@ def generate_statement(artist_name: str, discipline: str, works: list[str], inte
         "Ton d’exposition : sobre, concret, sans jargon ni superlatif. "
         "Pas de liste, pas de titre, pas de guillemets autour du texte."
     )
-    return complete(prompt, system=SOCIAL_SYSTEM.split("Tu réponds")[0], max_tokens=380)
+    return complete(prompt, system=SOCIAL_SYSTEM.split("Tu réponds")[0], max_tokens=380, heavy=heavy)
+
+
+def generate_cartel(title: str, medium: str = "", year: str = "", dimensions: str = "", intent: str = "", heavy: bool = False) -> str:
+    """Note de cartel pour une œuvre — Studio, modèle plus ample."""
+    ask = intent.strip() or "Écris la note du cartel."
+    prompt = (
+        f"Œuvre : {title}. "
+        f"Année : {year or 'non précisée'}. "
+        f"Technique : {medium or 'non précisée'}. "
+        f"Dimensions : {dimensions or 'non précisées'}.\n\n"
+        f"{ask}\n\n"
+        "Deux ou trois phrases, en français, à la troisième personne. "
+        "Ton d’exposition, concret, sans superlatif ni invitation à acheter."
+    )
+    return complete(prompt, heavy=heavy, system=SOCIAL_SYSTEM.split("Tu réponds")[0], max_tokens=280)

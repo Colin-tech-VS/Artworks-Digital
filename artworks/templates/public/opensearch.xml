@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+  <ShortName>Artworksdigital</ShortName>
+  <Description>Trouver une salle d’artiste sur Artworksdigital</Description>
+  <InputEncoding>UTF-8</InputEncoding>
+  <Image width="16" height="16" type="image/svg+xml">{{ canonical_url('/static/favicon.svg') }}</Image>
+  <Url type="text/html" method="get" template="{{ search_url }}"/>
+  <Url type="application/json" method="get" template="{{ suggest_url }}"/>
+  <SearchForm>{{ canonical_url('/galeries') }}</SearchForm>
+</OpenSearchDescription>

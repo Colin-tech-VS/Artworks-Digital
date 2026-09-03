@@ -51,6 +51,11 @@
 {% endblock %}
 
 {% block content %}
+{% set crumbs = [
+  {"name": "Accueil", "href": url_for('public.home')},
+  {"name": "Offres"}
+] %}
+{% include "_crumbs.html" %}
 <section class="room-head">
   <p class="eyebrow">Tarifs</p>
   <h1>Choisir son offre</h1>

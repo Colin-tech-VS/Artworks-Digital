@@ -50,11 +50,18 @@
       <button type="button" data-tool="get_platform_stats">État de la plateforme</button>
       <button type="button" data-tool="get_service_health">Santé des services</button>
     {% else %}
-      <button type="button" data-tool="analyze_portfolio">Analyser mon portfolio</button>
-      {% if kael_work_id %}
-        <button type="button" data-tool="analyze_artwork" data-params='{"work_id": {{ kael_work_id }}}'>Analyser cette œuvre</button>
+      {% if current_user.has_feature('ai') %}
+        <button type="button" data-tool="analyze_portfolio">Analyser mon portfolio</button>
+        {% if kael_work_id %}
+          <button type="button" data-tool="analyze_artwork" data-params='{"work_id": {{ kael_work_id }}}'>Analyser cette œuvre</button>
+        {% endif %}
       {% endif %}
-      <button type="button" data-tool="get_artist_stats">Mon audience</button>
+      {% if current_user.has_feature('stats') %}
+        <button type="button" data-tool="get_artist_stats">Mon audience</button>
+      {% endif %}
+      {% if not current_user.has_feature('ai') and not current_user.has_feature('stats') %}
+        <p class="kael-note">K.A.E.L. s’ouvre avec les statistiques (Artiste) et l’IA (Pro).</p>
+      {% endif %}
     {% endif %}
   </div>
 

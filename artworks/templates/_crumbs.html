@@ -1,0 +1,13 @@
+<nav class="crumb" aria-label="Fil d’Ariane">
+  <ol>
+    {% for crumb in crumbs %}
+      <li>
+        {% if crumb.href and not loop.last %}
+          <a href="{{ crumb.href }}">{{ crumb.name }}</a>
+        {% else %}
+          <span aria-current="page">{{ crumb.name }}</span>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+</nav>

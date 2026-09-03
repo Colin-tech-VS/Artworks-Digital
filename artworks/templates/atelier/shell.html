@@ -38,15 +38,27 @@
       <a href="{{ url_for('atelier.billing') }}" class="{% if request.endpoint in ['atelier.billing', 'atelier.billing_return'] %}is-on{% endif %}">
         <span>Offre</span>
       </a>
-      <a href="{{ url_for('atelier.stats') }}" class="{% if request.endpoint == 'atelier.stats' %}is-on{% endif %}">
-        <span>Statistiques</span>
-      </a>
-      <a href="{{ url_for('atelier.ai_tools') }}" class="{% if request.endpoint == 'atelier.ai_tools' %}is-on{% endif %}">
-        <span>IA</span>
-      </a>
-      <a href="{{ url_for('atelier.collections') }}" class="{% if request.endpoint == 'atelier.collections' %}is-on{% endif %}">
-        <span>Collections</span>
-      </a>
+      {% if current_user.has_feature('stats') %}
+        <a href="{{ url_for('atelier.stats') }}" class="{% if request.endpoint == 'atelier.stats' %}is-on{% endif %}">
+          <span>Statistiques</span>
+        </a>
+      {% else %}
+        <a class="is-locked" href="{{ url_for('atelier.billing') }}"><span>Statistiques</span><em>Artiste</em></a>
+      {% endif %}
+      {% if current_user.has_feature('ai') %}
+        <a href="{{ url_for('atelier.ai_tools') }}" class="{% if request.endpoint == 'atelier.ai_tools' %}is-on{% endif %}">
+          <span>IA</span>
+        </a>
+      {% else %}
+        <a class="is-locked" href="{{ url_for('atelier.billing') }}"><span>IA</span><em>Pro</em></a>
+      {% endif %}
+      {% if current_user.has_feature('collections') %}
+        <a href="{{ url_for('atelier.collections') }}" class="{% if request.endpoint == 'atelier.collections' %}is-on{% endif %}">
+          <span>Collections</span>
+        </a>
+      {% else %}
+        <a class="is-locked" href="{{ url_for('atelier.billing') }}"><span>Collections</span><em>Studio</em></a>
+      {% endif %}
       <a href="{{ url_for('atelier.account') }}" class="{% if request.endpoint == 'atelier.account' %}is-on{% endif %}">
         <span>Compte</span>
       </a>
@@ -67,9 +79,11 @@
   </div>
 </div>
 
+{% if current_user.has_feature('ai') or current_user.has_feature('stats') %}
 {% set kael_mode = 'atelier' %}
 {% set kael_endpoint = url_for('atelier.kael_panel') %}
 {% set kael_context_label = 'Atelier de ' ~ current_user.display_name %}
 {% set kael_work_id = kael_work_id | default(none) %}
 {% include '_kael.html' %}
+{% endif %}
 {% endblock %}

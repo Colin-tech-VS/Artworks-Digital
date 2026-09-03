@@ -20,6 +20,7 @@
       "inLanguage": "fr-FR",
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
       "primaryImageOfPage": {{ self.og_image() | tojson }},
+      "dateModified": {{ (artist.updated_at or artist.created_at).strftime('%Y-%m-%d') | tojson }},
       "mainEntity": {"@id": {{ (canonical_url() ~ '#artiste') | tojson }}}
     },
     {
@@ -27,12 +28,20 @@
       "@id": {{ (canonical_url() ~ '#artiste') | tojson }},
       "name": {{ artist.display_name | tojson }},
       "url": {{ canonical_url() | tojson }},
-      "image": {{ self.og_image() | tojson }}{% if artist.discipline %},
+      "image": {
+        "@type": "ImageObject",
+        "url": {{ self.og_image() | tojson }},
+        "contentUrl": {{ self.og_image() | tojson }},
+        "caption": {{ ('Galerie de ' ~ artist.display_name) | tojson }},
+        "creditText": {{ artist.display_name | tojson }}
+      }{% if artist.discipline %},
       "jobTitle": {{ artist.discipline | tojson }},
-      "knowsAbout": {{ artist.discipline | tojson }}{% endif %}{% if artist.location %},
+      "knowsAbout": {{ artist.discipline | tojson }},
+      "hasOccupation": {"@type": "Occupation", "name": {{ artist.discipline | tojson }}}{% endif %}{% if artist.location %},
+      "homeLocation": {"@type": "Place", "name": {{ artist.location | tojson }}},
       "address": {"@type": "PostalAddress", "addressLocality": {{ artist.location | tojson }}}{% endif %}{% if artist.statement %},
       "description": {{ artist.statement[:400] | tojson }}{% endif %}
-    }{% if works %},
+    }{% if all_works %},
     {
       "@type": "CollectionPage",
       "@id": {{ (canonical_url() ~ '#accrochage') | tojson }},
@@ -40,9 +49,9 @@
       "url": {{ canonical_url() | tojson }},
       "mainEntity": {
         "@type": "ItemList",
-        "numberOfItems": {{ works | length }},
+        "numberOfItems": {{ all_works | length }},
         "itemListElement": [
-          {% for work in works %}
+          {% for work in all_works %}
           {
             "@type": "ListItem",
             "position": {{ loop.index }},
@@ -51,7 +60,15 @@
               "@type": "VisualArtwork",
               "name": {{ work.title | tojson }},
               "url": {{ canonical_url(url_for('public.artwork', slug=artist.slug, work_id=work.id)) | tojson }},
-              "image": {{ absolute_media(work.image_path) | tojson }},
+              "image": {
+                "@type": "ImageObject",
+                "url": {{ absolute_media(work.image_path) | tojson }},
+                "contentUrl": {{ absolute_media(work.image_path) | tojson }},
+                "caption": {{ (work.title ~ ' — ' ~ artist.display_name) | tojson }},
+                "creditText": {{ artist.display_name | tojson }}{% if (work.image_w or 0) > 0 %},
+                "width": {{ work.image_w }},
+                "height": {{ work.image_h }}{% endif %}
+              },
               "creator": {"@id": {{ (canonical_url() ~ '#artiste') | tojson }}}{% if work.year %},
               "dateCreated": {{ work.year | tojson }}{% endif %}{% if work.medium %},
               "artMedium": {{ work.medium | tojson }}{% endif %}
@@ -75,13 +92,19 @@
 {% endblock %}
 
 {% block content %}
+{% set crumbs = [
+  {"name": "Accueil", "href": url_for('public.home')},
+  {"name": "Galeries", "href": url_for('public.galleries')},
+  {"name": artist.display_name}
+] %}
+{% include "_crumbs.html" %}
 <article class="room-head {% if artist.cover_path %}has-cover{% endif %}">
   {% if artist.cover_path %}
-    <img class="room-cover" src="{{ url_for('media', filename=artist.cover_path) }}" alt="Salle de {{ artist.display_name }}" fetchpriority="high">
+    <img class="room-cover" src="{{ url_for('media', filename=artist.cover_path) }}" alt="Galerie de {{ artist.display_name }}{% if artist.discipline %} — {{ artist.discipline }}{% endif %}{% if artist.location %}, {{ artist.location }}{% endif %}" width="1600" height="900" fetchpriority="high" decoding="async">
   {% endif %}
   <div class="room-intro">
     <p class="eyebrow">{{ artist.discipline or "Galerie" }}</p>
-    <h1>{{ artist.display_name }}{% if artist.has_feature('featured') %} <em class="tag">mise en avant</em>{% endif %}</h1>
+    <h1>{{ artist.display_name }}{% if artist.has_feature('featured') %} <em class="tag">mise en avant</em>{% endif %}{% if artist.has_feature('priority') %} <em class="tag">prioritaire</em>{% endif %}</h1>
     {% if artist.location %}<p class="where">{{ artist.location }}</p>{% endif %}
     {% if artist.statement %}
       <p class="statement">{{ artist.statement }}</p>
@@ -89,19 +112,36 @@
   </div>
 </article>
 
+{% if spotlight %}
+  <section class="spotlight">
+    <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=spotlight.id) }}">
+      <figure>
+        <img src="{{ url_for('media', filename=spotlight.image_path) }}" alt="{{ spotlight.title }}, {{ artist.display_name }}{% if spotlight.year %}, {{ spotlight.year }}{% endif %}{% if spotlight.medium %} — {{ spotlight.medium }}{% endif %}" fetchpriority="high" decoding="async"{% if (spotlight.image_w or 0) > 0 %} width="{{ spotlight.image_w }}" height="{{ spotlight.image_h }}"{% endif %}>
+        <figcaption>
+          <p class="eyebrow">En avant</p>
+          <strong>{{ spotlight.title }}</strong>
+          {% if spotlight.cartel %}<span>{{ spotlight.cartel }}</span>{% endif %}
+          {% if artist.has_feature('present') and spotlight.note %}<span>{{ spotlight.note }}</span>{% endif %}
+        </figcaption>
+      </figure>
+    </a>
+  </section>
+{% endif %}
+
 {% if groups %}
   {% for name, items in groups.items() %}
     <section class="collection-block">
       <h2>{{ name }}</h2>
-      <ul class="hang">
+      <ul class="hang {% if artist.hang_style == 'salon' and artist.has_feature('present') %}salon{% endif %}">
         {% for work in items %}
           <li>
             <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=work.id) }}">
               <figure>
-                <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}{% if work.year %}, {{ work.year }}{% endif %}" loading="lazy" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
+                <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}, {{ artist.display_name }}{% if work.year %}, {{ work.year }}{% endif %}{% if work.medium %} — {{ work.medium }}{% endif %}" loading="lazy" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
                 <figcaption>
                   <strong>{{ work.title }}</strong>
                   {% if work.cartel %}<span>{{ work.cartel }}</span>{% endif %}
+                  {% if artist.has_feature('present') and work.note %}<span>{{ work.note }}</span>{% endif %}
                 </figcaption>
               </figure>
             </a>
@@ -111,22 +151,23 @@
     </section>
   {% endfor %}
 {% elif works %}
-  <ul class="hang">
+  <ul class="hang {% if artist.hang_style == 'salon' and artist.has_feature('present') %}salon{% endif %}">
     {% for work in works %}
       <li>
         <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=work.id) }}">
           <figure>
-            <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}{% if work.year %}, {{ work.year }}{% endif %}" loading="lazy" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
+            <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}, {{ artist.display_name }}{% if work.year %}, {{ work.year }}{% endif %}{% if work.medium %} — {{ work.medium }}{% endif %}" loading="lazy" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
             <figcaption>
               <strong>{{ work.title }}</strong>
               {% if work.cartel %}<span>{{ work.cartel }}</span>{% endif %}
+              {% if artist.has_feature('present') and work.note %}<span>{{ work.note }}</span>{% endif %}
             </figcaption>
           </figure>
         </a>
       </li>
     {% endfor %}
   </ul>
-{% else %}
+{% elif not spotlight %}
   <p class="empty-room">L’accrochage n’a pas encore commencé.</p>
 {% endif %}
 

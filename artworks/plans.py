@@ -78,12 +78,21 @@ CATALOG = (
 
 
 def seed_offers() -> None:
+    """Crée les offres manquantes et aligne le catalogue : un flag oublié
+    en base ne doit pas laisser une promesse d’offre sans effet."""
     changed = False
     for spec in CATALOG:
         offer = db.session.get(Offer, spec["key"])
         if offer is None:
             db.session.add(Offer(**spec))
             changed = True
+            continue
+        for key, value in spec.items():
+            if key == "key":
+                continue
+            if getattr(offer, key) != value:
+                setattr(offer, key, value)
+                changed = True
     if changed:
         db.session.commit()
 

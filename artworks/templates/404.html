@@ -7,6 +7,9 @@
   <p class="eyebrow">404</p>
   <h1>Cette salle n’existe pas.</h1>
   <p class="lead-sm">La galerie est fermée, ou l’adresse a changé.</p>
-  <a class="btn btn-ink" href="{{ url_for('public.home') }}">Revenir à l’entrée</a>
+  <div class="hero-actions">
+    <a class="btn btn-ink" href="{{ url_for('public.home') }}">Revenir à l’entrée</a>
+    <a class="btn btn-ghost" href="{{ url_for('public.galleries') }}">Chercher une salle</a>
+  </div>
 </section>
 {% endblock %}

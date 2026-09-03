@@ -106,6 +106,8 @@ def ensure_schema() -> None:
     _add_column("artist", "stripe_subscription_id", "VARCHAR(80) DEFAULT ''")
     _add_column("artist", "plan_period_end", dt_type)
     _add_column("work", "collection_name", "VARCHAR(120) DEFAULT ''")
+    _add_column("artist", "hang_style", "VARCHAR(20) DEFAULT 'grille'")
+    _add_column("artist", "featured_work_id", "INTEGER")
     _add_column("mail_message", "external_id", "VARCHAR(200) DEFAULT ''")
     _add_column("work", "image_w", "INTEGER DEFAULT 0")
     _add_column("work", "image_h", "INTEGER DEFAULT 0")
@@ -130,12 +132,13 @@ def ensure_schema() -> None:
         db.session.rollback()
 
     from artworks.plans import seed_offers
-    from artworks.seed import purge_examples, write_og_image
+    from artworks.seed import purge_examples, purge_test_accounts, write_og_image
 
     try:
         seed_offers()
         write_og_image()
         purge_examples()
+        purge_test_accounts()
     except SQLAlchemyError:
         db.session.rollback()
 

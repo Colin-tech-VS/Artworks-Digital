@@ -25,7 +25,14 @@
         "contentUrl": {{ absolute_media(work.image_path) | tojson }}{% if (work.image_w or 0) > 0 %},
         "width": {{ work.image_w }},
         "height": {{ work.image_h }}{% endif %},
-        "caption": {{ (work.title ~ ' — ' ~ artist.display_name) | tojson }}
+        "caption": {{ (work.title ~ ' — ' ~ artist.display_name) | tojson }},
+        "creditText": {{ artist.display_name | tojson }},
+        "creator": {
+          "@type": "Person",
+          "name": {{ artist.display_name | tojson }},
+          "url": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }}
+        },
+        "representativeOfPage": true
       },
       "creator": {
         "@type": "Person",
@@ -58,13 +65,17 @@
 {% endblock %}
 
 {% block content %}
-<nav class="crumb" aria-label="Fil d’Ariane">
-  <a href="{{ url_for('public.gallery', slug=artist.slug) }}">← {{ artist.display_name }}</a>
-</nav>
+{% set crumbs = [
+  {"name": "Accueil", "href": url_for('public.home')},
+  {"name": "Galeries", "href": url_for('public.galleries')},
+  {"name": artist.display_name, "href": url_for('public.gallery', slug=artist.slug)},
+  {"name": work.title}
+] %}
+{% include "_crumbs.html" %}
 
 <article class="solo">
   <figure class="solo-frame">
-    <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}{% if work.year %}, {{ work.year }}{% endif %}" fetchpriority="high" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
+    <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}, {{ artist.display_name }}{% if work.year %}, {{ work.year }}{% endif %}{% if work.medium %} — {{ work.medium }}{% endif %}" fetchpriority="high" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
   </figure>
   <aside class="cartel">
     <p class="eyebrow">{{ artist.display_name }}</p>

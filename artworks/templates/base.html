@@ -16,6 +16,7 @@
   <meta name="author" content="{% block author %}{% endblock %}">
   {%- endif %}
   <link rel="canonical" href="{% block canonical %}{{ canonical_url() }}{% endblock %}">
+  <link rel="search" type="application/opensearchdescription+xml" title="Artworksdigital" href="{{ url_for('public.opensearch') }}">
   <meta property="og:type" content="{% block og_type %}website{% endblock %}">
   <meta property="og:site_name" content="Artworksdigital">
   <meta property="og:locale" content="fr_FR">
@@ -24,6 +25,7 @@
   <meta property="og:url" content="{{ self.canonical() }}">
   <meta property="og:image" content="{% block og_image %}{{ default_og_image }}{% endblock %}">
   <meta property="og:image:secure_url" content="{{ self.og_image() }}">
+  <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:alt" content="{% block og_image_alt %}{{ self.og_title() }}{% endblock %}">
   {%- if self.og_image_width() | trim and self.og_image_height() | trim %}
   <meta property="og:image:width" content="{% block og_image_width %}{% endblock %}">
@@ -53,10 +55,22 @@
         "@id": {{ (canonical_url('/') ~ '#organisation') | tojson }},
         "name": "Artworksdigital",
         "url": {{ canonical_url('/') | tojson }},
-        "logo": {{ default_og_image | tojson }},
+        "logo": {
+          "@type": "ImageObject",
+          "url": {{ default_og_image | tojson }},
+          "width": 1200,
+          "height": 630
+        },
+        "image": {{ default_og_image | tojson }},
         "email": {{ site_contact_email | tojson }},
         "description": "Artworksdigital ouvre à chaque artiste une galerie qui lui appartient : une adresse, un accrochage, une note d’intention.",
-        "areaServed": "FR"
+        "areaServed": "FR",
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "email": {{ site_contact_email | tojson }},
+          "contactType": "customer support",
+          "availableLanguage": ["French"]
+        }
       },
       {
         "@type": "WebSite",
@@ -64,7 +78,15 @@
         "name": "Artworksdigital",
         "url": {{ canonical_url('/') | tojson }},
         "inLanguage": "fr-FR",
-        "publisher": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}}
+        "publisher": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}},
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": {{ (canonical_url('/galeries') ~ '?q={search_term_string}') | tojson }}
+          },
+          "query-input": "required name=search_term_string"
+        }
       }
     ]
   }
@@ -77,6 +99,11 @@
   {% block chrome %}
   <header class="site-bar">
     <a class="mark" href="{{ url_for('public.home') }}">Artworks <em>Digital</em></a>
+    <form class="site-search" action="{{ url_for('public.galleries') }}" method="get" role="search" data-rooms-index="{{ url_for('public.rooms_feed') }}" data-rooms-page="{{ url_for('public.galleries') }}">
+      <label class="sr-only" for="site-q">Rechercher une salle</label>
+      <input id="site-q" type="search" name="q" value="{{ query|default('') }}" placeholder="Rechercher une salle…" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="site-suggest">
+      <ul id="site-suggest" class="site-suggest" hidden></ul>
+    </form>
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Ouvrir le menu">
       <span></span><span></span><span></span>
     </button>
@@ -113,7 +140,13 @@
 
   {% block footer %}
   <footer class="site-foot">
-    <p>Artworksdigital — la galerie appartient à l’artiste. · <a href="{{ url_for('public.offers') }}">Offres</a> · <a href="{{ url_for('public.contact') }}">Contact</a></p>
+    <p>Artworksdigital — la galerie appartient à l’artiste.</p>
+    <nav aria-label="Pied de page">
+      <a href="{{ url_for('public.home') }}">Accueil</a>
+      <a href="{{ url_for('public.galleries') }}">Galeries</a>
+      <a href="{{ url_for('public.offers') }}">Offres</a>
+      <a href="{{ url_for('public.contact') }}">Contact</a>
+    </nav>
   </footer>
   {% endblock %}
   {%- if request.endpoint and not request.endpoint.startswith('admin.') and not request.endpoint.startswith('atelier.') %}
