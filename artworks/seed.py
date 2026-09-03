@@ -1,112 +1,174 @@
 from datetime import timedelta
 from io import BytesIO
 import os
+from pathlib import Path
 from random import Random
 from secrets import token_urlsafe
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 
 from artworks.extensions import db
 from artworks.images import save_bytes
 from artworks.models import Artist, PageView, Work, utcnow
 
 
-PALETTES = (
-    ((28, 24, 21), (196, 142, 92), (232, 214, 186), (90, 108, 92)),
-    ((18, 32, 48), (214, 186, 140), (120, 86, 70), (240, 236, 228)),
-    ((48, 28, 32), (220, 168, 148), (92, 64, 58), (236, 226, 214)),
-    ((24, 36, 28), (168, 186, 148), (214, 196, 120), (244, 240, 230)),
-)
+DEMO_DIR = Path(__file__).resolve().parent / "static" / "demo"
 
 
+# Les galeries d’exemple viennent du catalogue de la V3 : sept artistes, leurs
+# mots, leurs œuvres et leurs visuels. Un artiste tient une salle, et une seule.
 EXAMPLES = (
     {
-        "display_name": "Clara Morel",
-        "slug": "clara-morel",
-        "email": "clara.morel@galerie.artworksdigital.fr",
-        "discipline": "Peinture",
-        "location": "Lyon",
-        "statement": (
-            "Je peins des seuils : la lumière d’un atelier, le silence d’un mur, "
-            "ce qui reste quand la figure s’efface. Chaque toile est une salle à elle seule."
-        ),
-        "works": (
-            ("Seuil ochre", "2024", "Huile sur toile", "120 × 90 cm", "Un orange retenu, presque un enduit."),
-            ("Mur de midi", "2023", "Huile sur toile", "100 × 80 cm", "La chaleur d’un atelier vide."),
-            ("Les deux chaises", "2025", "Huile sur lin", "81 × 65 cm", "Personne n’est assis. L’espace tient."),
-            ("Étude pour une fenêtre", "2024", "Huile sur papier", "50 × 40 cm", "Un rectangle de jour."),
-        ),
-    },
-    {
-        "display_name": "Malik Benyamin",
-        "slug": "malik-benyamin",
-        "email": "malik.benyamin@galerie.artworksdigital.fr",
-        "discipline": "Photographie",
+        "display_name": "Camille Vasseur",
+        "slug": "camille-vasseur",
+        "email": "camille.vasseur@galerie.artworksdigital.fr",
+        "discipline": "Peinture abstraite · Huile",
         "location": "Marseille",
+        "cover": "collection-abstraction.jpg",
         "statement": (
-            "Je photographie le port comme on dessine : plans serrés, matières, halos. "
-            "Pas de postcard. Juste le grain de la ville quand elle se tait."
+            "Je peins ce qui brûle juste avant de disparaître. La couleur n’est pas un décor : "
+            "c’est une température, une matière qui se souvient du feu et de la terre. Chaque toile "
+            "commence par un effacement — j’applique, je gratte, je recommence, jusqu’à ce que la "
+            "surface respire d’elle-même."
         ),
         "works": (
-            ("Quai 14, 6 h 12", "2024", "Tirage pigmentaire", "60 × 40 cm", "La mer n’est qu’une bande claire."),
-            ("Câbles", "2023", "Tirage pigmentaire", "50 × 50 cm", "Une écriture horizontale."),
-            ("Nuit au Panier", "2025", "Tirage pigmentaire", "70 × 50 cm", "Une fenêtre, puis plus rien."),
+            ("Embrasement", "2024", "Huile sur toile de lin", "120 × 90 × 4 cm",
+             "Le rouge n’éclaire pas : il chauffe.", "art-01.jpg", "Abstraction"),
+            ("Aube rouge", "2023", "Huile sur toile de lin", "70 × 95 cm",
+             "Ce qui reste du feu au matin.", "oeuvre-main.jpg", "Abstraction"),
         ),
     },
     {
-        "display_name": "Atelier Sèvre",
-        "slug": "atelier-sevre",
-        "email": "sevre@galerie.artworksdigital.fr",
-        "discipline": "Céramique",
+        "display_name": "Théo Lambert",
+        "slug": "theo-lambert",
+        "email": "theo.lambert@galerie.artworksdigital.fr",
+        "discipline": "Color field · Acrylique",
+        "location": "Nantes",
+        "cover": "cover-color-field.jpg",
+        "statement": (
+            "Je cherche l’horizon : cette ligne où deux couleurs se rencontrent sans jamais se "
+            "toucher. De grands aplats où la lumière semble retenue, et la lenteur d’une transition "
+            "qui ne veut pas finir."
+        ),
+        "works": (
+            ("Marée basse", "2023", "Acrylique sur toile", "100 × 140 cm",
+             "Deux bleus qui se cèdent le passage.", "art-02.jpg", "Color field"),
+        ),
+    },
+    {
+        "display_name": "Inès Caron",
+        "slug": "ines-caron",
+        "email": "ines.caron@galerie.artworksdigital.fr",
+        "discipline": "Photographie argentique",
         "location": "Paris",
+        "cover": "collection-photographie.jpg",
         "statement": (
-            "Formes utiles, presque. Des pièces qui tiennent dans la main et sur un socle. "
-            "L’émail est une lumière posée, jamais un décor."
+            "Le silence a une texture. Je la cherche dans le grain de l’argentique. Je photographie "
+            "le vide et la matière en noir et blanc ; chaque tirage est fait à la main, à l’atelier."
         ),
         "works": (
-            ("Jarre basse", "2024", "Grès émaillé", "H. 28 cm", "Un ventre, une ombre."),
-            ("Coupe blanche", "2025", "Porcelaine", "Ø 32 cm", "Le bord est plus important que le fond."),
-            ("Trois cylindres", "2023", "Grès", "H. 18 à 41 cm", "Une famille, pas une série."),
+            ("Silence n°7", "2024", "Tirage argentique sur papier baryté", "60 × 80 cm",
+             "Le grain tient lieu de sujet.", "art-03.jpg", "Argentique"),
+            ("Horizon", "2024", "Tirage argentique sur papier baryté", "50 × 70 cm",
+             "Une ligne, et beaucoup de patience.", "art-10.jpg", "Argentique"),
         ),
     },
     {
-        "display_name": "Noa Eller",
-        "slug": "noa-eller",
-        "email": "noa.eller@galerie.artworksdigital.fr",
-        "discipline": "Dessin",
-        "location": "Bruxelles",
+        "display_name": "Marius Hadi",
+        "slug": "marius-hadi",
+        "email": "marius.hadi@galerie.artworksdigital.fr",
+        "discipline": "Abstraction géométrique",
+        "location": "Lyon",
+        "cover": "cover-geometrie.jpg",
         "statement": (
-            "Le dessin comme un accrochage : une feuille, un trait, beaucoup d’air. "
-            "Je cherche la tension minimale pour qu’une figure tienne."
+            "La géométrie est une émotion qui a trouvé sa forme. Je compose des architectures de "
+            "couleurs où l’équilibre tient à un fil, avec un vocabulaire puisé dans le Bauhaus et "
+            "dans la musique."
         ),
         "works": (
-            ("Portrait sans siège", "2025", "Fusain sur papier", "70 × 50 cm", "Une présence, presque."),
-            ("Main gauche", "2024", "Mine de plomb", "29,7 × 21 cm", "Étude."),
-            ("La table", "2023", "Encre", "40 × 30 cm", "Un plateau, une ombre portée."),
-            ("Sans titre (série 12)", "2025", "Fusain", "100 × 70 cm", "Le plus grand format. Le moins de traits."),
+            ("Géométrie douce", "2023", "Acrylique sur bois", "80 × 80 cm",
+             "L’angle s’excuse presque.", "art-04.jpg", "Géométrie"),
+            ("Contrepoint", "2023", "Acrylique sur toile", "75 × 100 cm",
+             "Deux voix, une seule mesure.", "art-11.jpg", "Géométrie"),
+            ("Carnaval", "2024", "Acrylique sur toile", "80 × 80 cm",
+             "La règle prend un jour de congé.", "art-08.jpg", "Abstraction"),
+        ),
+    },
+    {
+        "display_name": "Salomé Drift",
+        "slug": "salome-drift",
+        "email": "salome.drift@galerie.artworksdigital.fr",
+        "discipline": "Peinture abstraite · Huile",
+        "location": "Arles",
+        "cover": "banner.jpg",
+        "statement": (
+            "Je laboure la toile comme on retourne une terre : pour ce qu’elle garde en mémoire. "
+            "Matière épaisse, pigments, sillons — des paysages abstraits qui viennent de la "
+            "campagne provençale."
+        ),
+        "works": (
+            ("Terres labourées", "2022", "Huile et pigments sur toile", "90 × 130 cm",
+             "Le sillon avant la récolte.", "art-05.jpg", "Terres"),
+            ("Sillage", "2024", "Huile sur toile", "60 × 40 cm",
+             "Le petit format, là où la main se voit.", "art-12.jpg", "Terres"),
+        ),
+    },
+    {
+        "display_name": "Élena Roux",
+        "slug": "elena-roux",
+        "email": "elena.roux@galerie.artworksdigital.fr",
+        "discipline": "Figuration",
+        "location": "Bordeaux",
+        "cover": "collection-emergents.jpg",
+        "statement": (
+            "Je peins des présences à la lisière de la lumière. Des intérieurs, des portraits, et "
+            "le clair-obscur pour seule intimité."
+        ),
+        "works": (
+            ("Femme à la fenêtre", "2024", "Huile sur toile", "65 × 80 cm",
+             "Elle regarde dehors ; nous, dedans.", "art-06.jpg", "Figuration"),
+        ),
+    },
+    {
+        "display_name": "Atelier Nova",
+        "slug": "atelier-nova",
+        "email": "nova@galerie.artworksdigital.fr",
+        "discipline": "Sculpture · Bronze",
+        "location": "Genève",
+        "cover": "collection-sculpture.jpg",
+        "statement": (
+            "Le bronze est une attente qui prend forme. Deux sculpteurs, des formes organiques "
+            "patinées, quelque part entre la figure et l’abstraction."
+        ),
+        "works": (
+            ("Veille", "2023", "Bronze patiné, pièce unique", "H. 48 cm",
+             "Debout, sans rien attendre de précis.", "art-07.jpg", "Bronzes"),
         ),
     },
 )
 
 
-def _blob(rng: Random, size: int, palette: tuple) -> bytes:
-    image = Image.new("RGB", (size, size), palette[0])
-    draw = ImageDraw.Draw(image, "RGBA")
-    for _ in range(18):
-        color = palette[rng.randint(1, len(palette) - 1)] + (rng.randint(70, 180),)
-        x0, y0 = rng.randint(-80, size), rng.randint(-80, size)
-        x1, y1 = x0 + rng.randint(120, 520), y0 + rng.randint(80, 480)
-        kind = rng.choice(("ellipse", "rect", "arc"))
-        if kind == "ellipse":
-            draw.ellipse((x0, y0, x1, y1), fill=color)
-        elif kind == "rect":
-            draw.rectangle((x0, y0, x1, y1), fill=color)
-        else:
-            draw.arc((x0, y0, x1, y1), rng.randint(0, 180), rng.randint(180, 360), fill=color[:3], width=18)
-    image = image.filter(ImageFilter.GaussianBlur(radius=1.2))
-    buffer = BytesIO()
-    image.save(buffer, format="JPEG", quality=84, optimize=True)
-    return buffer.getvalue()
+def _photo(filename: str, max_side: int = 2000) -> tuple[str, int, int] | None:
+    """Range un visuel de démonstration dans le magasin d’images du site.
+
+    Les fichiers vivent dans ``static/demo``. Le seed les fait passer par le
+    même chemin que les téléversements d’artistes : ils sont donc servis par
+    ``/media`` comme le reste, et survivent au disque éphémère de Scalingo.
+    Un fichier manquant ne fait pas tomber le seed — l’œuvre est simplement
+    passée."""
+    source = DEMO_DIR / filename
+    if not source.is_file() or source.stat().st_size == 0:
+        return None
+    try:
+        image = Image.open(source)
+        if image.mode not in ("RGB", "L"):
+            image = image.convert("RGB")
+        image.thumbnail((max_side, max_side))
+        buffer = BytesIO()
+        image.save(buffer, format="JPEG", quality=86, optimize=True)
+    except OSError:
+        return None
+    return save_bytes(buffer.getvalue()), image.width, image.height
 
 
 def _og_default() -> bytes:
@@ -159,7 +221,7 @@ def seed_examples() -> None:
     write_og_image()
     created = False
     try:
-        for index, spec in enumerate(EXAMPLES):
+        for spec in EXAMPLES:
             if Artist.query.filter((Artist.slug == spec["slug"]) | (Artist.email == spec["email"])).first():
                 continue
             artist = Artist(
@@ -178,12 +240,15 @@ def seed_examples() -> None:
             artist.set_password(token_urlsafe(24))
             db.session.add(artist)
             db.session.flush()
-            rng = Random(spec["slug"])
-            palette = PALETTES[index % len(PALETTES)]
-            artist.cover_path = save_bytes(_blob(rng, 1600, palette))
-            for position, work in enumerate(spec["works"]):
-                title, year, medium, dimensions, note = work
-                image_path = save_bytes(_blob(Random(f"{spec['slug']}-{title}"), 1400, palette))
+            cover = _photo(spec["cover"])
+            if cover:
+                artist.cover_path = cover[0]
+            position = 0
+            for title, year, medium, dimensions, note, photo, collection in spec["works"]:
+                visual = _photo(photo)
+                if visual is None:
+                    continue
+                image_path, width, height = visual
                 db.session.add(
                     Work(
                         artist_id=artist.id,
@@ -193,10 +258,14 @@ def seed_examples() -> None:
                         dimensions=dimensions,
                         note=note,
                         image_path=image_path,
+                        image_w=width,
+                        image_h=height,
+                        collection_name=collection,
                         visible=True,
                         position=position,
                     )
                 )
+                position += 1
             created = True
         if created:
             db.session.commit()
