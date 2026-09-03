@@ -39,12 +39,15 @@ import os
 import sqlite3
 import sys
 import urllib.request
+from io import BytesIO
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from artworks import create_app  # noqa: E402
 from artworks.extensions import db  # noqa: E402
+from PIL import Image  # noqa: E402
+
 from artworks.images import save_bytes  # noqa: E402
 from artworks.models import Artist, Work  # noqa: E402
 from artworks.slugs import unique_slug  # noqa: E402
@@ -166,6 +169,25 @@ def fetch_image(url: str, timeout: int = 25) -> bytes | None:
         return None
 
 
+def as_jpeg(payload: bytes, max_side: int = 2400) -> bytes | None:
+    """Ramène un visuel au format que le site sert.
+
+    Les bases d’avant stockent du WebP, parfois servi sous une étiquette qui
+    n’est pas la sienne. Le magasin d’images, lui, annonce du JPEG : garder
+    les octets tels quels reviendrait à mentir sur leur nature. On les
+    redécode donc une fois, à la bonne taille, et on les réécrit."""
+    try:
+        image = Image.open(BytesIO(payload))
+        if image.mode not in ("RGB", "L"):
+            image = image.convert("RGB")
+        image.thumbnail((max_side, max_side))
+        buffer = BytesIO()
+        image.save(buffer, format="JPEG", quality=88, optimize=True)
+    except Exception:
+        return None
+    return buffer.getvalue()
+
+
 def import_all(
     source: str, *, with_images: bool, limit: int, dry_run: bool, plan: str, media_base: str = ""
 ) -> dict:
@@ -212,6 +234,7 @@ def import_all(
         cover = rewrite_media(str(pick(row, "profile_photo_url", "profile_photo", "cover_path")), media_base)
         if with_images and cover:
             payload = fetch_image(cover)
+            payload = as_jpeg(payload) if payload else None
             if payload:
                 # À blanc, on vérifie que le visuel répond sans rien écrire.
                 if not dry_run:
@@ -235,6 +258,7 @@ def import_all(
             # L’essai à blanc rapatrie aussi les visuels : c’est le seul moyen
             # de savoir, avant d’écrire, si les URLs de la base répondent encore.
             payload = fetch_image(image_url)
+            payload = as_jpeg(payload) if payload else None
             if payload is None:
                 report["images_lost"] += 1
                 print(f"      · {title} — visuel introuvable, œuvre ignorée")

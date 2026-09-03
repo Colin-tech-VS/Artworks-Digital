@@ -6,6 +6,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from artworks.extensions import db, login_manager
 
 
+# Empreintes bcrypt héritées d’une base d’avant.
+BCRYPT_PREFIXES = ("$2a$", "$2b$", "$2y$")
+
+
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -64,7 +68,32 @@ class Artist(UserMixin, db.Model):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password: str) -> bool:
-        return check_password_hash(self.password_hash, password)
+        """Vérifie un mot de passe, y compris ceux venus d’avant.
+
+        Les bases reprises portent deux écritures : le scrypt de Werkzeug,
+        que la maison sait lire, et le bcrypt d’une génération antérieure,
+        qu’elle ignore. Plutôt que de demander à ces artistes-là de refaire
+        un mot de passe, on lit les deux — et à la première connexion réussie
+        l’empreinte ancienne est réécrite au format courant, si bien qu’elle
+        finit par disparaître d’elle-même."""
+        stored = self.password_hash or ""
+        if not stored.startswith(BCRYPT_PREFIXES):
+            return check_password_hash(stored, password)
+
+        import bcrypt
+
+        try:
+            valid = bcrypt.checkpw(password.encode("utf-8"), stored.encode("utf-8"))
+        except (ValueError, TypeError):
+            return False
+        if valid:
+            self.set_password(password)
+            try:
+                db.session.commit()
+            except Exception:
+                # La connexion est acquise : un réécriture ratée ne la refuse pas.
+                db.session.rollback()
+        return valid
 
     def touch(self) -> None:
         self.updated_at = utcnow()

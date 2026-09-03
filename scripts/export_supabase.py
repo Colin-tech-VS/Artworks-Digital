@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -46,19 +47,34 @@ def _get(url: str, key: str, timeout: int = 60) -> list[dict]:
             "Accept": "application/json",
         },
     )
-    try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as error:
-        if error.code in (401, 403):
-            # Une trace de pile n’apprend rien ici : le problème est la clé.
-            sys.exit(
-                "Clé refusée par le projet (HTTP "
-                f"{error.code}). Prendre la clé « service_role » dans "
-                "Dashboard → Settings → API keys ; la clé anon ne traverse "
-                "pas les politiques RLS."
-            )
-        raise
+    for essai in range(5):
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            if error.code >= 500 and essai < 4:
+                time.sleep(2 ** essai)
+                continue
+            raise _lisible(error)
+        except urllib.error.URLError:
+            # Coupure passagère : on laisse au réseau le temps de revenir.
+            if essai < 4:
+                time.sleep(2 ** essai)
+                continue
+            raise
+    raise RuntimeError("réseau injoignable après cinq tentatives")
+
+
+def _lisible(error: urllib.error.HTTPError) -> BaseException:
+    if error.code in (401, 403):
+        # Une trace de pile n’apprend rien ici : le problème est la clé.
+        sys.exit(
+            "Clé refusée par le projet (HTTP "
+            f"{error.code}). Prendre la clé « service_role » dans "
+            "Dashboard → Settings → API keys ; la clé anon ne traverse "
+            "pas les politiques RLS."
+        )
+    return error
 
 
 def read_table(base: str, key: str, table: str) -> list[dict]:
@@ -75,14 +91,31 @@ def read_table(base: str, key: str, table: str) -> list[dict]:
     return rows
 
 
-def table_exists(base: str, key: str, table: str) -> bool:
+def count_rows(base: str, key: str, table: str) -> int:
+    """Nombre de lignes, ou -1 si la table n’existe pas.
+
+    Une base migrée garde souvent les deux schémas côte à côte, l’ancien
+    vidé après le transfert. Compter, et pas seulement constater qu’une
+    table existe, évite d’exporter la coquille au lieu du catalogue."""
+    url = f"{base}/rest/v1/{urllib.parse.quote(table)}?select=*&limit=1"
+    request = urllib.request.Request(
+        url,
+        headers={
+            "apikey": key,
+            "Authorization": f"Bearer {key}",
+            "Prefer": "count=exact",
+            "Range-Unit": "items",
+            "Range": "0-0",
+        },
+    )
     try:
-        _get(f"{base}/rest/v1/{urllib.parse.quote(table)}?select=*&limit=1", key)
-        return True
+        with urllib.request.urlopen(request, timeout=60) as response:
+            total = response.headers.get("Content-Range", "").rpartition("/")[2]
+            return int(total) if total.isdigit() else 0
     except urllib.error.HTTPError as error:
         if error.code in (404, 400, 406):
-            return False
-        raise
+            return -1
+        raise _lisible(error)
 
 
 def main() -> None:
@@ -99,13 +132,18 @@ def main() -> None:
     if args.table_artists:
         shape = (args.table_artists, args.table_works or "")
     else:
-        shape = next(
-            ((a, w) for a, w in SHAPES if table_exists(base, args.key, a)),
-            None,
-        )
-        if shape is None:
+        peuplées = []
+        for artistes, œuvres in SHAPES:
+            lignes = count_rows(base, args.key, artistes)
+            if lignes >= 0:
+                print(f"  {artistes} : {lignes} ligne(s)")
+            if lignes > 0:
+                peuplées.append((lignes, artistes, œuvres))
+        if not peuplées:
             noms = " ou ".join(a for a, _ in SHAPES)
-            sys.exit(f"Aucune table d’artistes reconnue ({noms}).")
+            sys.exit(f"Aucune table d’artistes peuplée ({noms}).")
+        _, artistes, œuvres = max(peuplées)
+        shape = (artistes, œuvres)
 
     artists_table, works_table = shape
     print(f"Schéma « {artists_table} » retenu.")
