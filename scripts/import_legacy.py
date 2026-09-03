@@ -73,15 +73,20 @@ def read_postgres(dsn: str) -> tuple[list[dict], list[dict], str]:
                 "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
             )
             present = {row[0] for row in cursor.fetchall()}
+            best: tuple[list[dict], list[dict], str] | None = None
             for artists_table, works_table, _ in SHAPES:
-                if artists_table in present:
-                    cursor.execute(f"SELECT * FROM {artists_table}")
-                    artists = _rows(cursor)
-                    works: list[dict] = []
-                    if works_table in present:
-                        cursor.execute(f"SELECT * FROM {works_table}")
-                        works = _rows(cursor)
-                    return artists, works, artists_table
+                if artists_table not in present:
+                    continue
+                cursor.execute(f"SELECT * FROM {artists_table}")
+                artists = _rows(cursor)
+                works: list[dict] = []
+                if works_table in present:
+                    cursor.execute(f"SELECT * FROM {works_table}")
+                    works = _rows(cursor)
+                if best is None or len(artists) > len(best[0]):
+                    best = (artists, works, artists_table)
+            if best:
+                return best
     raise SystemExit("Aucune table d’artistes reconnue dans cette base.")
 
 
@@ -91,17 +96,21 @@ def read_sqlite(path: str) -> tuple[list[dict], list[dict], str]:
     present = {
         row["name"] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
     }
+    best: tuple[list[dict], list[dict], str] | None = None
     for artists_table, works_table, _ in SHAPES:
-        if artists_table in present:
-            artists = [dict(row) for row in connection.execute(f"SELECT * FROM {artists_table}")]
-            works = (
-                [dict(row) for row in connection.execute(f"SELECT * FROM {works_table}")]
-                if works_table in present
-                else []
-            )
-            connection.close()
-            return artists, works, artists_table
+        if artists_table not in present:
+            continue
+        artists = [dict(row) for row in connection.execute(f"SELECT * FROM {artists_table}")]
+        works = (
+            [dict(row) for row in connection.execute(f"SELECT * FROM {works_table}")]
+            if works_table in present
+            else []
+        )
+        if best is None or len(artists) > len(best[0]):
+            best = (artists, works, artists_table)
     connection.close()
+    if best:
+        return best
     raise SystemExit("Aucune table d’artistes reconnue dans ce fichier.")
 
 
