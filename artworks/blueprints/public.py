@@ -21,16 +21,90 @@ from artworks.seo import canonical_url
 
 public_bp = Blueprint("public", __name__)
 
+# La lettre est datée : les moteurs — et les moteurs génératifs surtout —
+# rangent une annonce par sa fraîcheur. On avance cette date quand on
+# réécrit la lettre, pas à chaque déploiement.
+LETTER_PUBLISHED = "2025-11-18"
+LETTER_MODIFIED = "2026-09-03"
+
+# Une seule liste de questions : la lettre l'affiche, son JSON-LD la répète,
+# et `/llms.txt` la sert aux moteurs génératifs. Trois copies mentiraient.
+SITE_FAQ = (
+    {
+        "q": "Qu’est-ce qu’Artworksdigital ?",
+        "a": (
+            "Artworksdigital ouvre à chaque artiste une galerie qui lui appartient : "
+            "un atelier privé pour préparer la salle, une adresse publique pour la "
+            "montrer. Ce n’est ni une marketplace, ni une vitrine collective."
+        ),
+    },
+    {
+        "q": "Artworksdigital vend-il des œuvres ?",
+        "a": (
+            "Non. Il n’y a ni panier, ni catalogue partagé, ni commission. La galerie "
+            "appartient à l’artiste ; un visiteur lui écrit directement depuis la salle."
+        ),
+    },
+    {
+        "q": "Comment ouvrir une galerie ?",
+        "a": (
+            "On crée un atelier, on accroche ses œuvres avec leur cartel, on écrit la "
+            "note d’intention, puis on ouvre la salle. L’adresse publique est "
+            "artworksdigital.fr/galerie/votre-nom."
+        ),
+    },
+    {
+        "q": "Combien coûte une galerie sur Artworksdigital ?",
+        "a": (
+            "L’offre Découverte est gratuite, jusqu’à cinq œuvres. Artiste coûte "
+            "9,90 €/mois, Pro 19,90 €/mois, Studio 39,90 €/mois. Aucune commission "
+            "sur les ventes : il n’y a pas de boutique."
+        ),
+    },
+    {
+        "q": "Artworksdigital est-il ouvert aujourd’hui ?",
+        "a": (
+            "Une nouvelle version se prépare, et la page d’accueil est pour l’instant "
+            "une lettre. Les galeries déjà publiées restent visitables à leur adresse, "
+            "et la liste des salles ouvertes est sur artworksdigital.fr/galeries."
+        ),
+    },
+    {
+        "q": "À qui s’adresse Artworksdigital ?",
+        "a": (
+            "Aux artistes qui veulent une adresse à eux : peinture, dessin, "
+            "photographie, sculpture, art numérique. Il n’y a pas de compte galerie "
+            "ni de compte collectionneur, pas de jury et pas de sélection."
+        ),
+    },
+)
+
 
 @public_bp.route("/", methods=["GET", "POST"])
 def home():
     if not site_is_open():
+        from artworks.plans import active_offers
+
         error = False
         if request.method == "POST":
             if try_unlock(request.form.get("key") or ""):
                 return redirect(url_for("public.home"))
             error = True
-        return render_template("public/coming_soon.html", gate_error=error)
+        # Porte fermée, la lettre est la seule page que les moteurs lisent :
+        # elle porte donc le site entier — la définition, les salles ouvertes,
+        # les offres, les questions — et non un simple « à bientôt ».
+        rooms = open_rooms()
+        g.track_title = "Artworksdigital revient"
+        return render_template(
+            "public/coming_soon.html",
+            gate_error=error,
+            rooms=rooms,
+            room_counts=public_work_counts(rooms),
+            offers=active_offers(),
+            faq=SITE_FAQ,
+            letter_published=LETTER_PUBLISHED,
+            letter_date=LETTER_MODIFIED,
+        )
     rooms = open_rooms()
     featured = [artist for artist in rooms if artist.has_feature("featured")][:6]
     g.track_title = "Artworksdigital"
@@ -280,8 +354,25 @@ def robots():
 
 @public_bp.route("/llms.txt")
 def llms():
-    """Fichier pour les moteurs génératifs : qui nous sommes, sans jargon."""
-    body = render_template("public/llms.txt", contact=contact_inbox())
+    """Fichier pour les moteurs génératifs : qui nous sommes, sans jargon.
+
+    Un modèle qui cite Artworksdigital doit trouver ici de quoi le faire
+    juste : la définition, les faits, les questions posées et les salles
+    réellement ouvertes ce matin — pas une brochure figée.
+    """
+    from artworks.plans import active_offers
+
+    rooms = open_rooms()
+    body = render_template(
+        "public/llms.txt",
+        contact=contact_inbox(),
+        rooms=rooms,
+        room_counts=public_work_counts(rooms),
+        offers=active_offers(),
+        faq=SITE_FAQ,
+        site_open=site_is_open(),
+        updated=LETTER_MODIFIED,
+    )
     return body, 200, {
         "Content-Type": "text/plain; charset=utf-8",
         "Cache-Control": "public, max-age=3600",

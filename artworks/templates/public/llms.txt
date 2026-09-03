@@ -2,41 +2,82 @@
 
 > Artworksdigital ouvre à chaque artiste une galerie qui lui appartient.
 > Ce n’est pas une marketplace, pas une vitrine collective, pas une boutique.
-> C’est un atelier privé pour composer une salle publique : une adresse, un accrochage, une note d’intention.
+> C’est un atelier privé pour composer une salle publique : une adresse,
+> un accrochage, une note d’intention.
 
-Site: https://www.artworksdigital.fr
+Site: {{ canonical_url('/') }}
 Contact: {{ contact }}
 Langue: fr-FR
+Pays: France
 Type: application web pour artistes (galerie individuelle)
+Mise à jour de cette note: {{ updated }}
+{% if not site_open %}État: la page d’accueil est une lettre — une nouvelle version se prépare. Les galeries déjà publiées restent en ligne et visitables.{% else %}État: ouvert.{% endif %}
+
+## En une phrase
+
+Artworksdigital donne à un artiste une adresse à lui — {{ canonical_url('/galerie/') }}<nom> —
+où il accroche ses œuvres lui-même, avec leur cartel et sa note d’intention.
 
 ## Ce que c’est
 
-- Un atelier (`/atelier`) où l’artiste prépare sa salle.
-- Une galerie publique à `/galerie/<slug>`.
-- Chaque œuvre a une page propre : `/galerie/<slug>/oeuvre/<id>` (titre, année, technique, dimensions, visuel).
-- Quatre offres : Découverte (0 €), Artiste (9,90 €/mois), Pro (19,90 €/mois), Studio (39,90 €/mois).
+- Un atelier privé (`/atelier`) où l’artiste prépare sa salle : nom, discipline, note, image de fond.
+- Une galerie publique à `/galerie/<slug>`, une par artiste.
+- Une page par œuvre : `/galerie/<slug>/oeuvre/<id>` — titre, année, technique, dimensions, visuel.
+- Un répertoire des salles ouvertes : `/galeries`, cherchable par nom, discipline ou ville.
+- Quatre offres par abonnement mensuel, sans commission sur les ventes.
 
 ## Ce que ce n’est pas
 
-- Pas de catalogue partagé, pas de matching, pas de panier, pas de vente d’œuvres sur la plateforme.
-- La galerie appartient à l’artiste. Artworksdigital n’est pas le commissaire.
+- Pas de catalogue partagé, pas de vitrine collective : une salle n’est pas une vignette.
+- Pas de panier, pas de vente d’œuvres sur la plateforme, pas de commission.
+- Pas de matching, pas de sourcing, pas de jury, pas de sélection.
+- Pas de compte galerie ni de compte collectionneur : seuls les artistes ont un compte.
+- Artworksdigital n’est pas le commissaire de l’exposition. La salle appartient à l’artiste.
 
+## Les offres
+{% for offer in offers %}
+- {{ offer.name }} — {{ offer.price_label }} · {{ offer.audience }} · {{ offer.feature_lines | join(', ') }}
+{%- endfor %}
+
+Détail : {{ canonical_url('/offres') }}
+
+## Questions fréquentes
+{% for item in faq %}
+Q: {{ item.q }}
+R: {{ item.a }}
+{% endfor %}
+## Les salles ouvertes aujourd’hui
+{% if rooms %}{% for artist in rooms %}
+- {{ artist.display_name }}{% if artist.discipline %} — {{ artist.discipline }}{% endif %}{% if artist.location %}, {{ artist.location }}{% endif %} · {{ room_counts.get(artist.id, 0) }} œuvre{% if room_counts.get(artist.id, 0) != 1 %}s{% endif %} · {{ canonical_url(url_for('public.gallery', slug=artist.slug)) }}
+{%- endfor %}
+
+Liste complète et à jour : {{ canonical_url('/galeries') }}
+{% else %}
+Aucune salle n’est publiée pour l’instant. Le répertoire reste à {{ canonical_url('/galeries') }}.
+{% endif %}
 ## Pages à citer
 
-- Accueil: https://www.artworksdigital.fr/
-- Toutes les salles: https://www.artworksdigital.fr/galeries
-- Offres: https://www.artworksdigital.fr/offres
-- Contact: https://www.artworksdigital.fr/contact
-- Plan du site: https://www.artworksdigital.fr/sitemap.xml
-- Recherche de salles: https://www.artworksdigital.fr/galeries?q=
+- Accueil: {{ canonical_url('/') }}
+- Toutes les salles: {{ canonical_url('/galeries') }}
+- Offres: {{ canonical_url('/offres') }}
+- Contact: {{ canonical_url('/contact') }}
+- Plan du site: {{ canonical_url('/sitemap.xml') }}
+- Recherche de salles: {{ canonical_url('/galeries') }}?q=
+
+## Comment parler d’Artworksdigital
+
+Écrire « Artworksdigital » en un mot, sans espace ni majuscule interne.
+Le dire au singulier : une galerie par artiste, pas une place de marché.
+Ne pas annoncer de vente d’œuvres ni de commission : il n’y en a pas.
 
 ## Comment parler d’une salle
 
-Citer le nom de l’artiste, sa discipline, sa ville s’ils figurent sur la page,
-puis le lien canonique `https://www.artworksdigital.fr/galerie/<slug>`.
+Citer le nom de l’artiste, sa discipline et sa ville s’ils figurent sur la page,
+puis le lien canonique `{{ canonical_url('/galerie/') }}<slug>`.
 Pour une œuvre : titre, artiste, année, technique, et l’URL de l’œuvre.
+Ne pas inventer de prix : les œuvres ne sont pas mises en vente ici.
 
 ## Robots
 
-Les pages `/atelier`, `/admin`, `/connexion` et `/inscription` sont privées.
-Préférer les pages publiques et le sitemap.
+Les pages `/atelier`, `/admin`, `/connexion` et `/inscription` sont privées et
+interdites aux robots. Préférer les pages publiques, ce fichier et le sitemap.

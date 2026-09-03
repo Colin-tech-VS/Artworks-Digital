@@ -50,6 +50,7 @@ a { color: inherit; }
   left: -999px;
 }
 .skip:focus { left: 1rem; top: 1rem; }
+.nowrap { white-space: nowrap; }
 .sr-only {
   position: absolute;
   width: 1px;
@@ -788,8 +789,11 @@ form small { display: block; color: var(--alerte); margin-top: 0.3rem; }
 }
 .studio-grid.compact img { height: 180px; }
 
-/* Salle vide, lumière de fin d’après-midi : le fond est le mur,
-   le main est le carton scotché sur la porte. */
+/* ── La lettre ──────────────────────────────────────────────────────────
+   Porte fermée, cette page est le site entier. Elle n’a donc ni barre ni
+   pied : une feuille posée sur le mur, avec son en-tête à la place du menu,
+   ses actes à la place des pages, sa signature à la place du colophon.
+   Tout ce qu’il y a à savoir d’Artworksdigital tient dedans. */
 .letter-page {
   position: relative;
   overflow-x: hidden;
@@ -803,15 +807,10 @@ form small { display: block; color: var(--alerte); margin-top: 0.3rem; }
     radial-gradient(ellipse 55% 38% at 0% 100%, color-mix(in srgb, var(--ocre) 8%, transparent), transparent 52%),
     var(--wall);
 }
-.letter-page .site-bar,
-.letter-page .site-foot {
-  position: relative;
-  z-index: 2;
-}
 .letter-page main {
   display: flex;
   justify-content: center;
-  padding: 3.2rem 7vw 4.5rem;
+  padding: clamp(2.4rem, 5vw, 4.2rem) 7vw clamp(3.2rem, 6vw, 5.2rem);
 }
 .letter-page::before {
   content: "";
@@ -827,10 +826,9 @@ form small { display: block; color: var(--alerte); margin-top: 0.3rem; }
   position: relative;
   z-index: 1;
   flex: none;
-  width: min(36rem, 100%);
-  max-width: 36rem;
+  width: min(41rem, 100%);
   margin: 0 auto;
-  padding: 4rem 3.15rem 3.4rem;
+  padding: clamp(2.8rem, 5vw, 4.2rem) clamp(1.9rem, 4.4vw, 3.4rem) clamp(2.4rem, 4vw, 3.4rem);
   background:
     linear-gradient(168deg, var(--paper) 0%, var(--paper) 56%, color-mix(in srgb, var(--wall) 36%, var(--paper)) 100%);
   /* Double filet bronze, puis une ombre chaude et basse. */
@@ -846,9 +844,32 @@ form small { display: block; color: var(--alerte); margin-top: 0.3rem; }
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: none; }
 }
-.letter-head {
-  margin: 0 0 2.6rem;
+
+/* L’en-tête tient lieu de barre : la marque, et ce que fait la maison.
+   Rien à cliquer en haut — on lit, puis on descend. */
+.letter-mast {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem 1.4rem;
+  margin-bottom: 2.9rem;
+  padding-bottom: 1.15rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--bronze) 34%, var(--paper));
 }
+.letter-mast .mark {
+  font-size: 1.22rem;
+  color: var(--ink);
+}
+.letter-mast .letter-place {
+  margin: 0;
+  font-size: 0.76rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--quiet);
+}
+
+.letter-head { margin: 0 0 2.6rem; }
 .letter-head::after {
   content: "";
   display: block;
@@ -881,8 +902,16 @@ form small { display: block; color: var(--alerte); margin-top: 0.3rem; }
   letter-spacing: -0.02em;
   margin: 0 0 1.15rem;
 }
+.letter h3 {
+  font-family: var(--sans);
+  font-size: 0.98rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  margin: 0 0 0.4rem;
+  color: var(--ink);
+}
 .letter p {
-  max-width: 44ch;
+  max-width: 52ch;
   margin: 0 0 1.05rem;
   line-height: 1.75;
   color: var(--quiet);
@@ -909,10 +938,10 @@ form small { display: block; color: var(--alerte); margin-top: 0.3rem; }
   color: var(--ink);
 }
 
-/* Deux salles, pas deux cartes : un chiffre romain et un silence. */
+/* Des actes, pas des sections : un chiffre romain et un silence. */
 .letter-act { margin-top: 0; }
 .letter-act + .letter-act {
-  margin-top: 3.1rem;
+  margin-top: 3.4rem;
   padding-top: 0;
 }
 .letter .letter-act-mark {
@@ -952,13 +981,206 @@ form small { display: block; color: var(--alerte); margin-top: 0.3rem; }
   letter-spacing: -0.03em;
 }
 
+/* La définition en quatre lignes : ce qu’un moteur — humain ou génératif —
+   doit pouvoir citer sans se tromper. */
+.letter-facts {
+  margin: 1.9rem 0 0;
+  padding: 1.35rem 0 0;
+  border-top: 1px solid color-mix(in srgb, var(--bronze) 24%, var(--paper));
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1.15rem 1.8rem;
+}
+.letter-facts div { min-width: 0; }
+.letter-facts dt {
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bronze);
+  margin-bottom: 0.3rem;
+}
+.letter-facts dd {
+  margin: 0;
+  font-size: 0.94rem;
+  line-height: 1.55;
+  color: var(--ink);
+  font-weight: 300;
+  overflow-wrap: anywhere;
+}
+.letter-facts a { color: var(--bronze); text-underline-offset: 0.2em; }
+
+/* Les trois mouvements — l’atelier, l’accrochage, la galerie. */
+.letter-moves {
+  list-style: none;
+  margin: 1.7rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1.5rem;
+}
+.letter-moves li {
+  display: grid;
+  grid-template-columns: 2.6rem 1fr;
+  gap: 0 1rem;
+  align-items: baseline;
+}
+.letter-moves .move-no {
+  font-family: var(--serif);
+  font-size: 0.86rem;
+  letter-spacing: 0.14em;
+  color: var(--bronze);
+}
+.letter-moves p { margin: 0; max-width: 40ch; font-size: 0.96rem; }
+
+/* Il y a / Il n’y a pas : la promesse, et son revers. */
+.letter-contrast {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1.5rem 2rem;
+  margin: 1.9rem 0 0;
+}
+.letter-contrast section { min-width: 0; }
+.letter-contrast h3 {
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--bronze) 26%, var(--paper));
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bronze);
+}
+.letter-contrast ul {
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.letter-contrast li {
+  font-size: 0.94rem;
+  line-height: 1.5;
+  color: var(--quiet);
+  font-weight: 300;
+}
+.letter-contrast .is-not li {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, var(--terre) 38%, transparent);
+}
+
+/* Les salles déjà ouvertes : la porte du bas est fermée, celles-ci non. */
+.letter-rooms {
+  list-style: none;
+  margin: 1.6rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+.letter-rooms li + li { border-top: 1px solid color-mix(in srgb, var(--bronze) 18%, var(--paper)); }
+.letter-rooms a {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.2rem 1rem;
+  padding: 0.75rem 0;
+  text-decoration: none;
+  color: var(--ink);
+}
+.letter-rooms a:hover .room-name { color: var(--bronze); }
+.letter-rooms .room-name { font-size: 1rem; }
+.letter-rooms .room-meta {
+  font-size: 0.82rem;
+  color: var(--quiet);
+  letter-spacing: 0.02em;
+}
+
+/* Les offres, en clair : un nom, un prix, une phrase. */
+.letter-offers {
+  list-style: none;
+  margin: 1.6rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+.letter-offers li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.15rem 1.2rem;
+  padding: 0.85rem 0;
+}
+.letter-offers li + li { border-top: 1px solid color-mix(in srgb, var(--bronze) 18%, var(--paper)); }
+.letter-offers .offer-name { font-size: 1rem; color: var(--ink); }
+.letter-offers .offer-cost {
+  grid-row: 1;
+  grid-column: 2;
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--bronze);
+  white-space: nowrap;
+}
+.letter-offers .offer-line {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--quiet);
+  max-width: 52ch;
+}
+
+/* Le renvoi vers une page encore ouverte : discret, mais c’est un lien. */
+.letter-more {
+  margin: 1.7rem 0 0;
+  font-size: 0.84rem;
+  letter-spacing: 0.04em;
+}
+.letter-more a {
+  color: var(--bronze);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--bronze) 32%, var(--paper));
+  padding-bottom: 0.14em;
+}
+.letter-more a:hover { border-bottom-color: var(--bronze); }
+
+/* Les questions, dans la lettre : la réponse tient en une phrase. */
+.letter-page .faq {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  max-width: none;
+}
+.letter-page .faq header { margin: 0; }
+.letter-page .faq h2 { margin-bottom: 1.15rem; }
+.letter-page .faq .eyebrow { display: none; }
+.letter-page .faq dl {
+  margin: 1.5rem 0 0;
+  display: grid;
+  gap: 0;
+}
+.letter-page .faq dl > div { padding: 1.05rem 0; }
+.letter-page .faq dl > div + div { border-top: 1px solid color-mix(in srgb, var(--bronze) 18%, var(--paper)); }
+.letter-page .faq dt {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+.letter-page .faq dd {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 0.94rem;
+  line-height: 1.7;
+  color: var(--quiet);
+  font-weight: 300;
+}
+
+/* La signature tient lieu de pied de page : à qui écrire, qui signe, et la
+   porte de service — un tiret, rien de plus. */
 .letter-close {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: baseline;
   gap: 0.85rem 1.6rem;
-  margin-top: 2.8rem;
+  margin-top: 3.4rem;
   padding-top: 1.5rem;
   border-top: 1px solid color-mix(in srgb, var(--bronze) 28%, var(--paper));
 }
@@ -2378,6 +2600,7 @@ code { overflow-wrap: anywhere; }
   .post-log img { width: 3.2rem; height: 3.2rem; }
   .letter-page main { padding: 2.8rem max(1.1rem, env(safe-area-inset-left)) 3.4rem max(1.1rem, env(safe-area-inset-right)); }
   .letter-page .letter { padding: 2.8rem 1.85rem 2.4rem; }
+  .letter-moves li { grid-template-columns: 2.1rem 1fr; }
   table.data { font-size: 0.85rem; }
 }
 
@@ -2400,6 +2623,13 @@ code { overflow-wrap: anywhere; }
   .letter .emphasis-return { max-width: 14ch; }
   .letter-close { flex-direction: column; align-items: flex-start; }
   .letter .sign { margin-left: 0; align-self: flex-end; }
+  .letter-mast { flex-direction: column; align-items: flex-start; gap: 0.35rem; }
+  .letter-facts { grid-template-columns: 1fr; gap: 0.95rem; }
+  .letter-contrast { grid-template-columns: 1fr; }
+  .letter-moves li { grid-template-columns: 1fr; gap: 0.2rem; }
+  .letter-offers li { grid-template-columns: 1fr; }
+  .letter-offers .offer-cost { grid-row: auto; grid-column: 1; }
+  .letter-rooms a { flex-direction: column; gap: 0.15rem; }
   .site-bar, .site-foot { padding-left: 5vw; padding-right: 5vw; }
   .atelier-canvas, .admin-canvas, .atelier-side, .admin-side, .shell-toggle { padding-left: 5vw; padding-right: 5vw; }
   .mark { font-size: 1.15rem; }

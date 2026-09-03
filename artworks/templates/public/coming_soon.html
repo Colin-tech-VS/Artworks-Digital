@@ -1,17 +1,138 @@
 {% extends "base.html" %}
-{% block title %}Artworksdigital revient{% endblock %}
-{% block description %}Artworksdigital revient. Une nouvelle version est en préparation, avec une nouvelle vision et une nouvelle expérience pour les artistes.{% endblock %}
-{% block robots %}index, follow{% endblock %}
+{#- Porte fermée, cette lettre est le site entier : ni barre, ni pied. Ce que
+    la navigation disait, la lettre le dit elle-même — en-tête, actes,
+    signature — et le dit assez clairement pour être cité. -#}
+{% block title %}Artworksdigital revient — la galerie qui appartient à l’artiste{% endblock %}
+{% block description %}Artworksdigital revient : une nouvelle version se prépare. Chaque artiste y ouvre sa galerie à son adresse — un atelier privé, un accrochage, une note d’intention. Pas de marketplace, pas de catalogue partagé, pas de commission.{% endblock %}
+{% block robots %}index, follow, max-image-preview:large, max-snippet:-1{% endblock %}
 {% block og_title %}Artworksdigital revient{% endblock %}
-{% block og_description %}Nous travaillons actuellement sur la nouvelle version. On revient bientôt.{% endblock %}
+{% block og_description %}Une nouvelle version se prépare : votre salle, vos œuvres, rien d’autre. Les salles déjà ouvertes restent visitables.{% endblock %}
 {% block og_image_width %}1200{% endblock %}
 {% block og_image_height %}630{% endblock %}
 {% block body_class %}letter-page{% endblock %}
 
+{#- La barre et le pied du site ne suivent pas la lettre. -#}
+{% block chrome %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": {{ (canonical_url('/') ~ '#accueil') | tojson }},
+      "url": {{ canonical_url('/') | tojson }},
+      "name": "Artworksdigital revient — la galerie qui appartient à l’artiste",
+      "description": {{ self.description() | tojson }},
+      "inLanguage": "fr-FR",
+      "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
+      "about": [
+        {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}},
+        {"@id": {{ (canonical_url('/') ~ '#application') | tojson }}}
+      ],
+      "mainEntity": {"@id": {{ (canonical_url('/') ~ '#faq') | tojson }}},
+      "primaryImageOfPage": {{ default_og_image | tojson }},
+      "datePublished": {{ letter_published | tojson }},
+      "dateModified": {{ letter_date | tojson }},
+      "significantLink": [
+        {{ canonical_url('/galeries') | tojson }},
+        {{ canonical_url('/offres') | tojson }},
+        {{ canonical_url('/contact') | tojson }}
+      ],
+      "speakable": {
+        "@type": "SpeakableSpecification",
+        "cssSelector": [".letter h1", ".letter-open", ".letter-facts dd", ".faq dt", ".faq dd"]
+      }
+    },
+    {
+      "@type": "Article",
+      "@id": {{ (canonical_url('/') ~ '#lettre') | tojson }},
+      "headline": "Artworksdigital revient",
+      "description": "Lettre ouverte aux artistes : pourquoi Artworksdigital a fermé, ce qui revient, et ce que la nouvelle version leur donne.",
+      "inLanguage": "fr-FR",
+      "datePublished": {{ letter_published | tojson }},
+      "dateModified": {{ letter_date | tojson }},
+      "isPartOf": {"@id": {{ (canonical_url('/') ~ '#accueil') | tojson }}},
+      "mainEntityOfPage": {"@id": {{ (canonical_url('/') ~ '#accueil') | tojson }}},
+      "about": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}},
+      "author": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}},
+      "publisher": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}},
+      "image": {{ default_og_image | tojson }},
+      "articleSection": "Annonce"
+    },
+    {
+      "@type": "FAQPage",
+      "@id": {{ (canonical_url('/') ~ '#faq') | tojson }},
+      "inLanguage": "fr-FR",
+      "isPartOf": {"@id": {{ (canonical_url('/') ~ '#accueil') | tojson }}},
+      "mainEntity": [
+        {% for item in faq %}
+        {
+          "@type": "Question",
+          "name": {{ item.q | tojson }},
+          "acceptedAnswer": {"@type": "Answer", "text": {{ item.a | tojson }}}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ]
+    }{% if offers %},
+    {
+      "@type": "OfferCatalog",
+      "@id": {{ (canonical_url('/') ~ '#offres') | tojson }},
+      "name": "Offres Artworksdigital",
+      "url": {{ canonical_url('/offres') | tojson }},
+      "inLanguage": "fr-FR",
+      "numberOfItems": {{ offers | length }},
+      "itemListElement": [
+        {% for offer in offers %}
+        {
+          "@type": "Offer",
+          "position": {{ loop.index }},
+          "name": {{ ('Artworksdigital ' ~ offer.name) | tojson }},
+          "description": {{ (offer.audience or offer.name) | tojson }},
+          "price": {{ ('%.2f' % (offer.price_cents / 100)) | tojson }},
+          "priceCurrency": "EUR",
+          "availability": "https://schema.org/PreOrder",
+          "url": {{ canonical_url('/offres') | tojson }},
+          "category": "Abonnement mensuel",
+          "seller": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ]
+    }{% endif %}{% if rooms %},
+    {
+      "@type": "ItemList",
+      "@id": {{ (canonical_url('/') ~ '#salles') | tojson }},
+      "name": "Galeries d’artistes déjà ouvertes",
+      "url": {{ canonical_url('/galeries') | tojson }},
+      "numberOfItems": {{ rooms | length }},
+      "itemListElement": [
+        {% for artist in rooms[:12] %}
+        {
+          "@type": "ListItem",
+          "position": {{ loop.index }},
+          "url": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }},
+          "name": {{ artist.display_name | tojson }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ]
+    }{% endif %}
+  ]
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <article class="letter">
+  {#- L’en-tête tient lieu de barre : qui écrit, d’où, quand. -#}
+  <header class="letter-mast">
+    <p class="mark">Artworks <em>Digital</em></p>
+    <p class="letter-place">Galerie d’artiste en ligne · France</p>
+  </header>
+
   <header class="letter-head">
-    <p class="eyebrow">Artworksdigital</p>
+    <p class="eyebrow">Lettre ouverte aux artistes</p>
     <h1>Artworksdigital <em>revient</em></h1>
   </header>
 
@@ -39,9 +160,121 @@
     <p>On revient bientôt.</p>
   </section>
 
+  {#- Acte III : la définition. C’est ce paragraphe qu’un moteur — un lecteur
+      humain comme un moteur génératif — doit pouvoir citer sans se tromper. -#}
+  <section class="letter-act" aria-labelledby="letter-what">
+    <p class="letter-act-mark" aria-hidden="true">III</p>
+    <h2 id="letter-what">Ce qu’est Artworksdigital</h2>
+    <p><strong>Artworksdigital ouvre à chaque artiste une galerie qui lui appartient.</strong> Un atelier privé pour préparer la salle, une adresse publique pour la montrer : <span class="nowrap">artworksdigital.fr/galerie/votre-nom</span>.</p>
+    <p>Ce n’est ni une marketplace, ni une vitrine collective, ni une boutique. Il n’y a pas de catalogue partagé où votre travail se noierait, pas de panier, pas de commission sur ce que vous vendez ailleurs. La salle est à vous ; nous ne sommes pas le commissaire de votre exposition.</p>
+
+    <div class="letter-contrast">
+      <section aria-labelledby="letter-yes">
+        <h3 id="letter-yes">Il y a</h3>
+        <ul>
+          <li>Un compte artiste, et un atelier privé</li>
+          <li>Une salle publique à votre nom</li>
+          <li>Un cartel par œuvre — titre, année, technique, dimensions</li>
+          <li>Une note d’intention, écrite par vous</li>
+          <li>Un visiteur qui vous écrit directement</li>
+        </ul>
+      </section>
+      <section class="is-not" aria-labelledby="letter-no">
+        <h3 id="letter-no">Il n’y a pas</h3>
+        <ul>
+          <li>De marketplace ni de catalogue partagé</li>
+          <li>De panier, de vente, de commission</li>
+          <li>De matching, de sourcing, de jury</li>
+          <li>De compte galerie ou collectionneur</li>
+          <li>De vitrine où vous seriez une vignette</li>
+        </ul>
+      </section>
+    </div>
+
+    <ol class="letter-moves">
+      <li>
+        <span class="move-no" aria-hidden="true">01</span>
+        <div>
+          <h3>L’atelier</h3>
+          <p>Un espace privé pour préparer la salle : nom, discipline, note d’intention, image de fond.</p>
+        </div>
+      </li>
+      <li>
+        <span class="move-no" aria-hidden="true">02</span>
+        <div>
+          <h3>L’accrochage</h3>
+          <p>Chaque œuvre a son cartel et son visuel. Vous choisissez l’ordre, comme sur un mur.</p>
+        </div>
+      </li>
+      <li>
+        <span class="move-no" aria-hidden="true">03</span>
+        <div>
+          <h3>La galerie</h3>
+          <p>Vous publiez. Les visiteurs entrent dans <em>votre</em> salle, pas dans un catalogue.</p>
+        </div>
+      </li>
+    </ol>
+
+    <dl class="letter-facts">
+      <div><dt>Quoi</dt><dd>Galerie d’artiste en ligne, une par artiste</dd></div>
+      <div><dt>Pour qui</dt><dd>Artistes — peinture, dessin, photo, sculpture, numérique</dd></div>
+      <div><dt>Où</dt><dd>France, en français, sur le web</dd></div>
+      <div><dt>Combien</dt><dd>À partir de 0 €/mois</dd></div>
+      <div><dt>Adresse d’une salle</dt><dd>artworksdigital.fr/galerie/&lt;nom&gt;</dd></div>
+      <div><dt>Écrire</dt><dd><a href="mailto:{{ site_contact_email }}">{{ site_contact_email }}</a></dd></div>
+    </dl>
+  </section>
+
+  {% if rooms %}
+  <section class="letter-act" aria-labelledby="letter-rooms-title">
+    <p class="letter-act-mark" aria-hidden="true">IV</p>
+    <h2 id="letter-rooms-title">Les salles déjà ouvertes</h2>
+    <p>La nouvelle version se prépare, mais ces galeries-là sont en ligne aujourd’hui. Entrez :</p>
+    <ul class="letter-rooms">
+      {% for artist in rooms[:8] %}
+        <li>
+          <a href="{{ url_for('public.gallery', slug=artist.slug) }}">
+            <span class="room-name">{{ artist.display_name }}</span>
+            <span class="room-meta">
+              {{ artist.discipline or "Artiste" }}
+              {%- if artist.location %} · {{ artist.location }}{% endif %}
+              · {{ room_counts.get(artist.id, 0) }} œuvre{% if room_counts.get(artist.id, 0) != 1 %}s{% endif %}
+            </span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+    <p class="letter-more"><a href="{{ url_for('public.galleries') }}">Toutes les galeries{% if rooms | length > 8 %} — {{ rooms | length }} salles{% endif %}</a></p>
+  </section>
+  {% endif %}
+
+  {% if offers %}
+  <section class="letter-act" aria-labelledby="letter-offers-title">
+    <p class="letter-act-mark" aria-hidden="true">{% if rooms %}V{% else %}IV{% endif %}</p>
+    <h2 id="letter-offers-title">Ce que coûtera une salle</h2>
+    <p>Quatre offres, un abonnement mensuel, aucune commission sur vos ventes. On commence gratuitement.</p>
+    <ul class="letter-offers">
+      {% for offer in offers %}
+        <li>
+          <span class="offer-name">{{ offer.name }}</span>
+          <span class="offer-cost">{{ offer.price_label }}</span>
+          <p class="offer-line">{{ offer.audience }} — {{ offer.feature_lines | join(' · ') }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+    <p class="letter-more"><a href="{{ url_for('public.offers') }}">Le détail des offres</a></p>
+  </section>
+  {% endif %}
+
+  <section class="letter-act" aria-label="Questions fréquentes">
+    <p class="letter-act-mark" aria-hidden="true">{% if rooms and offers %}VI{% elif rooms or offers %}V{% else %}IV{% endif %}</p>
+    {% set faq_title = "Les questions qu’on nous pose" %}
+    {% include "_faq.html" %}
+  </section>
+
   <footer class="letter-close">
     <p class="letter-write">
-      <a href="{{ url_for('public.contact') }}">Écrire à contact@artworksdigital.fr</a>
+      <a href="{{ url_for('public.contact') }}">Écrire à {{ site_contact_email }}</a>
     </p>
     <p class="sign">
       <button type="button" class="gate-dot" id="gate-dot" aria-label="Accès">—</button>
