@@ -1,13 +1,14 @@
 from io import BytesIO
 from pathlib import Path
 
-from flask import Flask, abort, g, render_template, request, send_file
+from flask import Flask, abort, g, redirect, render_template, request, send_file
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from artworks.analytics import attach_session_cookie, record_view, should_track
 from artworks.config import Config, ensure_schema
 from artworks.extensions import csrf, db, login_manager
 from artworks.images import asset_bytes
+from artworks.legacy_urls import destination as legacy_destination
 from artworks.seo import absolute_media, canonical_redirect, canonical_url, default_og_image, static_url
 
 
@@ -98,6 +99,16 @@ def create_app(config_class=Config) -> Flask:
 
     @app.errorhandler(404)
     def not_found(_error):
+        # Le site d’avant a laissé ses adresses dans les moteurs et dans les
+        # marque-pages. Quand l’une d’elles désigne une salle qui existe, on
+        # y mène plutôt que de refermer la porte.
+        try:
+            target = legacy_destination(request.path)
+        except Exception:
+            db.session.rollback()
+            target = None
+        if target and target != request.path:
+            return redirect(target, code=301)
         return render_template("404.html"), 404
 
     @app.errorhandler(403)
