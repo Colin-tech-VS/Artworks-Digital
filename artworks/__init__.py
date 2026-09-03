@@ -8,7 +8,15 @@ from artworks.analytics import attach_session_cookie, record_view, should_track
 from artworks.config import Config, ensure_schema
 from artworks.extensions import csrf, db, login_manager
 from artworks.images import asset_bytes
-from artworks.seo import absolute_media, canonical_redirect, canonical_url, default_og_image, static_url
+from artworks.seo import (
+    SITE_NAME,
+    SITE_SLOGAN,
+    absolute_media,
+    canonical_redirect,
+    canonical_url,
+    default_og_image,
+    static_url,
+)
 
 
 def create_app(config_class=Config) -> Flask:
@@ -55,6 +63,8 @@ def create_app(config_class=Config) -> Flask:
             "absolute_media": absolute_media,
             "static_url": static_url,
             "default_og_image": default_og_image(),
+            "site_name": SITE_NAME,
+            "site_slogan": SITE_SLOGAN,
             "site_contact_email": app.config.get("SITE_CONTACT_EMAIL", ""),
             "kael_ready": bool(
                 app.config.get("KAEL_ENABLED")

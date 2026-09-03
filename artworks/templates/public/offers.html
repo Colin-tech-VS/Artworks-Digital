@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Offres — Artworksdigital{% endblock %}
-{% block description %}Quatre offres pour composer votre galerie : Découverte, Artiste, Pro et Studio. À partir de 0 €/mois.{% endblock %}
+{% block title %}Offres galerie d’artiste — {{ site_name }}{% endblock %}
+{% block description %}Ouvrez votre galerie d’artiste : Découverte 0 €, Artiste, Pro ou Studio. Un atelier privé, une page publique.{% endblock %}
 {% block og_image_width %}1200{% endblock %}
 {% block og_image_height %}630{% endblock %}
 {% block body_class %}offers-page{% endblock %}
@@ -11,7 +11,7 @@
   "@graph": [
     {
       "@type": "ItemList",
-      "name": "Offres Artworksdigital",
+      "name": {{ ("Offres galerie d’artiste — " ~ site_name) | tojson }},
       "url": {{ canonical_url() | tojson }},
       "numberOfItems": {{ offers | length }},
       "itemListElement": [
@@ -21,7 +21,7 @@
           "position": {{ loop.index }},
           "item": {
             "@type": "Product",
-            "name": {{ ('Artworksdigital ' ~ offer.name) | tojson }},
+            "name": {{ (site_name ~ ' ' ~ offer.name) | tojson }},
             "description": {{ (offer.audience or offer.name) | tojson }},
             "brand": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}},
             "url": {{ canonical_url() | tojson }},

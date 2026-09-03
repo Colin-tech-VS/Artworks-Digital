@@ -6,8 +6,8 @@
   {#- Posé avant le rendu : le menu repliable ne doit exister que si le
       bouton peut l’ouvrir, et sans clignotement au chargement. #}
   <script>document.documentElement.classList.add("js");</script>
-  <title>{% block title %}Artworksdigital{% endblock %}</title>
-  <meta name="description" content="{% block description %}Artworksdigital — un atelier pour composer votre galerie. Une adresse, un accrochage, une note d’intention.{% endblock %}">
+  <title>{% block title %}{{ site_name }} — {{ site_slogan }}{% endblock %}</title>
+  <meta name="description" content="{% block description %}{{ site_name }} — un atelier pour composer votre galerie d’artiste. Une adresse, un accrochage, une note d’intention.{% endblock %}">
   <meta name="robots" content="{% block robots %}index, follow, max-image-preview:large{% endblock %}">
   <meta name="google-site-verification" content="Usy-kI0kuCwbbEphmFS_o3AZxK5DXDNBS-vwwdpPSVk">
   {#- Le bloc est rendu dans l’attribut : le déclarer à côté écrirait sa
@@ -17,14 +17,14 @@
   {%- endif %}
   <link rel="canonical" href="{% block canonical %}{{ canonical_url() }}{% endblock %}">
   <meta property="og:type" content="{% block og_type %}website{% endblock %}">
-  <meta property="og:site_name" content="Artworksdigital">
+  <meta property="og:site_name" content="{{ site_name }}">
   <meta property="og:locale" content="fr_FR">
   <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
   <meta property="og:description" content="{% block og_description %}{{ self.description() }}{% endblock %}">
   <meta property="og:url" content="{{ self.canonical() }}">
   <meta property="og:image" content="{% block og_image %}{{ default_og_image }}{% endblock %}">
   <meta property="og:image:secure_url" content="{{ self.og_image() }}">
-  <meta property="og:image:alt" content="{% block og_image_alt %}{{ self.og_title() }}{% endblock %}">
+  <meta property="og:image:alt" content="{% block og_image_alt %}{{ site_name }} — {{ site_slogan }}{% endblock %}">
   {%- if self.og_image_width() | trim and self.og_image_height() | trim %}
   <meta property="og:image:width" content="{% block og_image_width %}{% endblock %}">
   <meta property="og:image:height" content="{% block og_image_height %}{% endblock %}">
@@ -51,17 +51,20 @@
       {
         "@type": "Organization",
         "@id": {{ (canonical_url('/') ~ '#organisation') | tojson }},
-        "name": "Artworksdigital",
+        "name": {{ site_name | tojson }},
+        "alternateName": "Artworksdigital",
         "url": {{ canonical_url('/') | tojson }},
         "logo": {{ default_og_image | tojson }},
         "email": {{ site_contact_email | tojson }},
-        "description": "Artworksdigital ouvre à chaque artiste une galerie qui lui appartient : une adresse, un accrochage, une note d’intention.",
+        "slogan": "Chaque artiste ouvre sa galerie",
+        "description": {{ (site_name ~ " ouvre à chaque artiste une galerie qui lui appartient : une adresse, un accrochage, une note d’intention.") | tojson }},
         "areaServed": "FR"
       },
       {
         "@type": "WebSite",
         "@id": {{ (canonical_url('/') ~ '#site') | tojson }},
-        "name": "Artworksdigital",
+        "name": {{ site_name | tojson }},
+        "alternateName": "Artworksdigital",
         "url": {{ canonical_url('/') | tojson }},
         "inLanguage": "fr-FR",
         "publisher": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}}

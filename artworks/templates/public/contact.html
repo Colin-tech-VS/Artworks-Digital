@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Contact — Artworksdigital{% endblock %}
-{% block description %}Écrire à Artworksdigital. Une question, un atelier, une galerie.{% endblock %}
+{% block title %}Contact {{ site_name }} — atelier et galerie{% endblock %}
+{% block description %}Écrivez à l’équipe {{ site_name }}. Une question sur l’atelier, une galerie d’artiste ou une offre : {{ site_contact_email }}.{% endblock %}
 {% block og_image_width %}1200{% endblock %}
 {% block og_image_height %}630{% endblock %}
 {% block body_class %}contact-page{% endblock %}
@@ -12,7 +12,7 @@
     {
       "@type": "ContactPage",
       "@id": {{ canonical_url() | tojson }},
-      "name": "Contact — Artworksdigital",
+      "name": {{ ("Contact " ~ site_name ~ " — atelier et galerie") | tojson }},
       "url": {{ canonical_url() | tojson }},
       "inLanguage": "fr-FR",
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},

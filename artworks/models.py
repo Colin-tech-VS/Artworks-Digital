@@ -4,6 +4,7 @@ from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from artworks.extensions import db, login_manager
+from artworks.seo import SITE_NAME, meta_trim, page_title
 
 
 # Empreintes bcrypt héritées d’une base d’avant.
@@ -12,19 +13,6 @@ BCRYPT_PREFIXES = ("$2a$", "$2b$", "$2y$")
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
-
-
-def meta_trim(text: str, limit: int = 158) -> str:
-    """Coupe une description au dernier mot entier : les moteurs n’affichent
-    qu’environ 160 signes, autant choisir où la phrase s’arrête."""
-    text = " ".join((text or "").split())
-    if len(text) <= limit:
-        return text
-    cut = text[: limit - 1]
-    space = cut.rfind(" ")
-    if space > limit * 0.6:
-        cut = cut[:space]
-    return cut.rstrip(" ,;:–—-") + "…"
 
 
 class Artist(UserMixin, db.Model):
@@ -123,8 +111,19 @@ class Artist(UserMixin, db.Model):
         return name[:1].upper()
 
     @property
+    def seo_title(self) -> str:
+        return page_title(self.display_name, f"galerie {SITE_NAME}")
+
+    @property
+    def cover_alt(self) -> str:
+        text = f"Galerie de {self.display_name}"
+        if self.discipline:
+            text = f"{text} — {self.discipline}"
+        return meta_trim(text, 125)
+
+    @property
     def seo_description(self) -> str:
-        bits = [f"Galerie de {self.display_name}"]
+        bits = [f"Galerie en ligne de {self.display_name}"]
         if self.discipline:
             bits.append(self.discipline)
         if self.location:
@@ -132,7 +131,7 @@ class Artist(UserMixin, db.Model):
         text = (self.statement or "").strip()
         if text:
             return meta_trim(f"{' — '.join(bits)}. {text}")
-        return meta_trim(f"{' — '.join(bits)} sur Artworksdigital.")
+        return meta_trim(f"{' — '.join(bits)} sur {SITE_NAME}.")
 
     @property
     def unread_count(self) -> int:
@@ -198,6 +197,20 @@ class Work(db.Model):
         return " · ".join(parts)
 
     @property
+    def seo_title(self) -> str:
+        return page_title(self.title, self.artist.display_name)
+
+    @property
+    def image_alt(self) -> str:
+        head = self.title or "Œuvre"
+        if self.year:
+            head = f"{head}, {self.year}"
+        text = f"{head}, œuvre de {self.artist.display_name}"
+        if self.medium:
+            text = f"{text} — {self.medium}"
+        return meta_trim(text, 125)
+
+    @property
     def seo_description(self) -> str:
         parts = [self.title, self.artist.display_name]
         if self.cartel:
@@ -206,7 +219,7 @@ class Work(db.Model):
         base = " — ".join(parts)
         if note:
             return meta_trim(f"{base}. {note}")
-        return meta_trim(f"{base}. Œuvre présentée dans la galerie Artworksdigital.")
+        return meta_trim(f"{base}. Œuvre présentée dans la galerie {SITE_NAME}.")
 
 
 class Asset(db.Model):
