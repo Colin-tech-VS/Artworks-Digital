@@ -31,7 +31,7 @@ from artworks.mistral import mistral_ready
 from artworks.models import Artist, MailMessage, Offer, PageView, SocialPost, SubscriptionEvent, Work
 from artworks.seo import absolute_media, canonical_url
 from artworks.social import DeviantArt, Pinterest, delete_token, live_feed, platform_status, publish as publish_social
-from artworks.plans import all_offers, get_offer
+from artworks.plans import all_offers, forget_offers, get_offer
 from artworks.stripe_billing import apply_plan, ensure_offer_priced, stripe_ready, sync_offers_to_stripe
 
 
@@ -451,6 +451,9 @@ def offer_edit(key: str):
             offer.allow_priority = bool(form.allow_priority.data)
             offer.allow_collections = bool(form.allow_collections.data)
             db.session.commit()
+            # Le catalogue est mémorisé pour la durée de la requête : après
+            # une écriture, on l'oublie pour ne pas servir l'ancien.
+            forget_offers()
             if stripe_ready() and offer.price_cents:
                 try:
                     ensure_offer_priced(offer)

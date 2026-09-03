@@ -17,9 +17,21 @@ précise :
 """
 from __future__ import annotations
 
-import pytest
+import os
+import tempfile
 
-from artworks import create_app
+# `artworks.config` lit os.environ à l'IMPORT du module, et `create_app()`
+# touche la base avant que le moindre réglage de test puisse s'appliquer.
+# La base de test doit donc être choisie ici, avant l'import — sinon les
+# tests écrivent dans `instance/artworks.db`, la base de développement.
+_DB = os.path.join(tempfile.mkdtemp(prefix="artworks-tests-"), "test.db")
+os.environ["DATABASE_URL"] = f"sqlite:///{_DB}"
+os.environ.setdefault("SECRET_KEY", "clé-de-test")
+os.environ.setdefault("CANONICAL_REDIRECT", "0")
+
+import pytest  # noqa: E402
+
+from artworks import create_app  # noqa: E402
 from artworks.extensions import db as _db
 from artworks.models import Artist, Work
 
@@ -39,7 +51,6 @@ def app():
     application.config.update(
         TESTING=True,
         WTF_CSRF_ENABLED=False,
-        SQLALCHEMY_DATABASE_URI="sqlite://",
         SECRET_KEY="clé-de-test",
         CANONICAL_REDIRECT=False,
         ADMIN_USERNAME=ADMIN_USERNAME,

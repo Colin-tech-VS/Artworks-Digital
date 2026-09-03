@@ -1,5 +1,19 @@
+from flask import g, has_app_context
+
 from artworks.extensions import db
 from artworks.models import Offer
+
+# Le catalogue est relu une fois par requête, pas une fois par lecture.
+#
+# `Artist.offer` appelait `get_offer()`, qui rappelait `seed_offers()`, qui
+# repassait les quatre offres du catalogue : cinq requêtes SQL pour savoir
+# si un artiste a droit aux statistiques. Les gabarits posent la question
+# plusieurs fois par artiste, et l'annuaire en affiche trente — la page
+# /galeries partait ainsi à 450 requêtes. Le catalogue ne bouge pas pendant
+# une requête HTTP : le mémoriser sur `g` le ramène à cinq, sans rien
+# changer à ce qui est servi.
+_SEEDED = "_artworks_offers_seeded"
+_CACHE = "_artworks_offers_cache"
 
 CATALOG = (
     {
@@ -77,9 +91,16 @@ CATALOG = (
 )
 
 
-def seed_offers() -> None:
+def seed_offers(*, force: bool = False) -> None:
     """Crée les offres manquantes et aligne le catalogue : un flag oublié
-    en base ne doit pas laisser une promesse d’offre sans effet."""
+    en base ne doit pas laisser une promesse d’offre sans effet.
+
+    L'alignement a lieu une fois par contexte d'application — soit une fois
+    par requête. `force=True` le refait tout de suite, pour le code qui
+    vient d'écrire une offre.
+    """
+    if not force and has_app_context() and getattr(g, _SEEDED, False):
+        return
     changed = False
     for spec in CATALOG:
         offer = db.session.get(Offer, spec["key"])
@@ -95,11 +116,30 @@ def seed_offers() -> None:
                 changed = True
     if changed:
         db.session.commit()
+    if has_app_context():
+        setattr(g, _SEEDED, True)
+        # Une offre vient peut-être d'être créée ou réalignée : le cache de
+        # lecture repart de zéro.
+        setattr(g, _CACHE, {})
+
+
+def forget_offers() -> None:
+    """Oublier le catalogue mémorisé. À appeler après avoir écrit une offre."""
+    if has_app_context():
+        setattr(g, _SEEDED, False)
+        setattr(g, _CACHE, {})
 
 
 def get_offer(key: str | None) -> Offer | None:
     seed_offers()
-    return db.session.get(Offer, key or "decouverte") or db.session.get(Offer, "decouverte")
+    wanted = key or "decouverte"
+    cache = getattr(g, _CACHE, None) if has_app_context() else None
+    if cache is not None and wanted in cache:
+        return cache[wanted]
+    offer = db.session.get(Offer, wanted) or db.session.get(Offer, "decouverte")
+    if cache is not None:
+        cache[wanted] = offer
+    return offer
 
 
 def active_offers() -> list[Offer]:
