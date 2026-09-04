@@ -22,6 +22,7 @@
   <link rel="alternate" hreflang="x-default" href="{{ self.canonical() }}">
   <link rel="search" type="application/opensearchdescription+xml" title="Artworksdigital" href="{{ url_for('public.opensearch') }}">
   <link rel="sitemap" type="application/xml" title="Plan du site" href="{{ url_for('public.sitemap') }}">
+  <link rel="alternate" type="application/atom+xml" title="Artworksdigital — les salles ouvertes" href="{{ url_for('public.rooms_atom') }}">
   {#- La note aux moteurs génératifs : ils la cherchent à la racine, autant
       la leur désigner depuis chaque page. #}
   <link rel="alternate" type="text/plain" title="llms.txt" href="{{ url_for('public.llms') }}">
@@ -52,10 +53,15 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.svg') }}">
+  {#- Les deux fontes du texte courant sont demandées en même temps que la
+      feuille de style, pas après elle : sans cela, le navigateur ne les
+      découvre qu’une fois le CSS lu et analysé, et le titre arrive en
+      retard sur sa propre page. Les plages étendues et l’italique ne sont
+      pas préchargées — ils ne servent qu’à quelques signes. #}
+  <link rel="preload" href="{{ static_url('fonts/CormorantGaramond-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{ static_url('fonts/Outfit-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{ static_url('css/app.css') }}">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  {% block preload %}{% endblock %}
   <script src="{{ static_url('js/app.js') }}" defer></script>
   <script type="application/ld+json">
   {
@@ -76,10 +82,27 @@
         "email": {{ site_contact_email | tojson }},
         "description": "Artworksdigital ouvre à chaque artiste une galerie qui lui appartient : une adresse, un accrochage, une note d’intention. Ce n’est pas une marketplace.",
         "slogan": "Votre salle. Vos œuvres. Rien d’autre.",
-        "knowsAbout": ["galerie d'artiste", "portfolio artiste", "accrochage", "atelier d'artiste"],
+        "knowsAbout": [
+          "galerie d'artiste en ligne",
+          "portfolio d'artiste",
+          "accrochage",
+          "atelier d'artiste",
+          "note d'intention",
+          "cartel d'œuvre",
+          "peinture", "dessin", "photographie", "sculpture", "gravure", "art numérique"
+        ],
         "audience": {"@type": "Audience", "audienceType": "Artistes"},
         "areaServed": {"@type": "Country", "name": "France"},
         "brand": {"@type": "Brand", "name": "Artworksdigital"},
+        {#- `sameAs` relie le site à ses profils publics : sans lui, un
+            moteur voit trois comptes homonymes plutôt qu'une entité. Les
+            adresses viennent de la configuration — on n'en invente pas. #}
+        {%- if site_same_as %}
+        "sameAs": {{ site_same_as | tojson }},
+        {%- endif %}
+        {%- if site_founded %}
+        "foundingDate": {{ site_founded | tojson }},
+        {%- endif %}
         "contactPoint": {
           "@type": "ContactPoint",
           "email": {{ site_contact_email | tojson }},

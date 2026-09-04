@@ -8,11 +8,24 @@
 {% block og_image_alt %}{{ work.title }}, œuvre de {{ artist.display_name }}{% endblock %}
 {% block og_image_width %}{% if (work.image_w or 0) > 0 %}{{ work.image_w }}{% endif %}{% endblock %}
 {% block og_image_height %}{% if (work.image_h or 0) > 0 %}{{ work.image_h }}{% endif %}{% endblock %}
+{% block preload %}
+  {#- L’œuvre est le sujet de la page : elle se charge avant tout le reste. #}
+  <link rel="preload" as="image" href="{{ media_url(work.image_path, 1600) }}" imagesrcset="{{ media_srcset(work.image_path, work.image_w) }}" imagesizes="(max-width: 860px) 92vw, 62vw" fetchpriority="high">
+{% endblock %}
 {% block extra_head %}
   {%- if artist.location %}
   <meta name="geo.placename" content="{{ artist.location }}">
   {%- endif %}
   <link rel="author" href="{{ canonical_url(url_for('public.gallery', slug=artist.slug)) }}">
+  {#- La salle est le parent de l’œuvre : le dire aide un moteur à ranger
+      les pages d’un même accrochage ensemble plutôt qu’en vrac. #}
+  <link rel="up" href="{{ canonical_url(url_for('public.gallery', slug=artist.slug)) }}">
+  {%- if prev_work %}
+  <link rel="prev" href="{{ canonical_url(url_for('public.artwork', slug=artist.slug, work_id=prev_work.id)) }}">
+  {%- endif %}
+  {%- if next_work %}
+  <link rel="next" href="{{ canonical_url(url_for('public.artwork', slug=artist.slug, work_id=next_work.id)) }}">
+  {%- endif %}
 {% endblock %}
 {% block jsonld %}
 <script type="application/ld+json">
@@ -25,6 +38,7 @@
       "name": {{ work.title | tojson }},
       "url": {{ canonical_url() | tojson }},
       "inLanguage": "fr-FR",
+      "mainEntityOfPage": {{ canonical_url() | tojson }},
       "image": {
         "@type": "ImageObject",
         "url": {{ absolute_media(work.image_path) | tojson }},
@@ -33,29 +47,30 @@
         "height": {{ work.image_h }}{% endif %},
         "caption": {{ (work.title ~ ' — ' ~ artist.display_name) | tojson }},
         "creditText": {{ artist.display_name | tojson }},
-        "creator": {
-          "@type": "Person",
-          "name": {{ artist.display_name | tojson }},
-          "url": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }}
-        },
+        "creator": {"@id": {{ (canonical_url(url_for('public.gallery', slug=artist.slug)) ~ '#artiste') | tojson }}},
+        "copyrightNotice": {{ ('© ' ~ artist.display_name) | tojson }},
+        "acquireLicensePage": {{ canonical_url() | tojson }},
         "representativeOfPage": true
       },
       "creator": {
         "@type": "Person",
+        "@id": {{ (canonical_url(url_for('public.gallery', slug=artist.slug)) ~ '#artiste') | tojson }},
         "name": {{ artist.display_name | tojson }},
         "url": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }}
       },
-      "copyrightHolder": {
-        "@type": "Person",
-        "name": {{ artist.display_name | tojson }}
-      }{% if work.year %},
-      "dateCreated": {{ work.year | tojson }}{% endif %}{% if work.medium %},
-      "artMedium": {{ work.medium | tojson }}{% endif %}{% if artist.discipline %},
-      "artform": {{ artist.discipline | tojson }}{% endif %}{% if work.dimensions %},
+      "copyrightHolder": {"@id": {{ (canonical_url(url_for('public.gallery', slug=artist.slug)) ~ '#artiste') | tojson }}},
+      "copyrightNotice": {{ ('© ' ~ artist.display_name) | tojson }}{% if work.year %},
+      "dateCreated": {{ work.year | tojson }}{% endif %},
+      "dateModified": {{ (work.updated_at or work.created_at).strftime('%Y-%m-%d') | tojson }}{% if work.medium %},
+      "artMedium": {{ work.medium | tojson }},
+      "material": {{ work.medium | tojson }}{% endif %}{% if artist.discipline %},
+      "artform": {{ artist.discipline | tojson }},
+      "genre": {{ artist.discipline | tojson }}{% endif %}{% if work.dimensions %},
       "size": {{ work.dimensions | tojson }}{% endif %},
       "isPartOf": {"@id": {{ (canonical_url(url_for('public.gallery', slug=artist.slug)) ~ '#salle') | tojson }}},
       "description": {{ work.seo_description | tojson }},
-      "creditText": {{ artist.display_name | tojson }}
+      "creditText": {{ artist.display_name | tojson }},
+      "position": {{ position }}
     },
     {
       "@type": "WebPage",
@@ -65,7 +80,13 @@
       "description": {{ work.seo_description | tojson }},
       "inLanguage": "fr-FR",
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
+      "primaryImageOfPage": {{ absolute_media(work.image_path) | tojson }},
+      "dateModified": {{ (work.updated_at or work.created_at).strftime('%Y-%m-%d') | tojson }},
       "mainEntity": {"@id": {{ (canonical_url() ~ '#oeuvre') | tojson }}},
+      "speakable": {
+        "@type": "SpeakableSpecification",
+        "cssSelector": [".cartel h1", ".cartel .note"]
+      },
       "author": {
         "@type": "Person",
         "name": {{ artist.display_name | tojson }},
@@ -95,15 +116,33 @@
 ] %}
 {% include "_crumbs.html" %}
 
-<article class="solo viewing-room">
-  <figure class="solo-frame">
-    <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}, {{ artist.display_name }}{% if work.year %}, {{ work.year }}{% endif %}{% if work.medium %} — {{ work.medium }}{% endif %}" fetchpriority="high" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
+<article class="solo">
+  <figure class="solo-frame" data-viewer data-full="{{ media_url(work.image_path) }}" data-alt="{{ work.title }}, {{ artist.display_name }}">
+    <img src="{{ media_url(work.image_path, 1600) }}"
+         srcset="{{ media_srcset(work.image_path, work.image_w) }}"
+         sizes="(max-width: 860px) 92vw, 62vw"
+         alt="{{ work.title }}, {{ artist.display_name }}{% if work.year %}, {{ work.year }}{% endif %}{% if work.medium %} — {{ work.medium }}{% endif %}"
+         fetchpriority="high" decoding="async"
+         {%- if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
   </figure>
+
   <aside class="cartel">
-    <p class="eyebrow">{{ artist.display_name }}</p>
+    <p class="eyebrow">Œuvre {{ position }} sur {{ total }}</p>
     <h1>{{ work.title }}</h1>
-    {% if work.cartel %}<p class="meta">{{ work.cartel }}</p>{% endif %}
+    <p class="meta">
+      <a class="by" href="{{ url_for('public.gallery', slug=artist.slug) }}">{{ artist.display_name }}</a>
+      {%- if artist.location %} · {{ artist.location }}{% endif -%}
+    </p>
     {% if work.note %}<p class="note">{{ work.note }}</p>{% endif %}
+
+    <dl class="cartel-facts">
+      {% if work.year %}<div><dt>Année</dt><dd>{{ work.year }}</dd></div>{% endif %}
+      {% if work.medium %}<div><dt>Technique</dt><dd>{{ work.medium }}</dd></div>{% endif %}
+      {% if work.dimensions %}<div><dt>Format</dt><dd>{{ work.dimensions }}</dd></div>{% endif %}
+      <div><dt>Salle</dt><dd><a href="{{ url_for('public.gallery', slug=artist.slug) }}">{{ artist.display_name }}</a></dd></div>
+      <div><dt>Droits</dt><dd>© {{ artist.display_name }}</dd></div>
+    </dl>
+
     {% if artist.has_feature('share') %}
       <p class="share-row">
         <a href="https://www.facebook.com/sharer/sharer.php?u={{ canonical_url() | urlencode }}" target="_blank" rel="noopener nofollow">Facebook</a>
@@ -112,14 +151,48 @@
         <button class="link-copy" type="button" data-copy="{{ canonical_url() }}">Copier le lien</button>
       </p>
     {% endif %}
-    <p class="walk">
-      {% if prev_work %}
-        <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=prev_work.id) }}" rel="prev">Précédente</a>
-      {% endif %}
-      {% if next_work %}
-        <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=next_work.id) }}" rel="next">Suivante</a>
-      {% endif %}
-    </p>
+
+    {% if prev_work or next_work %}
+      <nav class="walk" aria-label="Dans l’accrochage">
+        {% if prev_work %}
+          <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=prev_work.id) }}" rel="prev">
+            <img src="{{ media_url(prev_work.image_path, 480) }}" alt="" loading="lazy" decoding="async" width="72" height="72">
+            <span>Précédente<b>{{ prev_work.title }}</b></span>
+          </a>
+        {% endif %}
+        {% if next_work %}
+          <a class="walk-next" href="{{ url_for('public.artwork', slug=artist.slug, work_id=next_work.id) }}" rel="next">
+            <span>Suivante<b>{{ next_work.title }}</b></span>
+            <img src="{{ media_url(next_work.image_path, 480) }}" alt="" loading="lazy" decoding="async" width="72" height="72">
+          </a>
+        {% endif %}
+      </nav>
+    {% endif %}
   </aside>
 </article>
+
+{% if siblings %}
+<section aria-labelledby="meme-salle">
+  <div class="band">
+    <div>
+      <p class="eyebrow">Dans la même salle</p>
+      <h2 id="meme-salle">Le reste de l’accrochage</h2>
+    </div>
+    <a class="band-link" href="{{ url_for('public.gallery', slug=artist.slug) }}">Toute la galerie</a>
+  </div>
+  <ul class="more-strip">
+    {% for other in siblings %}
+      <li>
+        <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=other.id) }}">
+          <img src="{{ media_url(other.image_path, 480) }}" alt="{{ other.title }}, {{ artist.display_name }}" loading="lazy" decoding="async" width="240" height="240">
+          <span class="tag-line">
+            <strong>{{ other.title }}</strong>
+            {% if other.year %}<span>{{ other.year }}</span>{% endif %}
+          </span>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
 {% endblock %}

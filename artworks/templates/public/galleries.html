@@ -1,10 +1,13 @@
 {% extends "base.html" %}
-{% block title %}{% if query %}« {{ query }} » — salles d’artistes{% else %}Galeries d’artistes — Artworksdigital{% endif %}{% endblock %}
-{% block description %}{% if query %}Salles d’artistes correspondant à « {{ query }} » sur Artworksdigital.{% else %}Toutes les salles ouvertes sur Artworksdigital. Chaque artiste a sa galerie : un accrochage, une adresse, une note d’intention.{% endif %}{% endblock %}
+{#- Deux pages en un gabarit : le répertoire complet, et le répertoire
+    restreint à une discipline. Elles ne diffèrent que par leur titre,
+    leur adresse canonique et le jeu de salles reçu. #}
+{% set here = url_for('public.discipline', slug=discipline.slug) if discipline else url_for('public.galleries') %}
+{% block title %}{% if query %}« {{ query }} » — galeries d’artistes{% elif discipline %}Galeries de {{ discipline.name | lower }} — {{ discipline.count }} salle{% if discipline.count != 1 %}s{% endif %} | Artworksdigital{% else %}Galeries d’artistes en ligne — toutes les salles ouvertes | Artworksdigital{% endif %}{% endblock %}
+{% block description %}{% if query %}Salles d’artistes correspondant à « {{ query }} » sur Artworksdigital.{% elif discipline %}Les galeries de {{ discipline.name | lower }} sur Artworksdigital : {{ discipline.count }} salle{% if discipline.count != 1 %}s{% endif %} d’artiste{% if discipline.count != 1 %}s{% endif %}, chacune à sa propre adresse, avec son accrochage et sa note d’intention.{% else %}Toutes les galeries d’artistes ouvertes sur Artworksdigital : peinture, dessin, photographie, sculpture, gravure, art numérique. Une salle par artiste, avec son accrochage et son adresse.{% endif %}{% endblock %}
 {% block robots %}{% if query %}noindex, follow, max-image-preview:large{% else %}index, follow, max-image-preview:large{% endif %}{% endblock %}
-{% block canonical %}{{ canonical_url('/galeries') }}{% endblock %}
-{% block og_image_width %}1200{% endblock %}
-{% block og_image_height %}630{% endblock %}
+{% block canonical %}{{ canonical_url(here) }}{% endblock %}
+{% block og_image %}{% if shown and shown[0].cover_path %}{{ absolute_media(shown[0].cover_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
 {% block body_class %}rooms-page{% endblock %}
 {% block jsonld %}
 <script type="application/ld+json">
@@ -13,16 +16,15 @@
   "@graph": [
     {
       "@type": "{% if query %}SearchResultsPage{% else %}CollectionPage{% endif %}",
-      "@id": {{ canonical_url('/galeries') | tojson }},
-      "name": "Galeries Artworksdigital",
-      "url": {{ canonical_url('/galeries') | tojson }},
+      "@id": {{ canonical_url(here) | tojson }},
+      "name": {{ (('Galeries de ' ~ discipline.name | lower) if discipline else 'Galeries d’artistes — Artworksdigital') | tojson }},
+      "url": {{ canonical_url(here) | tojson }},
       "inLanguage": "fr-FR",
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
       "description": {{ self.description() | tojson }},
       "mainEntity": {
         "@type": "ItemList",
         "numberOfItems": {{ shown | length }},
-        "itemListOrder": "https://schema.org/ItemListOrderDescending",
         "itemListElement": [
           {% for artist in shown %}
           {
@@ -38,10 +40,12 @@
                 "@type": "ImageObject",
                 "url": {{ absolute_media(artist.cover_path) | tojson }},
                 "contentUrl": {{ absolute_media(artist.cover_path) | tojson }},
-                "caption": {{ ('Galerie de ' ~ artist.display_name) | tojson }}
+                "caption": {{ ('Galerie de ' ~ artist.display_name) | tojson }},
+                "creditText": {{ artist.display_name | tojson }}
               }{% endif %}{% if artist.discipline %},
-              "jobTitle": {{ artist.discipline | tojson }}{% endif %}{% if artist.location %},
-              "homeLocation": {{ artist.location | tojson }}{% endif %}
+              "jobTitle": {{ artist.discipline | tojson }},
+              "hasOccupation": {"@type": "Occupation", "name": {{ artist.discipline | tojson }}}{% endif %}{% if artist.location %},
+              "homeLocation": {"@type": "Place", "name": {{ artist.location | tojson }}}{% endif %}
             }
           }{% if not loop.last %},{% endif %}
           {% endfor %}
@@ -52,7 +56,8 @@
       "@type": "BreadcrumbList",
       "itemListElement": [
         {"@type": "ListItem", "position": 1, "name": "Accueil", "item": {{ canonical_url('/') | tojson }}},
-        {"@type": "ListItem", "position": 2, "name": "Galeries", "item": {{ canonical_url('/galeries') | tojson }}}
+        {"@type": "ListItem", "position": 2, "name": "Galeries", "item": {{ canonical_url('/galeries') | tojson }}}{% if discipline %},
+        {"@type": "ListItem", "position": 3, "name": {{ discipline.name | tojson }}, "item": {{ canonical_url(here) | tojson }}}{% endif %}
       ]
     }
   ]
@@ -63,15 +68,24 @@
 {% block content %}
 {% set crumbs = [
   {"name": "Accueil", "href": url_for('public.home')},
-  {"name": "Galeries"}
-] %}
+  {"name": "Galeries", "href": url_for('public.galleries') if discipline else None},
+  {"name": discipline.name} if discipline else None
+] | select | list %}
 {% include "_crumbs.html" %}
 
-<section class="room-head">
-  <p class="eyebrow">Salles ouvertes</p>
-  <h1>Galeries</h1>
-  <p class="lead">Chaque adresse est une salle. Cherchez un nom, une discipline, une ville.</p>
-  <form class="room-search" action="{{ url_for('public.galleries') }}" method="get" role="search">
+<section class="page-head">
+  <p class="eyebrow">{% if discipline %}{{ discipline.name }}{% else %}Salles ouvertes{% endif %}</p>
+  <h1>{% if discipline %}Galeries de {{ discipline.name | lower }}{% else %}Les galeries{% endif %}</h1>
+  <p class="lead">
+    {%- if discipline -%}
+      {{ discipline.count }} artiste{% if discipline.count != 1 %}s{% endif %} en {{ discipline.name | lower }},
+      chacun dans sa salle, à son adresse.
+    {%- else -%}
+      Chaque adresse est une salle, et chaque salle appartient à son artiste.
+      Cherchez un nom, une discipline, une ville.
+    {%- endif -%}
+  </p>
+  <form class="finder" action="{{ url_for('public.galleries') }}" method="get" role="search">
     <label class="sr-only" for="room-q">Filtrer les salles</label>
     <input id="room-q" class="studio-filter" type="search" name="q" value="{{ query }}" placeholder="Nom, discipline, ville…" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
     <p class="room-count" data-room-count aria-live="polite">
@@ -82,12 +96,18 @@
       {% endif %}
     </p>
   </form>
-  {% if disciplines %}
+  {% if disciplines and not discipline %}
+    {#- Les puces filtrent tout de suite, sans recharger ; le lien « voir la
+        page » sous chacune mène à l’adresse indexable de la discipline. #}
     <p class="room-chips" data-room-chips>
       <button type="button" class="is-on" data-discipline="">Toutes</button>
-      {% for name in disciplines %}
-        <button type="button" data-discipline="{{ name }}">{{ name }}</button>
+      {% for row in disciplines %}
+        <button type="button" data-discipline="{{ row.name }}" data-href="{{ url_for('public.discipline', slug=row.slug) }}">{{ row.name }}</button>
       {% endfor %}
+    </p>
+  {% elif discipline %}
+    <p class="room-chips">
+      <a class="chip-back" href="{{ url_for('public.galleries') }}">← Toutes les disciplines</a>
     </p>
   {% endif %}
   {% if letters|length > 1 %}
@@ -98,11 +118,14 @@
     </nav>
   {% endif %}
 </section>
+
 {% if rooms %}
-  <ul class="room-list rich" data-room-list>
+  <ul class="rooms-grid" data-room-list>
     {% for artist in rooms %}
       {% set letter = room_letter(artist.display_name) %}
-      <li
+      {% set count = room_counts.get(artist.id, 0) %}
+      {% set shots = previews.get(artist.id, []) %}
+      <li class="room-card"
         data-room
         data-hay="{{ room_haystack(artist) }}"
         data-discipline="{{ artist.discipline or '' }}"
@@ -110,18 +133,44 @@
         {% if letter_ids.get(letter) == artist.id %}id="lettre-{{ letter }}"{% endif %}
         {% if query and artist.id not in shown_ids %}hidden{% endif %}
       >
+        {% if artist.has_feature('featured') or artist.has_feature('priority') %}
+          <span class="room-card-flags">
+            {% if artist.has_feature('priority') %}<em class="tag">prioritaire</em>{% endif %}
+            {% if artist.has_feature('featured') %}<em class="tag">mise en avant</em>{% endif %}
+          </span>
+        {% endif %}
         <a href="{{ url_for('public.gallery', slug=artist.slug) }}">
-          {% if artist.cover_path %}
-            <img src="{{ url_for('media', filename=artist.cover_path) }}" alt="Galerie de {{ artist.display_name }}{% if artist.discipline %} — {{ artist.discipline }}{% endif %}" width="240" height="160" loading="{{ 'eager' if loop.index <= 4 else 'lazy' }}" decoding="async"{% if loop.index <= 2 %} fetchpriority="high"{% endif %}>
-          {% endif %}
-          <div>
-            <span class="room-name">{{ artist.display_name }}{% if artist.has_feature('featured') %} <em class="tag">mise en avant</em>{% endif %}{% if artist.has_feature('priority') %} <em class="tag">prioritaire</em>{% endif %}</span>
-            <span class="room-meta">
-              {{ artist.discipline or "Artiste" }}
-              {% if artist.location %} · {{ artist.location }}{% endif %}
-              · {{ room_counts.get(artist.id, 0) }} œuvre{% if room_counts.get(artist.id, 0) != 1 %}s{% endif %}
+          {% set art = artist.cover_path or (shots[0].image_path if shots else '') %}
+          {% if art %}
+            <span class="room-card-cover">
+              <img src="{{ media_url(art, 480) }}"
+                   srcset="{{ media_url(art, 480) }} 480w, {{ media_url(art, 960) }} 960w"
+                   sizes="(max-width: 640px) 92vw, (max-width: 1100px) 46vw, 30vw"
+                   alt="Galerie de {{ artist.display_name }}{% if artist.discipline %} — {{ artist.discipline }}{% endif %}{% if artist.location %}, {{ artist.location }}{% endif %}"
+                   width="600" height="400"
+                   loading="{{ 'eager' if loop.index <= 3 else 'lazy' }}" decoding="async"
+                   {%- if loop.index <= 2 %} fetchpriority="high"{% endif %}>
             </span>
-          </div>
+          {% else %}
+            <span class="room-card-cover is-bare" aria-hidden="true"><span>{{ artist.initial }}</span></span>
+          {% endif %}
+          {% if shots|length > 1 %}
+            {#- Un aperçu de l’accrochage sous la salle : on sait ce qu’on
+                va voir avant de pousser la porte. Décoratif au sens des
+                lecteurs d’écran — le lien est déjà nommé par le titre. #}
+            <span class="room-card-strip" aria-hidden="true">
+              {% for work in shots[:3] %}
+                <img src="{{ media_url(work.image_path, 480) }}" alt="" loading="lazy" decoding="async" width="200" height="200">
+              {% endfor %}
+            </span>
+          {% endif %}
+          <span class="room-card-say">
+            <span class="room-card-name">{{ artist.display_name }}</span>
+            <span class="room-card-count room-card-meta">{{ count }} œuvre{% if count != 1 %}s{% endif %}</span>
+          </span>
+          <span class="room-card-meta">
+            {{ artist.discipline or "Artiste" }}{% if artist.location %} · {{ artist.location }}{% endif %}
+          </span>
         </a>
       </li>
     {% endfor %}
@@ -129,5 +178,21 @@
   <p class="empty-room" data-room-empty {% if shown %}hidden{% endif %}>Aucune salle ne correspond.</p>
 {% else %}
   <p class="empty-room">Aucune salle n’est encore ouverte.</p>
+{% endif %}
+
+{% if disciplines and not discipline %}
+<section id="disciplines">
+  <div class="band">
+    <div>
+      <p class="eyebrow">Par discipline</p>
+      <h2>Chercher par pratique</h2>
+    </div>
+  </div>
+  <ul class="disciplines">
+    {% for row in disciplines %}
+      <li><a href="{{ url_for('public.discipline', slug=row.slug) }}">{{ row.name }} <em>{{ row.count }}</em></a></li>
+    {% endfor %}
+  </ul>
+</section>
 {% endif %}
 {% endblock %}

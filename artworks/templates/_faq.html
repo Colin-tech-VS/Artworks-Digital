@@ -1,8 +1,13 @@
+{#- Les questions sont posées une seule fois dans le code : la page les
+    affiche, son JSON-LD les répète, `/llms.txt` les sert aux moteurs
+    génératifs. Trois écritures finiraient par se contredire. #}
 <section class="faq" id="faq" aria-labelledby="faq-title">
-  <header>
-    <p class="eyebrow">À retenir</p>
-    <h2 id="faq-title">{{ faq_title|default('Questions fréquentes') }}</h2>
-  </header>
+  <div class="band">
+    <div>
+      <p class="eyebrow">{{ faq_eyebrow|default('À retenir') }}</p>
+      <h2 id="faq-title">{{ faq_title|default('Questions fréquentes') }}</h2>
+    </div>
+  </div>
   <dl>
     {% for item in faq %}
       <div>

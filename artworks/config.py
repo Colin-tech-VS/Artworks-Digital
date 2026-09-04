@@ -42,6 +42,14 @@ class Config:
     MAIL_IMAP_HOST = os.environ.get("MAIL_IMAP_HOST", "")
     MAIL_IMAP_PORT = int(os.environ.get("MAIL_IMAP_PORT") or "993")
     SITE_CONTACT_EMAIL = os.environ.get("SITE_CONTACT_EMAIL", "contact@artworksdigital.fr")
+    # Les profils publics de la maison, séparés par des virgules. Ils
+    # entrent dans le `sameAs` de l'organisation : c'est ce qui permet à un
+    # moteur — et surtout à un moteur génératif — de relier le site, la page
+    # Facebook et le compte Instagram à une seule et même entité au lieu de
+    # trois inconnus qui portent le même nom. Rien n'est écrit en dur : une
+    # adresse inventée abîmerait le signal au lieu de l'établir.
+    SITE_SAME_AS = os.environ.get("SITE_SAME_AS", "")
+    SITE_FOUNDING_YEAR = os.environ.get("SITE_FOUNDING_YEAR", "2025")
     STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
     STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
     STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")

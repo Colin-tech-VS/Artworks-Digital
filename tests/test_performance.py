@@ -73,9 +73,35 @@ def _rooms(db_session, count: int) -> None:
 BUDGETS = {
     "/": 40,
     "/galeries": 40,
+    "/galeries.atom": 30,
     "/galeries.json": 30,
+    "/llms.txt": 40,
+    "/offres": 30,
     "/sitemap.xml": 30,
 }
+
+
+#: Les pages d'une salle : elles montrent l'accrochage, les salles voisines
+#: et leurs aperçus — donc plus de choses qu'avant, et c'est justement pour
+#: cela qu'il faut les compter.
+ROOM_BUDGETS = {
+    "/galerie/{slug}": 45,
+    "/galerie/{slug}/oeuvre/{work}": 40,
+}
+
+
+@pytest.mark.parametrize("template,budget", sorted(ROOM_BUDGETS.items()))
+def test_a_room_does_not_spend_hundreds_of_queries(app, client, db, template, budget):
+    _rooms(db, 12)
+    artist = Artist.query.filter_by(published=True).first()
+    work = Work.query.filter_by(artist_id=artist.id).first()
+    url = template.format(slug=artist.slug, work=work.id)
+    with counted(app) as counter:
+        response = client.get(url)
+    assert response.status_code == 200
+    assert counter["n"] <= budget, (
+        f"{url} : {counter['n']} requêtes SQL pour 12 salles (budget {budget})."
+    )
 
 
 @pytest.mark.parametrize("url,budget", sorted(BUDGETS.items()))

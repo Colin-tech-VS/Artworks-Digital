@@ -7,9 +7,17 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from artworks.analytics import attach_session_cookie, record_view, should_track
 from artworks.config import Config, ensure_schema
 from artworks.extensions import csrf, db, login_manager
-from artworks.images import asset_bytes
+from artworks.images import VARIANT_WIDTHS, asset_bytes, variant_bytes
 from artworks.legacy_urls import destination as legacy_destination
-from artworks.seo import absolute_media, canonical_redirect, canonical_url, default_og_image, static_url
+from artworks.seo import (
+    absolute_media,
+    canonical_redirect,
+    canonical_url,
+    default_og_image,
+    media_srcset,
+    media_url,
+    static_url,
+)
 
 
 def create_app(config_class=Config) -> Flask:
@@ -54,9 +62,17 @@ def create_app(config_class=Config) -> Flask:
         return {
             "canonical_url": canonical_url,
             "absolute_media": absolute_media,
+            "media_url": media_url,
+            "media_srcset": media_srcset,
             "static_url": static_url,
             "default_og_image": default_og_image(),
             "site_contact_email": app.config.get("SITE_CONTACT_EMAIL", ""),
+            "site_same_as": [
+                url.strip()
+                for url in (app.config.get("SITE_SAME_AS") or "").split(",")
+                if url.strip().startswith("http")
+            ],
+            "site_founded": app.config.get("SITE_FOUNDING_YEAR", ""),
             "kael_ready": bool(
                 app.config.get("KAEL_ENABLED")
                 and app.config.get("KAEL_API_URL")
@@ -74,6 +90,21 @@ def create_app(config_class=Config) -> Flask:
             or endpoint.startswith("kael.")
         ):
             response.headers["X-Robots-Tag"] = "noindex, nofollow"
+
+        # Les en-têtes que tout site public devrait poser, et que les
+        # audits — Lighthouse, Search Console, les moteurs génératifs —
+        # lisent comme un signe de sérieux.
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        response.headers.setdefault(
+            "Permissions-Policy", "geolocation=(), microphone=(), camera=(), payment=(), interest-cohort=()"
+        )
+        if request.is_secure:
+            response.headers.setdefault(
+                "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+            )
+
         if response.status_code == 200 and should_track(request):
             artist_id = getattr(g, "track_artist_id", None)
             work_id = getattr(g, "track_work_id", None)
@@ -85,17 +116,35 @@ def create_app(config_class=Config) -> Flask:
                 db.session.rollback()
         return response
 
-    @app.route("/media/<path:filename>")
-    def media(filename: str):
-        if ".." in filename or "/" in filename or "\\" in filename:
-            abort(404)
-        payload = asset_bytes(filename)
+    def _serve(payload):
         if payload is None:
             abort(404)
         data, mime = payload
         response = send_file(BytesIO(data), mimetype=mime)
+        # Le nom d'un visuel porte son empreinte : il ne change jamais de
+        # contenu, donc un an de cache et pas de revalidation.
         response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         return response
+
+    def _safe_name(filename: str) -> str:
+        if ".." in filename or "/" in filename or "\\" in filename:
+            abort(404)
+        return filename
+
+    @app.route("/media/<path:filename>")
+    def media(filename: str):
+        return _serve(asset_bytes(_safe_name(filename)))
+
+    @app.route("/media/w<int:width>/<path:filename>")
+    def media_variant(width: int, filename: str):
+        """Le même visuel, à la largeur demandée.
+
+        Une vignette n'a pas besoin de deux mille pixels. Les largeurs
+        acceptées sont closes — sinon n'importe qui fabriquerait mille
+        tailles et remplirait le disque."""
+        if width not in VARIANT_WIDTHS:
+            abort(404)
+        return _serve(variant_bytes(_safe_name(filename), width))
 
     @app.errorhandler(404)
     def not_found(_error):

@@ -17,6 +17,7 @@ PUBLIC_PAGES = [
     "/",
     "/galeries",
     "/galeries.json",
+    "/galeries.atom",
     "/offres",
     "/contact",
     "/connexion",

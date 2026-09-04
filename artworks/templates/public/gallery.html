@@ -1,11 +1,17 @@
 {% extends "base.html" %}
-{% block title %}{{ artist.display_name }}{% if artist.discipline %} — {{ artist.discipline }}{% endif %}{% if artist.location %} à {{ artist.location }}{% endif %} — galerie Artworksdigital{% endblock %}
+{% set lead_art = artist.cover_path or (spotlight.image_path if spotlight else (works[0].image_path if works else '')) %}
+{% block title %}{{ artist.display_name }}{% if artist.discipline %} — {{ artist.discipline }}{% endif %}{% if artist.location %} à {{ artist.location }}{% endif %} | galerie Artworksdigital{% endblock %}
 {% block description %}{{ artist.seo_description }}{% endblock %}
 {% block og_type %}profile{% endblock %}
-{% block og_image %}{% if artist.cover_path %}{{ absolute_media(artist.cover_path) }}{% elif works %}{{ absolute_media(works[0].image_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
+{% block og_image %}{% if lead_art %}{{ absolute_media(lead_art) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
 {% block author %}{{ artist.display_name }}{% endblock %}
 {% block body_class %}room{% endblock %}
 {% block og_image_alt %}Galerie de {{ artist.display_name }}{% endblock %}
+{% block preload %}
+  {%- if lead_art %}
+  <link rel="preload" as="image" href="{{ media_url(lead_art, 1600) }}" fetchpriority="high">
+  {%- endif %}
+{% endblock %}
 {% block extra_head %}
   {%- if artist.location %}
   <meta name="geo.placename" content="{{ artist.location }}">
@@ -27,11 +33,12 @@
       "inLanguage": "fr-FR",
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
       "primaryImageOfPage": {{ self.og_image() | tojson }},
+      "dateCreated": {{ artist.created_at.strftime('%Y-%m-%d') | tojson }},
       "dateModified": {{ (artist.updated_at or artist.created_at).strftime('%Y-%m-%d') | tojson }},
       "mainEntity": {"@id": {{ (canonical_url() ~ '#artiste') | tojson }}},
       "speakable": {
         "@type": "SpeakableSpecification",
-        "cssSelector": [".room-intro h1", ".statement", ".where"]
+        "cssSelector": [".room-hero-say h1", ".statement", ".where"]
       }
     },
     {
@@ -40,6 +47,7 @@
       "name": {{ ('Galerie de ' ~ artist.display_name) | tojson }},
       "url": {{ canonical_url() | tojson }},
       "founder": {"@id": {{ (canonical_url() ~ '#artiste') | tojson }}},
+      "parentOrganization": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}},
       "description": {{ artist.seo_description | tojson }}{% if artist.location %},
       "address": {"@type": "PostalAddress", "addressLocality": {{ artist.location | tojson }}, "addressCountry": "FR"}{% endif %}
     },
@@ -48,6 +56,7 @@
       "@id": {{ (canonical_url() ~ '#artiste') | tojson }},
       "name": {{ artist.display_name | tojson }},
       "url": {{ canonical_url() | tojson }},
+      "mainEntityOfPage": {{ canonical_url() | tojson }},
       "image": {
         "@type": "ImageObject",
         "url": {{ self.og_image() | tojson }},
@@ -59,14 +68,18 @@
       "knowsAbout": {{ artist.discipline | tojson }},
       "hasOccupation": {"@type": "Occupation", "name": {{ artist.discipline | tojson }}}{% endif %}{% if artist.location %},
       "homeLocation": {"@type": "Place", "name": {{ artist.location | tojson }}},
-      "address": {"@type": "PostalAddress", "addressLocality": {{ artist.location | tojson }}}{% endif %}{% if artist.statement %},
-      "description": {{ artist.statement[:400] | tojson }}{% endif %}
+      "workLocation": {"@type": "Place", "name": {{ artist.location | tojson }}},
+      "address": {"@type": "PostalAddress", "addressLocality": {{ artist.location | tojson }}, "addressCountry": "FR"}{% endif %}{% if artist.statement %},
+      "description": {{ artist.statement[:400] | tojson }}{% endif %}{% if all_works %},
+      "makesOffer": [],
+      "subjectOf": {"@id": {{ (canonical_url() ~ '#accrochage') | tojson }}}{% endif %}
     }{% if all_works %},
     {
-      "@type": "CollectionPage",
+      "@type": ["CollectionPage", "ImageGallery"],
       "@id": {{ (canonical_url() ~ '#accrochage') | tojson }},
       "name": {{ ('Accrochage de ' ~ artist.display_name) | tojson }},
       "url": {{ canonical_url() | tojson }},
+      "inLanguage": "fr-FR",
       "mainEntity": {
         "@type": "ItemList",
         "numberOfItems": {{ all_works | length }},
@@ -89,9 +102,11 @@
                 "width": {{ work.image_w }},
                 "height": {{ work.image_h }}{% endif %}
               },
-              "creator": {"@id": {{ (canonical_url() ~ '#artiste') | tojson }}}{% if work.year %},
+              "creator": {"@id": {{ (canonical_url() ~ '#artiste') | tojson }}},
+              "copyrightHolder": {"@id": {{ (canonical_url() ~ '#artiste') | tojson }}}{% if work.year %},
               "dateCreated": {{ work.year | tojson }}{% endif %}{% if work.medium %},
-              "artMedium": {{ work.medium | tojson }}{% endif %}
+              "artMedium": {{ work.medium | tojson }}{% endif %}{% if work.dimensions %},
+              "size": {{ work.dimensions | tojson }}{% endif %}
             }
           }{% if not loop.last %},{% endif %}
           {% endfor %}
@@ -118,27 +133,72 @@
   {"name": artist.display_name}
 ] %}
 {% include "_crumbs.html" %}
-<article class="room-head {% if artist.cover_path %}has-cover{% endif %}">
+
+<article class="room-hero {% if artist.cover_path %}has-cover{% endif %}">
   {% if artist.cover_path %}
-    <img class="room-cover" src="{{ url_for('media', filename=artist.cover_path) }}" alt="Galerie de {{ artist.display_name }}{% if artist.discipline %} — {{ artist.discipline }}{% endif %}{% if artist.location %}, {{ artist.location }}{% endif %}" width="1600" height="900" fetchpriority="high" decoding="async">
+    <div class="room-hero-cover">
+      <img src="{{ media_url(artist.cover_path, 1600) }}"
+           srcset="{{ media_url(artist.cover_path, 960) }} 960w, {{ media_url(artist.cover_path, 1600) }} 1600w, {{ media_url(artist.cover_path) }} 2400w"
+           sizes="100vw"
+           alt="Galerie de {{ artist.display_name }}{% if artist.discipline %} — {{ artist.discipline }}{% endif %}{% if artist.location %}, {{ artist.location }}{% endif %}"
+           width="1600" height="900" fetchpriority="high" decoding="async">
+    </div>
   {% endif %}
-  <div class="room-intro">
-    <p class="eyebrow">{{ artist.discipline or "Galerie" }}</p>
-    <h1>{{ artist.display_name }}{% if artist.has_feature('featured') %} <em class="tag">mise en avant</em>{% endif %}{% if artist.has_feature('priority') %} <em class="tag">prioritaire</em>{% endif %}</h1>
-    {% if artist.location %}<p class="where">{{ artist.location }}</p>{% endif %}
-    {% if artist.statement %}
-      <p class="statement">{{ artist.statement }}</p>
-    {% endif %}
+  <div class="room-hero-say">
+    <p class="eyebrow">{% if discipline_href %}<a href="{{ discipline_href }}">{{ artist.discipline }}</a>{% else %}{{ artist.discipline or "Galerie" }}{% endif %}</p>
+    <h1>{{ artist.display_name }}</h1>
+    <p class="where">
+      {%- if artist.location %}{{ artist.location }} · {% endif -%}
+      {{ all_works|length }} œuvre{% if all_works|length != 1 %}s{% endif %}
+      {%- if artist.has_feature('featured') %} <em class="tag">mise en avant</em>{% endif -%}
+      {%- if artist.has_feature('priority') %} <em class="tag">prioritaire</em>{% endif -%}
+    </p>
   </div>
 </article>
 
+<div class="room-brief">
+  <div>
+    {% if artist.statement %}
+      {% for para in artist.statement.split('\n') if para.strip() %}
+        <p class="statement">{{ para.strip() }}</p>
+      {% endfor %}
+    {% else %}
+      <p class="statement">La note d’intention n’est pas encore écrite. L’accrochage, lui, est là.</p>
+    {% endif %}
+  </div>
+  <dl class="room-facts">
+    {% if artist.discipline %}
+      <div>
+        <dt>Discipline</dt>
+        <dd>{% if discipline_href %}<a href="{{ discipline_href }}">{{ artist.discipline }}</a>{% else %}{{ artist.discipline }}{% endif %}</dd>
+      </div>
+    {% endif %}
+    {% if artist.location %}<div><dt>Où</dt><dd>{{ artist.location }}</dd></div>{% endif %}
+    <div><dt>Accrochage</dt><dd>{{ all_works|length }} œuvre{% if all_works|length != 1 %}s{% endif %}</dd></div>
+    <div><dt>Adresse</dt><dd><a href="{{ canonical_url() }}">{{ canonical_url() | replace('https://', '') }}</a></dd></div>
+    <div><dt>Écrire</dt><dd><a href="#ecrire">Envoyer un message</a></dd></div>
+  </dl>
+</div>
+
 {% if spotlight %}
   <section class="spotlight">
+    <div class="band">
+      <div>
+        <p class="eyebrow">En avant</p>
+        <h2>L’œuvre que l’artiste met en premier</h2>
+      </div>
+    </div>
     <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=spotlight.id) }}">
-      <figure>
-        <img src="{{ url_for('media', filename=spotlight.image_path) }}" alt="{{ spotlight.title }}, {{ artist.display_name }}{% if spotlight.year %}, {{ spotlight.year }}{% endif %}{% if spotlight.medium %} — {{ spotlight.medium }}{% endif %}" fetchpriority="high" decoding="async"{% if (spotlight.image_w or 0) > 0 %} width="{{ spotlight.image_w }}" height="{{ spotlight.image_h }}"{% endif %}>
+      <figure class="spotlight-figure">
+        <span class="frame">
+          <img src="{{ media_url(spotlight.image_path, 1600) }}"
+               srcset="{{ media_srcset(spotlight.image_path, spotlight.image_w) }}"
+               sizes="(max-width: 860px) 92vw, 60vw"
+               alt="{{ spotlight.title }}, {{ artist.display_name }}{% if spotlight.year %}, {{ spotlight.year }}{% endif %}{% if spotlight.medium %} — {{ spotlight.medium }}{% endif %}"
+               decoding="async"
+               {%- if (spotlight.image_w or 0) > 0 %} width="{{ spotlight.image_w }}" height="{{ spotlight.image_h }}"{% endif %}>
+        </span>
         <figcaption>
-          <p class="eyebrow">En avant</p>
           <strong>{{ spotlight.title }}</strong>
           {% if spotlight.cartel %}<span>{{ spotlight.cartel }}</span>{% endif %}
           {% if artist.has_feature('present') and spotlight.note %}<span>{{ spotlight.note }}</span>{% endif %}
@@ -148,53 +208,73 @@
   </section>
 {% endif %}
 
-{% if groups %}
-  {% for name, items in groups.items() %}
-    <section class="collection-block wall">
-      <h2>{{ name }}</h2>
-      <ul class="hang {% if artist.hang_style == 'salon' and artist.has_feature('present') %}salon{% endif %}">
-        {% for work in items %}
-          <li>
-            <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=work.id) }}">
-              <figure>
-                <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}, {{ artist.display_name }}{% if work.year %}, {{ work.year }}{% endif %}{% if work.medium %} — {{ work.medium }}{% endif %}" loading="lazy" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
-                <figcaption>
-                  <strong>{{ work.title }}</strong>
-                  {% if work.cartel %}<span>{{ work.cartel }}</span>{% endif %}
-                  {% if artist.has_feature('present') and work.note %}<span>{{ work.note }}</span>{% endif %}
-                </figcaption>
-              </figure>
-            </a>
-          </li>
-        {% endfor %}
-      </ul>
-    </section>
-  {% endfor %}
-{% elif works %}
-<section class="wall" aria-label="Accrochage">
-  <ul class="hang {% if artist.hang_style == 'salon' and artist.has_feature('present') %}salon{% endif %}">
-    {% for work in works %}
+{% macro hang_list(items, style) -%}
+  <ul class="hang {{ style }}">
+    {% for work in items %}
       <li>
         <a href="{{ url_for('public.artwork', slug=artist.slug, work_id=work.id) }}">
-          <figure>
-            <img src="{{ url_for('media', filename=work.image_path) }}" alt="{{ work.title }}, {{ artist.display_name }}{% if work.year %}, {{ work.year }}{% endif %}{% if work.medium %} — {{ work.medium }}{% endif %}" loading="lazy" decoding="async"{% if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
-            <figcaption>
-              <strong>{{ work.title }}</strong>
-              {% if work.cartel %}<span>{{ work.cartel }}</span>{% endif %}
-              {% if artist.has_feature('present') and work.note %}<span>{{ work.note }}</span>{% endif %}
-            </figcaption>
+          <figure class="frame">
+            <img src="{{ media_url(work.image_path, 960) }}"
+                 srcset="{{ media_srcset(work.image_path, work.image_w) }}"
+                 sizes="(max-width: 640px) 92vw, (max-width: 1100px) 46vw, 30vw"
+                 alt="{{ work.title }}, {{ artist.display_name }}{% if work.year %}, {{ work.year }}{% endif %}{% if work.medium %} — {{ work.medium }}{% endif %}"
+                 loading="{{ 'eager' if loop.index <= 2 else 'lazy' }}" decoding="async"
+                 {%- if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
           </figure>
+          <span class="tag-line">
+            <strong>{{ work.title }}</strong>
+            {% if work.cartel %}<span>{{ work.cartel }}</span>{% endif %}
+            {% if artist.has_feature('present') and work.note %}<span>{{ work.note }}</span>{% endif %}
+          </span>
         </a>
       </li>
     {% endfor %}
   </ul>
+{%- endmacro %}
+
+{% set style = 'salon' if artist.hang_style == 'salon' and artist.has_feature('present') else '' %}
+
+{% if groups %}
+  <section aria-label="Accrochage">
+    <div class="band">
+      <div>
+        <p class="eyebrow">Accrochage</p>
+        <h2>Les collections</h2>
+      </div>
+    </div>
+    {% for name, items in groups.items() %}
+      <section class="collection-block">
+        <div class="band">
+          <div><h2>{{ name }}</h2></div>
+          <span class="band-link">{{ items|length }} œuvre{% if items|length != 1 %}s{% endif %}</span>
+        </div>
+        {{ hang_list(items, style) }}
+      </section>
+    {% endfor %}
+  </section>
+{% elif works %}
+<section aria-label="Accrochage">
+  <div class="band">
+    <div>
+      <p class="eyebrow">Accrochage</p>
+      <h2>{% if spotlight %}Le reste de la salle{% else %}Les œuvres{% endif %}</h2>
+    </div>
+    <span class="band-link">{{ works|length }} œuvre{% if works|length != 1 %}s{% endif %}</span>
+  </div>
+  {{ hang_list(works, style) }}
 </section>
 {% elif not spotlight %}
   <p class="empty-room">L’accrochage n’a pas encore commencé.</p>
 {% endif %}
 
 <section class="contact-block" id="ecrire">
-  <h2>Écrire à l’artiste</h2>
+  <div class="band">
+    <div>
+      <p class="eyebrow">Écrire</p>
+      <h2>Un mot à {{ artist.display_name }}</h2>
+      <p>Le message part directement chez l’artiste. Artworksdigital ne s’interpose pas.</p>
+    </div>
+  </div>
   {% if sent %}
     <p class="flash flash-ok">Message envoyé. Merci.</p>
   {% endif %}
@@ -214,4 +294,39 @@
     <button class="btn btn-ink" type="submit">Envoyer</button>
   </form>
 </section>
+
+{% if kin %}
+<section aria-labelledby="voisines">
+  <div class="band">
+    <div>
+      <p class="eyebrow">Continuer la visite</p>
+      <h2 id="voisines">D’autres salles</h2>
+    </div>
+    <a class="band-link" href="{{ url_for('public.galleries') }}">Toutes les galeries</a>
+  </div>
+  <ul class="rooms-grid">
+    {% for other in kin %}
+      {% set shots = kin_previews.get(other.id, []) %}
+      {% set count = kin_counts.get(other.id, 0) %}
+      <li class="room-card">
+        <a href="{{ url_for('public.gallery', slug=other.slug) }}">
+          {% set art = other.cover_path or (shots[0].image_path if shots else '') %}
+          {% if art %}
+            <span class="room-card-cover">
+              <img src="{{ media_url(art, 480) }}" alt="Galerie de {{ other.display_name }}{% if other.discipline %} — {{ other.discipline }}{% endif %}" width="480" height="320" loading="lazy" decoding="async">
+            </span>
+          {% else %}
+            <span class="room-card-cover is-bare" aria-hidden="true"><span>{{ other.initial }}</span></span>
+          {% endif %}
+          <span class="room-card-say">
+            <span class="room-card-name">{{ other.display_name }}</span>
+            <span class="room-card-count room-card-meta">{{ count }} œuvre{% if count != 1 %}s{% endif %}</span>
+          </span>
+          <span class="room-card-meta">{{ other.discipline or "Artiste" }}{% if other.location %} · {{ other.location }}{% endif %}</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
 {% endblock %}

@@ -15,6 +15,8 @@ OPEN_ENDPOINTS = {
     "public.galleries",
     "public.search",
     "public.rooms_feed",
+    "public.rooms_atom",
+    "public.discipline",
     "public.opensearch",
     "public.sitemap",
     "public.robots",

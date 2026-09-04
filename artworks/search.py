@@ -177,3 +177,104 @@ def rooms_index(rooms: list[Artist], counts: dict[int, int] | None = None) -> li
             }
         )
     return payload
+
+
+def wall_works(rooms: list[Artist], limit: int = 12, per_room: int = 2) -> list[Work]:
+    """Ce qui est accroché en ce moment, toutes salles confondues.
+
+    L'accueil montrait des noms ; il montre des œuvres. On en prend au
+    plus `per_room` par salle pour qu'une salle bien remplie ne mange pas
+    le mur, et on suit l'ordre des salles — les offres hautes d'abord,
+    c'est ce qu'elles paient.
+
+    Une seule requête pour tout le mur : la page d'accueil ne doit pas
+    coûter une requête par artiste.
+    """
+    ids = [artist.id for artist in rooms]
+    if not ids or limit <= 0:
+        return []
+    rows = (
+        Work.query.filter(Work.artist_id.in_(ids), Work.visible.is_(True))
+        .order_by(Work.artist_id.asc(), Work.position.asc(), Work.id.desc())
+        .all()
+    )
+    by_room: dict[int, list[Work]] = {}
+    for work in rows:
+        by_room.setdefault(work.artist_id, []).append(work)
+
+    # Le plafond de l'offre s'applique ici aussi : une œuvre au-delà du
+    # plafond n'est pas publique, elle n'a rien à faire sur le mur.
+    for artist in rooms:
+        cap = artist.work_limit()
+        if cap:
+            by_room[artist.id] = by_room.get(artist.id, [])[:cap]
+
+    picked: list[Work] = []
+    for rank in range(per_room):
+        for artist in rooms:
+            bucket = by_room.get(artist.id) or []
+            if rank < len(bucket):
+                picked.append(bucket[rank])
+            if len(picked) >= limit:
+                return picked
+    return picked
+
+
+def room_previews(rooms: list[Artist], per_room: int = 3) -> dict[int, list[Work]]:
+    """Trois œuvres par salle, pour la bande sous une carte du répertoire."""
+    grouped = hung_works_by_artist(rooms)
+    return {artist_id: works[:per_room] for artist_id, works in grouped.items()}
+
+
+def discipline_slug(name: str) -> str:
+    """« Art numérique » devient « art-numerique » : une adresse propre."""
+    folded = fold(name)
+    kept = [ch if (ch.isalnum()) else "-" for ch in folded]
+    return "-".join(part for part in "".join(kept).split("-") if part)
+
+
+def disciplines_index(rooms: list[Artist]) -> list[dict]:
+    """Les disciplines réellement présentes, avec leur compte et leur adresse.
+
+    C'est le seul découpage du répertoire qui ait un sens pour un visiteur
+    comme pour un moteur : on ne cherche pas « une galerie », on cherche
+    « une galerie de photographie »."""
+    counted = Counter()
+    labels: dict[str, str] = {}
+    for artist in rooms:
+        name = (artist.discipline or "").strip()
+        if not name:
+            continue
+        slug = discipline_slug(name)
+        if not slug:
+            continue
+        counted[slug] += 1
+        labels.setdefault(slug, name)
+    return [
+        {"slug": slug, "name": labels[slug], "count": count}
+        for slug, count in sorted(counted.items(), key=lambda row: (-row[1], labels[row[0]]))
+    ]
+
+
+def rooms_of_discipline(rooms: list[Artist], slug: str) -> list[Artist]:
+    return [artist for artist in rooms if discipline_slug(artist.discipline or "") == slug]
+
+
+def kin_rooms(rooms: list[Artist], artist: Artist, limit: int = 4) -> list[Artist]:
+    """Les salles voisines : même discipline d'abord, puis même ville.
+
+    Une salle sans porte de sortie est une impasse — pour le visiteur qui
+    a fini sa visite comme pour le moteur qui suit les liens."""
+    slug = discipline_slug(artist.discipline or "")
+    town = fold(artist.location or "")
+    same_art, same_town, rest = [], [], []
+    for other in rooms:
+        if other.id == artist.id:
+            continue
+        if slug and discipline_slug(other.discipline or "") == slug:
+            same_art.append(other)
+        elif town and fold(other.location or "") == town:
+            same_town.append(other)
+        else:
+            rest.append(other)
+    return (same_art + same_town + rest)[:limit]

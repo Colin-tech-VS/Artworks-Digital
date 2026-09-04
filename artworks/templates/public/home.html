@@ -1,9 +1,16 @@
 {% extends "base.html" %}
-{% block title %}Artworksdigital — Votre salle. Vos œuvres.{% endblock %}
-{% block description %}Artworksdigital n’est pas une vitrine collective. C’est un atelier pour composer votre galerie : une adresse, un accrochage, une note d’intention. Trouvez les salles d’artistes ouvertes.{% endblock %}
-{% block og_image_width %}1200{% endblock %}
-{% block og_image_height %}630{% endblock %}
+{% block title %}Artworksdigital — la galerie en ligne de chaque artiste{% endblock %}
+{% block description %}Chaque artiste a sa galerie à son adresse : un accrochage, des cartels, une note d’intention. Pas de marketplace, pas de catalogue partagé. Visitez les salles ouvertes ou ouvrez la vôtre.{% endblock %}
+{% block og_image %}{% if triptych %}{{ absolute_media(triptych[0].image_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
+{% block og_image_alt %}{% if triptych %}{{ triptych[0].title }}, {{ triptych[0].artist.display_name }} — Artworksdigital{% else %}Artworksdigital{% endif %}{% endblock %}
 {% block body_class %}home{% endblock %}
+{% block preload %}
+  {#- La première image de l’accueil est aussi son LCP : le navigateur la
+      demande avant d’avoir fini de lire la feuille de style. #}
+  {%- if triptych %}
+  <link rel="preload" as="image" href="{{ media_url(triptych[0].image_path, 960) }}" imagesrcset="{{ media_srcset(triptych[0].image_path, triptych[0].image_w) }}" imagesizes="(max-width: 900px) 33vw, 20vw" fetchpriority="high">
+  {%- endif %}
+{% endblock %}
 {% block jsonld %}
 <script type="application/ld+json">
 {
@@ -13,7 +20,7 @@
       "@type": "WebPage",
       "@id": {{ (canonical_url('/') ~ '#accueil') | tojson }},
       "url": {{ canonical_url('/') | tojson }},
-      "name": "Artworksdigital — Votre salle. Vos œuvres.",
+      "name": "Artworksdigital — la galerie en ligne de chaque artiste",
       "description": {{ self.description() | tojson }},
       "inLanguage": "fr-FR",
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
@@ -21,53 +28,29 @@
         {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}},
         {"@id": {{ (canonical_url('/') ~ '#application') | tojson }}}
       ],
-      "primaryImageOfPage": {{ default_og_image | tojson }},
+      "primaryImageOfPage": {{ self.og_image() | tojson }},
       "speakable": {
         "@type": "SpeakableSpecification",
-        "cssSelector": [".hero h1", ".hero .lead", ".faq dt", ".faq dd"]
+        "cssSelector": [".foyer h1", ".foyer .lead", ".faq dt", ".faq dd"]
       }
     },
     {
       "@type": "FAQPage",
       "@id": {{ (canonical_url('/') ~ '#faq') | tojson }},
       "mainEntity": [
+        {% for item in faq %}
         {
           "@type": "Question",
-          "name": "Qu’est-ce qu’Artworksdigital ?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Un atelier pour composer votre galerie : une adresse, un accrochage, une note d’intention. Ce n’est pas une marketplace ni une vitrine collective."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Artworksdigital vend-il des œuvres ?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Non. Il n’y a pas de panier ni de catalogue partagé. La galerie appartient à l’artiste. Un visiteur lui écrit depuis la salle."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Comment ouvrir une galerie ?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Créez un atelier, accrochez vos œuvres, écrivez la note d’intention, puis ouvrez la salle. L’adresse publique est /galerie/votre-nom."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Combien ça coûte ?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "L’offre Découverte est gratuite (jusqu’à 5 œuvres). Artiste 9,90 €/mois, Pro 19,90 €/mois, Studio 39,90 €/mois."
-          }
-        }
+          "name": {{ item.q | tojson }},
+          "acceptedAnswer": {"@type": "Answer", "text": {{ item.a | tojson }}}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
       ]
     }{% if rooms %},
     {
       "@type": "ItemList",
-      "name": "Galeries publiées",
+      "@id": {{ (canonical_url('/') ~ '#salles') | tojson }},
+      "name": "Galeries d’artistes ouvertes sur Artworksdigital",
       "url": {{ canonical_url('/galeries') | tojson }},
       "numberOfItems": {{ rooms | length }},
       "itemListElement": [
@@ -76,7 +59,41 @@
           "@type": "ListItem",
           "position": {{ loop.index }},
           "url": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }},
-          "name": {{ artist.display_name | tojson }}
+          "name": {{ artist.display_name | tojson }},
+          "item": {
+            "@type": "Person",
+            "name": {{ artist.display_name | tojson }},
+            "url": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }}{% if artist.discipline %},
+            "jobTitle": {{ artist.discipline | tojson }}{% endif %}{% if artist.location %},
+            "homeLocation": {"@type": "Place", "name": {{ artist.location | tojson }}}{% endif %}
+          }
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ]
+    }{% endif %}{% if wall %},
+    {
+      "@type": "ImageGallery",
+      "@id": {{ (canonical_url('/') ~ '#mur') | tojson }},
+      "name": "Œuvres accrochées en ce moment",
+      "url": {{ canonical_url('/') | tojson }},
+      "inLanguage": "fr-FR",
+      "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
+      "associatedMedia": [
+        {% for work in wall %}
+        {
+          "@type": "ImageObject",
+          "contentUrl": {{ absolute_media(work.image_path) | tojson }},
+          "url": {{ canonical_url(url_for('public.artwork', slug=work.artist.slug, work_id=work.id)) | tojson }},
+          "name": {{ work.title | tojson }},
+          "caption": {{ (work.title ~ ' — ' ~ work.artist.display_name) | tojson }},
+          "creditText": {{ work.artist.display_name | tojson }},
+          "creator": {
+            "@type": "Person",
+            "name": {{ work.artist.display_name | tojson }},
+            "url": {{ canonical_url(url_for('public.gallery', slug=work.artist.slug)) | tojson }}
+          }{% if (work.image_w or 0) > 0 %},
+          "width": {{ work.image_w }},
+          "height": {{ work.image_h }}{% endif %}
         }{% if not loop.last %},{% endif %}
         {% endfor %}
       ]
@@ -87,57 +104,124 @@
 {% endblock %}
 
 {% block content %}
-<section class="hero">
-  <p class="eyebrow">Pour les artistes</p>
-  <h1>Votre salle.<br>Vos œuvres.<br>Rien d’autre.</h1>
-  <p class="lead">
-    Artworksdigital n’est pas une vitrine collective, ni une boutique.
-    C’est un atelier pour composer <em>votre</em> galerie — une adresse, un accrochage, une note d’intention.
-  </p>
-  <div class="hero-actions">
-    <a class="btn btn-ink" href="{{ url_for('auth.register') }}">Ouvrir mon atelier</a>
-    <a class="btn btn-ghost" href="{{ url_for('public.galleries') }}">Parcourir les salles</a>
+<section class="foyer">
+  <div class="foyer-say">
+    <p class="eyebrow">Galeries d’artistes</p>
+    <h1>Votre salle.<br>Vos œuvres.<br><em>Rien d’autre.</em></h1>
+    <p class="lead">
+      Artworksdigital n’est ni une marketplace ni une vitrine collective.
+      C’est un atelier pour composer <em>votre</em> galerie — une adresse à vous,
+      un accrochage que vous décidez, une note d’intention qui vous ressemble.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-ink" href="{{ url_for('auth.register') }}">Ouvrir mon atelier</a>
+      <a class="btn btn-ghost" href="{{ url_for('public.galleries') }}">Visiter les salles{% if rooms %} · {{ rooms|length }}{% endif %}</a>
+    </div>
   </div>
-  <form class="hero-search" action="{{ url_for('public.galleries') }}" method="get" role="search">
-    <label class="sr-only" for="home-q">Rechercher une salle d’artiste</label>
-    <input id="home-q" class="studio-filter" type="search" name="q" placeholder="Rechercher une salle — nom, discipline, ville…" autocomplete="off" enterkeyhint="search">
-    <button class="btn btn-ghost" type="submit">Chercher</button>
-  </form>
+
+  {% if triptych %}
+    <ul class="triptych">
+      {% for work in triptych %}
+        <li>
+          <a href="{{ url_for('public.artwork', slug=work.artist.slug, work_id=work.id) }}">
+            <figure class="frame is-cropped">
+              <img src="{{ media_url(work.image_path, 960) }}"
+                   srcset="{{ media_srcset(work.image_path, work.image_w) }}"
+                   sizes="(max-width: 900px) 33vw, 20vw"
+                   alt="{{ work.title }}, {{ work.artist.display_name }}{% if work.year %}, {{ work.year }}{% endif %}"
+                   {% if loop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
+                   decoding="async"
+                   {%- if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
+            </figure>
+            <span class="tag-line">
+              <strong>{{ work.title }}</strong>
+              <span class="by">{{ work.artist.display_name }}</span>
+            </span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="triptych-empty">Les murs attendent leur premier accrochage.<br>Ce sera peut-être le vôtre.</p>
+  {% endif %}
 </section>
 
-<section class="strip" id="comment">
-  <article>
-    <span>01</span>
-    <h2>L’atelier</h2>
-    <p>Un espace privé pour préparer la salle : nom, discipline, note, image de fond.</p>
-  </article>
-  <article>
-    <span>02</span>
-    <h2>L’accrochage</h2>
-    <p>Chaque œuvre a son cartel — titre, année, technique, dimensions — et son visuel.</p>
-  </article>
-  <article>
-    <span>03</span>
-    <h2>La galerie</h2>
-    <p>Vous publiez. Les visiteurs entrent dans <em>votre</em> salle, pas dans un catalogue.</p>
-  </article>
+{% if affiche %}
+<section id="a-l-affiche">
+  <div class="band">
+    <div>
+      <p class="eyebrow">À l’affiche</p>
+      <h2>La salle du moment</h2>
+    </div>
+    <a class="band-link" href="{{ url_for('public.galleries') }}">Toutes les salles</a>
+  </div>
+  <div class="affiche">
+    <a class="affiche-cover" href="{{ url_for('public.gallery', slug=affiche.slug) }}"
+       aria-label="Entrer dans la galerie de {{ affiche.display_name }}">
+      {% set art = affiche.cover_path or (affiche_works[0].image_path if affiche_works else '') %}
+      {% if art %}
+        <img src="{{ media_url(art, 960) }}"
+             srcset="{{ media_srcset(art, affiche.cover_path and 1600 or (affiche_works[0].image_w if affiche_works else 0)) }}"
+             sizes="(max-width: 900px) 92vw, 52vw"
+             alt="Galerie de {{ affiche.display_name }}{% if affiche.discipline %} — {{ affiche.discipline }}{% endif %}{% if affiche.location %}, {{ affiche.location }}{% endif %}"
+             loading="lazy" decoding="async" width="1200" height="960">
+      {% endif %}
+    </a>
+    <div class="affiche-say">
+      <p class="eyebrow">{{ affiche.discipline or "Artiste" }}</p>
+      <h3><a href="{{ url_for('public.gallery', slug=affiche.slug) }}">{{ affiche.display_name }}</a></h3>
+      <p class="affiche-where">
+        {%- if affiche.location %}{{ affiche.location }} · {% endif -%}
+        {{ room_counts.get(affiche.id, 0) }} œuvre{% if room_counts.get(affiche.id, 0) != 1 %}s{% endif %} accrochée{% if room_counts.get(affiche.id, 0) != 1 %}s{% endif %}
+      </p>
+      {% if affiche.statement %}
+        <p class="affiche-note">{{ affiche.statement[:260] }}{% if affiche.statement|length > 260 %}…{% endif %}</p>
+      {% endif %}
+      {% if affiche_works %}
+        <ul class="affiche-strip">
+          {% for work in affiche_works[:4] %}
+            <li>
+              <a href="{{ url_for('public.artwork', slug=affiche.slug, work_id=work.id) }}" title="{{ work.title }}">
+                <img src="{{ media_url(work.image_path, 480) }}" alt="{{ work.title }}, {{ affiche.display_name }}" loading="lazy" decoding="async" width="240" height="240">
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      <p class="affiche-go">
+        <a class="btn btn-ghost" href="{{ url_for('public.gallery', slug=affiche.slug) }}">Entrer dans la salle</a>
+      </p>
+    </div>
+  </div>
 </section>
+{% endif %}
 
-{% if featured_rooms %}
-<section class="rooms featured-rooms">
-  <header>
-    <p class="eyebrow">Mise en avant</p>
-    <h2>Salles Pro et Studio</h2>
-  </header>
-  <ul class="room-list">
-    {% for artist in featured_rooms %}
+{% if wall %}
+<section id="le-mur">
+  <div class="band">
+    <div>
+      <p class="eyebrow">Accroché en ce moment</p>
+      <h2>Le mur</h2>
+      <p>Des œuvres prises dans les salles ouvertes. Chacune mène chez son artiste.</p>
+    </div>
+    <a class="band-link" href="{{ url_for('public.galleries') }}">Voir les galeries</a>
+  </div>
+  <ul class="wall-mosaic">
+    {% for work in wall %}
       <li>
-        <a href="{{ url_for('public.gallery', slug=artist.slug) }}">
-          <span class="room-name">{{ artist.display_name }} <em class="tag">mise en avant</em>{% if artist.has_feature('priority') %} <em class="tag">prioritaire</em>{% endif %}</span>
-          <span class="room-meta">
-            {{ artist.discipline or "Artiste" }}
-            {% if artist.location %} · {{ artist.location }}{% endif %}
-            · {{ room_counts.get(artist.id, 0) }} œuvre{% if room_counts.get(artist.id, 0) != 1 %}s{% endif %}
+        <a href="{{ url_for('public.artwork', slug=work.artist.slug, work_id=work.id) }}">
+          <figure class="frame">
+            <img src="{{ media_url(work.image_path, 480) }}"
+                 srcset="{{ media_srcset(work.image_path, work.image_w) }}"
+                 sizes="(max-width: 640px) 92vw, (max-width: 1100px) 46vw, 22vw"
+                 alt="{{ work.title }}, {{ work.artist.display_name }}{% if work.year %}, {{ work.year }}{% endif %}{% if work.medium %} — {{ work.medium }}{% endif %}"
+                 loading="lazy" decoding="async"
+                 {%- if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
+          </figure>
+          <span class="tag-line">
+            <strong>{{ work.title }}</strong>
+            <span class="by">{{ work.artist.display_name }}</span>
+            {% if work.cartel %}<span>{{ work.cartel }}</span>{% endif %}
           </span>
         </a>
       </li>
@@ -146,35 +230,52 @@
 </section>
 {% endif %}
 
-{% if rooms %}
-<section class="rooms">
-  <header>
-    <p class="eyebrow">Salles ouvertes</p>
-    <h2>Galeries publiées</h2>
-  </header>
-  <ul class="room-list">
-    {% for artist in rooms[:10] %}
+{% if disciplines %}
+<section id="disciplines">
+  <div class="band">
+    <div>
+      <p class="eyebrow">Par discipline</p>
+      <h2>Ce qui s’accroche ici</h2>
+    </div>
+  </div>
+  <ul class="disciplines">
+    {% for row in disciplines %}
       <li>
-        <a href="{{ url_for('public.gallery', slug=artist.slug) }}">
-          <span class="room-name">{{ artist.display_name }}{% if artist.has_feature('featured') %} <em class="tag">mise en avant</em>{% endif %}</span>
-          <span class="room-meta">
-            {{ artist.discipline or "Artiste" }}
-            {% if artist.location %} · {{ artist.location }}{% endif %}
-            · {{ room_counts.get(artist.id, 0) }} œuvre{% if room_counts.get(artist.id, 0) != 1 %}s{% endif %}
-          </span>
+        <a href="{{ url_for('public.discipline', slug=row.slug) }}">
+          {{ row.name }} <em>{{ row.count }}</em>
         </a>
       </li>
     {% endfor %}
   </ul>
-  <p class="room-contact"><a href="{{ url_for('public.galleries') }}">Toutes les galeries{% if rooms|length > 10 %} — {{ rooms|length }} salles{% endif %}</a></p>
 </section>
 {% endif %}
 
-{% set faq = [
-  {"q": "Qu’est-ce qu’Artworksdigital ?", "a": "Un atelier pour composer votre galerie : une adresse, un accrochage, une note d’intention. Ce n’est pas une marketplace ni une vitrine collective."},
-  {"q": "Artworksdigital vend-il des œuvres ?", "a": "Non. Pas de panier, pas de catalogue partagé. La galerie appartient à l’artiste. Un visiteur lui écrit depuis la salle."},
-  {"q": "Comment ouvrir une galerie ?", "a": "Créez un atelier, accrochez vos œuvres, écrivez la note d’intention, puis ouvrez la salle. L’adresse publique est /galerie/votre-nom."},
-  {"q": "Combien ça coûte ?", "a": "Découverte est gratuit (jusqu’à 5 œuvres). Artiste 9,90 €/mois, Pro 19,90 €/mois, Studio 39,90 €/mois."}
-] %}
+<section id="comment">
+  <div class="band">
+    <div>
+      <p class="eyebrow">Comment ça marche</p>
+      <h2>Trois temps, et la salle est ouverte</h2>
+    </div>
+    <a class="band-link" href="{{ url_for('public.offers') }}">Voir les offres</a>
+  </div>
+  <ol class="steps">
+    <li>
+      <b>01</b>
+      <h3>L’atelier</h3>
+      <p>Un espace privé pour préparer la salle : nom, discipline, ville, note d’intention, image de fond.</p>
+    </li>
+    <li>
+      <b>02</b>
+      <h3>L’accrochage</h3>
+      <p>Chaque œuvre a son cartel — titre, année, technique, dimensions — et son visuel. Vous choisissez l’ordre.</p>
+    </li>
+    <li>
+      <b>03</b>
+      <h3>La galerie</h3>
+      <p>Vous publiez. Les visiteurs entrent dans <em>votre</em> salle, à <span class="nowrap">/galerie/votre-nom</span>, et vous écrivent depuis là.</p>
+    </li>
+  </ol>
+</section>
+
 {% include "_faq.html" %}
 {% endblock %}

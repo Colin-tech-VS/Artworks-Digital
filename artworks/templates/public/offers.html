@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Offres — Artworksdigital{% endblock %}
-{% block description %}Quatre offres pour composer votre galerie : Découverte, Artiste, Pro et Studio. À partir de 0 €/mois.{% endblock %}
+{% block title %}Tarifs — créer sa galerie d’artiste en ligne à partir de 0 €/mois | Artworksdigital{% endblock %}
+{% block description %}Quatre offres pour ouvrir votre galerie d’artiste en ligne : Découverte gratuite (5 œuvres), Artiste 9,90 €/mois, Pro 19,90 €/mois, Studio 39,90 €/mois. Sans engagement et sans aucune commission sur les ventes.{% endblock %}
 {% block og_image_width %}1200{% endblock %}
 {% block og_image_height %}630{% endblock %}
 {% block body_class %}offers-page{% endblock %}
@@ -10,29 +10,55 @@
   "@context": "https://schema.org",
   "@graph": [
     {
-      "@type": "ItemList",
+      "@type": "WebPage",
+      "@id": {{ (canonical_url() ~ '#page') | tojson }},
+      "url": {{ canonical_url() | tojson }},
+      "name": {{ self.title() | tojson }},
+      "description": {{ self.description() | tojson }},
+      "inLanguage": "fr-FR",
+      "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
+      "mainEntity": {"@id": {{ (canonical_url() ~ '#catalogue') | tojson }}},
+      "speakable": {
+        "@type": "SpeakableSpecification",
+        "cssSelector": [".page-head h1", ".page-head .lead", ".faq dt", ".faq dd"]
+      }
+    },
+    {
+      "@type": "OfferCatalog",
+      "@id": {{ (canonical_url() ~ '#catalogue') | tojson }},
       "name": "Offres Artworksdigital",
       "url": {{ canonical_url() | tojson }},
+      "inLanguage": "fr-FR",
+      "provider": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}},
       "numberOfItems": {{ offers | length }},
       "itemListElement": [
         {% for offer in offers %}
         {
-          "@type": "ListItem",
+          "@type": "Offer",
           "position": {{ loop.index }},
-          "item": {
-            "@type": "Product",
-            "name": {{ ('Artworksdigital ' ~ offer.name) | tojson }},
-            "description": {{ (offer.audience or offer.name) | tojson }},
-            "brand": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}},
-            "url": {{ canonical_url() | tojson }},
-            "offers": {
-              "@type": "Offer",
-              "price": {{ ('%.2f' % (offer.price_cents / 100)) | tojson }},
-              "priceCurrency": "EUR",
-              "availability": "https://schema.org/InStock",
-              "url": {{ canonical_url() | tojson }},
-              "category": "Abonnement mensuel"
-            }
+          "name": {{ ('Artworksdigital ' ~ offer.name) | tojson }},
+          "description": {{ ((offer.audience ~ '. ' ~ offer.feature_lines | join(', ')) if offer.audience else offer.feature_lines | join(', ')) | tojson }},
+          "url": {{ canonical_url() | tojson }},
+          "category": "Abonnement mensuel",
+          "availability": "https://schema.org/InStock",
+          "eligibleRegion": {"@type": "Country", "name": "France"},
+          "price": {{ ('%.2f' % (offer.price_cents / 100)) | tojson }},
+          "priceCurrency": "EUR",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "price": {{ ('%.2f' % (offer.price_cents / 100)) | tojson }},
+            "priceCurrency": "EUR",
+            "billingIncrement": 1,
+            "unitCode": "MON",
+            "referenceQuantity": {"@type": "QuantitativeValue", "value": 1, "unitCode": "MON"}
+          },
+          "itemOffered": {
+            "@type": "Service",
+            "name": {{ ('Galerie d’artiste en ligne — offre ' ~ offer.name) | tojson }},
+            "serviceType": "Galerie d’artiste en ligne",
+            "provider": {"@id": {{ (canonical_url('/') ~ '#organisation') | tojson }}},
+            "areaServed": {"@type": "Country", "name": "France"},
+            "audience": {"@type": "Audience", "audienceType": {{ (offer.audience or 'Artistes') | tojson }}}
           }
         }{% if not loop.last %},{% endif %}
         {% endfor %}
@@ -86,38 +112,105 @@
   {"name": "Offres"}
 ] %}
 {% include "_crumbs.html" %}
-<section class="room-head">
+<section class="page-head">
   <p class="eyebrow">Tarifs</p>
   <h1>Choisir son offre</h1>
-  <p class="lead">Un atelier privé, une galerie publique. Vous commencez gratuitement.</p>
+  <p class="lead">
+    Un atelier privé, une galerie publique, une adresse à vous.
+    On commence gratuitement, on change d’offre quand la salle se remplit —
+    et jamais de commission sur une vente, puisqu’il n’y a pas de boutique.
+  </p>
 </section>
 
 <div class="offers-grid">
   {% for offer in offers %}
     <article class="offer-card {% if offer.key == 'pro' %}is-featured{% endif %}" data-offre="{{ offer.key }}">
       <p class="offer-badge">{{ offer.badge }} {{ offer.name }}</p>
-      <p class="offer-audience">{{ offer.audience }}</p>
       <p class="offer-price">{{ offer.price_label }}</p>
+      <p class="offer-audience">{{ offer.audience }}</p>
       <ul>
         {% for line in offer.feature_lines %}
-          <li>{{ line }}</li>
+          <li><span>{{ line }}</span></li>
         {% endfor %}
       </ul>
+      <p class="offer-works">{{ offer.works_label }}</p>
       {% if current_user.is_authenticated %}
         <a class="btn {% if offer.key == 'pro' %}btn-ink{% else %}btn-ghost{% endif %}" href="{{ url_for('atelier.billing') }}">Gérer mon offre</a>
       {% else %}
         <a class="btn {% if offer.key == 'pro' %}btn-ink{% else %}btn-ghost{% endif %}" href="{{ url_for('auth.register') }}">
-          {% if offer.price_cents %}Choisir {{ offer.name }}{% else %}Commencer{% endif %}
+          {% if offer.price_cents %}Choisir {{ offer.name }}{% else %}Commencer gratuitement{% endif %}
         </a>
       {% endif %}
     </article>
   {% endfor %}
 </div>
 
+<section id="comparer">
+  <div class="band">
+    <div>
+      <p class="eyebrow">Le détail</p>
+      <h2>Ce que chaque offre ouvre</h2>
+      <p>Une seule ligne par fonction, une colonne par offre. Rien n’est caché derrière un astérisque.</p>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table class="data compare">
+      <caption class="sr-only">Comparaison des fonctions incluses dans chaque offre Artworksdigital</caption>
+      <thead>
+        <tr>
+          <th scope="col">Fonction</th>
+          {% for offer in offers %}<th scope="col">{{ offer.name }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% set rows = [
+          ("Œuvres accrochées", "works"),
+          ("Page publique à votre adresse", "always"),
+          ("Statistiques de visite", "stats"),
+          ("Personnalisation de la salle", "customize"),
+          ("Partage des œuvres", "share"),
+          ("Statistiques avancées", "advanced_stats"),
+          ("Mise en avant", "featured"),
+          ("Outils IA", "ai"),
+          ("Collections", "collections"),
+          ("Visibilité prioritaire", "priority")
+        ] %}
+        {% for label, key in rows %}
+          <tr>
+            <th scope="row">{{ label }}</th>
+            {% for offer in offers %}
+              <td>
+                {%- if key == 'works' -%}
+                  {{ offer.max_works or "∞" }}
+                {%- elif key == 'always' -%}
+                  <span aria-label="inclus">✓</span>
+                {%- elif offer.allows(key) -%}
+                  <span aria-label="inclus">✓</span>
+                {%- else -%}
+                  <span class="dim" aria-label="non inclus">—</span>
+                {%- endif -%}
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+        <tr>
+          <th scope="row">Prix</th>
+          {% for offer in offers %}<td><strong>{{ offer.price_label }}</strong></td>{% endfor %}
+        </tr>
+        <tr>
+          <th scope="row">Commission sur les ventes</th>
+          {% for offer in offers %}<td>aucune</td>{% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
 {% set faq = [
   {"q": "Quelle offre choisir ?", "a": "Découverte est gratuit (5 œuvres). Artiste ajoute statistiques et personnalisation. Pro ouvre l’IA et la mise en avant. Studio ajoute collections et priorité."},
   {"q": "Peut-on commencer gratuitement ?", "a": "Oui. Découverte est à 0 €/mois : atelier privé, page publique, jusqu’à cinq œuvres."},
-  {"q": "Y a-t-il une commission sur les ventes ?", "a": "Non. Pas de boutique. L’abonnement paie l’atelier et la salle, pas une vente."}
+  {"q": "Y a-t-il une commission sur les ventes ?", "a": "Non. Pas de boutique. L’abonnement paie l’atelier et la salle, pas une vente."},
+  {"q": "Peut-on changer d’offre ou arrêter ?", "a": "À tout moment, depuis l’atelier. En repassant à Découverte, la salle reste en ligne ; seules les œuvres au-delà du plafond cessent d’être publiques."}
 ] %}
 {% include "_faq.html" %}
 {% endblock %}

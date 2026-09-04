@@ -1,3 +1,59 @@
+/* Les fontes, servies par la maison.
+
+   Elles venaient de fonts.googleapis.com : une feuille de style tierce
+   bloquante, deux poignées de main TLS, et le texte qui attend. Les
+   mêmes fichiers, posés ici, arrivent sur la connexion déjà ouverte.
+   Seules les plages latines sont embarquées — le site est en français.
+   Ce sont des fontes variables : un fichier couvre toutes les graisses. */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('../fonts/CormorantGaramond-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('../fonts/CormorantGaramond-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('../fonts/CormorantGaramond-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('../fonts/CormorantGaramond-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 300 600;
+  font-display: swap;
+  src: url('../fonts/Outfit-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 300 600;
+  font-display: swap;
+  src: url('../fonts/Outfit-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 :root {
   --wall: #f3efe6;
   --paper: #faf7f1;
@@ -42,6 +98,11 @@ body {
   letter-spacing: 0.01em;
 }
 img { max-width: 100%; height: auto; display: block; }
+/* `img { display: block }` l'emporte sur la règle par défaut du navigateur
+   pour `[hidden]` : sans cette ligne, une image masquée continue d'occuper
+   la place et montre son icône de visuel cassé — c'est ce qui traînait
+   dans l'aperçu de l'admin réseaux. */
+[hidden] { display: none !important; }
 a { color: inherit; }
 /* Même la sélection reste dans la boîte de couleurs. */
 ::selection { background: var(--ocre-voile); color: var(--ink); }
@@ -63,14 +124,22 @@ a { color: inherit; }
   border: 0;
 }
 
+/* La barre, le contenu et le pied partagent la même gouttière et la même
+   largeur maximale : sans cela, le logo et le premier titre ne tombent pas
+   sur la même verticale, et la maison penche. */
 .site-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.85rem 1.5rem;
-  padding: 1.35rem 7vw;
+  padding: 1.35rem var(--gut);
   border-bottom: 1px solid var(--line);
+}
+.site-bar, .colophon, .site-foot {
+  width: 100%;
+  max-width: calc(var(--wide) + 2 * var(--gut));
+  margin-inline: auto;
 }
 .mark {
   text-decoration: none;
@@ -155,8 +224,6 @@ a { color: inherit; }
   font-size: 0.8rem;
 }
 
-main { flex: 1; padding: 0 7vw 5rem; }
-.home main { padding-top: 0; }
 
 /* Avis posé au-dessus de la page : un carton, pas une ligne dans le flux.
    Il s’en va tout seul — le JS pose .is-out, puis retire l’élément. */
@@ -256,15 +323,6 @@ h1, h2 {
   letter-spacing: -0.02em;
   margin: 0;
 }
-.hero {
-  padding: 6.5rem 0 5rem;
-  max-width: 38rem;
-}
-.hero h1 {
-  font-size: clamp(3.2rem, 8vw, 5.6rem);
-  line-height: 0.95;
-  font-weight: 500;
-}
 .lead, .lead-sm { color: var(--quiet); line-height: 1.65; }
 .lead { font-size: 1.15rem; margin: 1.6rem 0 2.2rem; }
 .lead-sm { margin: 0.7rem 0 0; }
@@ -297,45 +355,6 @@ h1, h2 {
   pointer-events: none;
 }
 
-.strip {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2.5rem;
-  padding: 3rem 0 5rem;
-  border-top: 1px solid var(--line);
-}
-/* Les trois temps — l'atelier, l'accrochage, la galerie — se suivent en
-   couleur comme ils se suivent dans le texte. */
-.strip span {
-  font-family: var(--serif);
-  font-style: italic;
-  color: var(--bronze);
-  font-size: 1.2rem;
-}
-.strip article:nth-child(1) span { color: var(--olive); }
-.strip article:nth-child(2) span { color: var(--bronze); }
-.strip article:nth-child(3) span { color: var(--terre); }
-.strip article { border-top: 2px solid var(--line); padding-top: 1rem; }
-.strip article:nth-child(1) { border-top-color: var(--olive); }
-.strip article:nth-child(2) { border-top-color: var(--bronze); }
-.strip article:nth-child(3) { border-top-color: var(--terre); }
-.strip h2 { font-size: 1.7rem; margin: 0.4rem 0 0.6rem; }
-.strip p { margin: 0; color: var(--quiet); line-height: 1.55; }
-
-.rooms { padding-bottom: 2rem; }
-.rooms header { margin-bottom: 1.6rem; }
-.rooms h2 { font-size: 2.2rem; }
-.room-list { list-style: none; margin: 0; padding: 0; }
-.room-list li { border-top: 1px solid var(--line); }
-.room-list a {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.15rem 0;
-  text-decoration: none;
-}
-.room-name { font-family: var(--serif); font-size: 1.55rem; }
-.room-meta { color: var(--quiet); font-size: 0.92rem; }
 
 .site-foot {
   display: flex;
@@ -343,7 +362,7 @@ h1, h2 {
   justify-content: space-between;
   align-items: center;
   gap: 0.7rem 1.4rem;
-  padding: 1.4rem 7vw;
+  padding: 1.4rem var(--gut);
   border-top: 1px solid var(--line);
   color: var(--quiet);
   font-size: 0.85rem;
@@ -357,7 +376,7 @@ h1, h2 {
   grid-template-columns: minmax(14rem, 1.4fr) auto minmax(12rem, 1fr);
   align-items: start;
   gap: 2rem 3rem;
-  padding: 2.4rem 7vw 2.6rem;
+  padding: 2.4rem var(--gut) 2.6rem;
 }
 .colophon-brand .mark { display: inline-block; margin-bottom: 0.45rem; }
 .colophon-brand p + p { max-width: 28rem; line-height: 1.55; }
@@ -375,17 +394,19 @@ h1, h2 {
   color: var(--bronze);
 }
 .facts dd { margin: 0; }
-.faq {
-  padding: 3.2rem 0 1rem;
-  border-top: 1px solid var(--line);
-  max-width: 42rem;
+/* Les questions : deux colonnes quand la place le permet, parce qu'une
+   colonne de six réponses pousse le pied de page très loin. */
+.faq .band { max-width: none; }
+.faq dl {
+  margin: 0;
+  columns: 2 26rem;
+  column-gap: clamp(1.6rem, 4vw, 4rem);
 }
-.faq header { margin-bottom: 1.6rem; }
-.faq h2 { font-size: 2rem; }
-.faq dl { margin: 0; }
 .faq dl > div {
-  padding: 1.1rem 0;
-  border-top: 1px solid var(--line);
+  break-inside: avoid;
+  padding: 0 0 1.4rem;
+  margin-bottom: 1.4rem;
+  border-bottom: 1px solid var(--line);
 }
 .faq dt {
   font-family: var(--serif);
@@ -397,12 +418,6 @@ h1, h2 {
   color: var(--quiet);
   line-height: 1.6;
 }
-.wall {
-  padding: 0.4rem 0 0.6rem;
-  border-top: 1px solid var(--line);
-}
-.collection-block.wall { margin-top: 2.4rem; }
-.collection-block.wall h2 { margin: 1.4rem 0 0.4rem; font-size: 1.7rem; }
 .board {
   display: grid;
   gap: 1.6rem;
@@ -420,63 +435,6 @@ h1, h2 {
 }
 .atelier-side .nav-label:first-of-type { margin-top: 0.2rem; }
 
-.room-head { padding: 3.5rem 0 2.5rem; max-width: 40rem; }
-.room-head.has-cover { max-width: none; }
-.room-cover {
-  width: 100%;
-  max-height: 52vh;
-  object-fit: cover;
-  margin: 2rem 0 2.2rem;
-}
-.room-intro h1 { font-size: clamp(2.6rem, 6vw, 4.4rem); }
-.where { color: var(--quiet); margin: 0.5rem 0 0; }
-.statement { margin: 1.4rem 0 0; line-height: 1.7; max-width: 38rem; }
-
-.hang {
-  list-style: none;
-  margin: 0;
-  padding: 1rem 0 3rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 2.4rem 1.6rem;
-}
-.hang a { text-decoration: none; }
-.hang figure { margin: 0; }
-.hang img {
-  width: 100%;
-  height: 320px;
-  object-fit: contain;
-  background: var(--paper);
-  padding: 1.2rem;
-}
-.hang.salon {
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 3.2rem 2rem;
-}
-.hang.salon img { height: 420px; padding: 1.6rem; }
-.spotlight {
-  padding: 0 0 2.4rem;
-  max-width: 52rem;
-}
-.spotlight a { text-decoration: none; }
-.spotlight figure { margin: 0; }
-.spotlight img {
-  width: 100%;
-  max-height: 72vh;
-  object-fit: contain;
-  background: var(--paper);
-  padding: 1.8rem;
-}
-.spotlight figcaption { margin-top: 0.9rem; }
-.spotlight strong { display: block; font-family: var(--serif); font-size: 1.6rem; font-weight: 500; }
-.spotlight span { display: block; color: var(--quiet); margin-top: 0.25rem; }
-.featured-rooms { padding-bottom: 0; }
-.hang figcaption { margin-top: 0.7rem; }
-.hang strong { display: block; font-family: var(--serif); font-size: 1.2rem; font-weight: 500; }
-.hang span { color: var(--quiet); font-size: 0.88rem; }
-
-.empty-room, .room-contact { color: var(--quiet); padding: 2rem 0; }
-.room-contact a { color: var(--bronze); }
 
 .crumb { padding: 1.6rem 0 0; }
 .crumb ol {
@@ -498,17 +456,500 @@ h1, h2 {
 .crumb a:hover { color: var(--bronze); }
 .crumb [aria-current] { color: var(--ink); }
 
-.hero-search,
-.room-search {
+/* ═══════════════════════════════════════════════════════════════════════
+   LA PARTIE PUBLIQUE — une maison qui montre des œuvres
+   ═══════════════════════════════════════════════════════════════════════
+
+   Le site montrait des listes de noms. Une galerie ne se visite pas en
+   lisant un répertoire : elle se visite en regardant les murs. Tout ce
+   qui suit part de là — l'image d'abord, le texte pour la nommer.
+
+   Trois formes seulement, reprises partout :
+
+     le cadre  (.frame)   un passe-partout de papier autour d'un visuel ;
+     la carte  (.card)    une salle ou une œuvre, image puis cartel ;
+     la bande  (.band)    un intertitre : surtitre, titre, lien à droite.
+
+   Les couleurs ne changent pas. La boîte de pigments reste celle d'avant.
+   ─────────────────────────────────────────────────────────────────── */
+
+/* ── L'échelle de la page ────────────────────────────────────────────── */
+
+:root {
+  /* La marge de la page, d'un seul endroit : la barre, le pied et le
+     contenu doivent s'aligner au pixel, sinon la maison bascule. */
+  --gut: clamp(1.15rem, 5.2vw, 5.5rem);
+  --measure: 40rem;   /* une colonne de texte lisible */
+  --wide: 96rem;      /* au-delà, on cesse d'étirer */
+}
+
+main {
+  flex: 1;
+  padding: 0 var(--gut) 5rem;
+  width: 100%;
+  max-width: calc(var(--wide) + 2 * var(--gut));
+  margin: 0 auto;
+}
+.home main { padding-top: 0; }
+
+/* Une section qui sort des marges pour aller d'un bord à l'autre. */
+.bleed {
+  margin-left: calc(-1 * var(--gut));
+  margin-right: calc(-1 * var(--gut));
+}
+
+/* ── La bande d'intertitre ───────────────────────────────────────────── */
+
+.band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem 2rem;
+  margin: 0 0 1.9rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--line);
+}
+.band > div { min-width: 0; }
+.band .eyebrow { margin-bottom: 0.35rem; }
+.band h2 {
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  line-height: 1.05;
+}
+.band p {
+  margin: 0.6rem 0 0;
+  color: var(--quiet);
+  line-height: 1.6;
+  max-width: var(--measure);
+}
+.band-link {
+  color: var(--bronze);
+  font-size: 0.84rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+}
+.band-link:hover { border-bottom-color: var(--bronze); }
+
+section + section { margin-top: clamp(3.2rem, 6vw, 5.5rem); }
+
+/* ── Le cadre ────────────────────────────────────────────────────────────
+   Une œuvre n'est pas une vignette : elle est montée sur un passe-partout
+   de papier, avec une ombre courte qui la décolle du mur. Le visuel garde
+   ses proportions — c'est tout l'objet du cadre. */
+
+.frame {
+  margin: 0;
+  background: var(--paper);
+  padding: clamp(0.7rem, 1.5vw, 1.4rem);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--bronze) 16%, transparent),
+    0 14px 30px -22px color-mix(in srgb, var(--ink) 55%, transparent);
+  transition: box-shadow 0.4s ease, transform 0.4s ease;
+}
+.frame img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+/* Quand la place est contrainte (une rangée régulière), le visuel se
+   recadre plutôt que de crever la ligne. */
+.frame.is-cropped img {
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+}
+a:hover > .frame,
+a:hover .frame {
+  transform: translateY(-4px);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--bronze) 42%, transparent),
+    0 22px 40px -22px color-mix(in srgb, var(--ink) 60%, transparent);
+}
+
+/* Le cartel sous une œuvre. */
+.tag-line {
+  margin: 0.85rem 0 0;
+  display: block;
+}
+.tag-line strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 500;
+  line-height: 1.25;
+}
+.tag-line span {
+  display: block;
+  color: var(--quiet);
+  font-size: 0.86rem;
+  margin-top: 0.2rem;
+  line-height: 1.45;
+}
+.tag-line .by { color: var(--bronze); }
+
+/* ── L'accueil : le vestibule ───────────────────────────────────────── */
+
+.foyer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 5rem);
+  padding: clamp(3rem, 7vw, 6rem) 0 clamp(3rem, 6vw, 5rem);
+}
+.foyer-say { max-width: 34rem; }
+.foyer h1 {
+  font-size: clamp(2.9rem, 6.4vw, 5rem);
+  line-height: 0.98;
+  font-weight: 500;
+}
+.foyer h1 em {
+  font-style: italic;
+  color: var(--bronze);
+}
+.foyer .lead { margin: 1.5rem 0 2rem; }
+
+/* Le triptyque : trois œuvres réelles, décalées comme un accrochage.
+   C'est la première chose que voit un visiteur — donc ce sont des
+   œuvres, pas une illustration. */
+.triptych {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: clamp(0.7rem, 1.6vw, 1.5rem);
+}
+.triptych li { list-style: none; }
+.triptych a { text-decoration: none; display: block; }
+.triptych li:nth-child(1) { transform: translateY(clamp(0.8rem, 2.4vw, 2.6rem)); }
+.triptych li:nth-child(3) { transform: translateY(clamp(-2.6rem, -2vw, -0.6rem)); }
+.triptych .tag-line strong { font-size: 0.98rem; }
+.triptych .tag-line span { font-size: 0.78rem; }
+
+/* Rien n'est encore accroché : on ne montre pas un trou, on montre
+   l'invitation. */
+.triptych-empty {
+  border: 1px dashed var(--line);
+  padding: clamp(2rem, 5vw, 3.5rem);
+  text-align: center;
+  color: var(--quiet);
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  line-height: 1.5;
+}
+
+/* ── La salle à l'affiche ────────────────────────────────────────────── */
+
+.affiche {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: clamp(1.6rem, 3.6vw, 3.2rem);
+  align-items: center;
+}
+.affiche-cover {
+  position: relative;
+  display: block;
+  text-decoration: none;
+  overflow: hidden;
+  background: var(--paper);
+}
+.affiche-cover img {
+  width: 100%;
+  aspect-ratio: 5 / 4;
+  object-fit: cover;
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.affiche-cover:hover img { transform: scale(1.035); }
+.affiche-say h3 {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(2rem, 3.8vw, 3rem);
+  line-height: 1.02;
+  margin: 0.2rem 0 0;
+  letter-spacing: -0.02em;
+}
+.affiche-say h3 a { text-decoration: none; }
+.affiche-say h3 a:hover { color: var(--bronze); }
+.affiche-where {
+  margin: 0.55rem 0 0;
+  color: var(--quiet);
+  font-size: 0.92rem;
+}
+.affiche-note {
+  margin: 1.1rem 0 0;
+  line-height: 1.7;
+  color: var(--quiet);
+  max-width: 34rem;
+}
+.affiche-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin: 1.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.affiche-strip a { display: block; text-decoration: none; }
+.affiche-strip img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: var(--paper);
+  transition: opacity 0.35s ease;
+}
+.affiche-strip a:hover img { opacity: 0.82; }
+.affiche-go { margin: 1.5rem 0 0; }
+
+/* ── Le mur ──────────────────────────────────────────────────────────────
+   Un accrochage en colonnes : les œuvres gardent leurs proportions et se
+   rangent comme sur une cimaise, pas comme dans un tableur. */
+
+.wall-mosaic {
+  columns: 4 17rem;
+  column-gap: clamp(0.9rem, 2vw, 1.8rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wall-mosaic li {
+  break-inside: avoid;
+  margin: 0 0 clamp(1.4rem, 2.6vw, 2.4rem);
+}
+.wall-mosaic a { text-decoration: none; display: block; }
+
+/* ── Les disciplines ─────────────────────────────────────────────────── */
+
+.disciplines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.disciplines a {
+  display: inline-block;
+  border: 1px solid var(--line);
+  padding: 0.5rem 0.95rem;
+  text-decoration: none;
+  color: var(--quiet);
+  font-size: 0.86rem;
+  transition: border-color 0.3s ease, color 0.3s ease, background 0.3s ease;
+}
+.disciplines a:hover {
+  border-color: var(--bronze);
+  color: var(--ink);
+  background: var(--paper);
+}
+.disciplines em {
+  font-style: normal;
+  color: var(--bronze);
+  font-size: 0.78rem;
+  margin-left: 0.35rem;
+}
+
+/* ── Les trois temps ─────────────────────────────────────────────────── */
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.4rem, 3vw, 2.8rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.steps li {
+  border-top: 2px solid var(--line);
+  padding-top: 1.1rem;
+}
+.steps li:nth-child(1) { border-top-color: var(--olive); }
+.steps li:nth-child(2) { border-top-color: var(--bronze); }
+.steps li:nth-child(3) { border-top-color: var(--terre); }
+.steps b {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.15rem;
+}
+.steps li:nth-child(1) b { color: var(--olive); }
+.steps li:nth-child(2) b { color: var(--bronze); }
+.steps li:nth-child(3) b { color: var(--terre); }
+.steps h3 {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 1.6rem;
+  margin: 0.35rem 0 0.5rem;
+  letter-spacing: -0.01em;
+}
+.steps p { margin: 0; color: var(--quiet); line-height: 1.6; }
+
+/* ── Les salles, en cartes ───────────────────────────────────────────────
+   Le répertoire montre des salles. Une salle a une image : la vignette de
+   240 px posée à côté d'un nom ne disait rien de ce qu'il y a dedans. */
+
+.rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+  gap: clamp(1.6rem, 3vw, 2.6rem) clamp(1.2rem, 2.4vw, 2rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.room-card { position: relative; }
+/* Le lien enveloppe toute la carte : ses enfants sont des `span`, donc on
+   les empile explicitement — sans quoi ils se rangent en ligne et le nom
+   passe par-dessus l'image. */
+.room-card > a {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  height: 100%;
+}
+.room-card-cover {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  background: var(--paper);
+  aspect-ratio: 3 / 2;
+}
+.room-card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.room-card > a:hover .room-card-cover img { transform: scale(1.04); }
+/* Sans image de fond, la salle porte son initiale — un mur nu, pas un
+   rectangle cassé. */
+.room-card-cover.is-bare {
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--bronze) 8%, var(--paper)),
+      var(--paper));
+}
+.room-card-cover.is-bare span {
+  font-family: var(--serif);
+  font-size: clamp(3rem, 7vw, 4.4rem);
+  color: color-mix(in srgb, var(--bronze) 55%, transparent);
+  line-height: 1;
+}
+.room-card-say {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.9rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+  transition: border-color 0.35s ease;
+}
+.room-card > a:hover .room-card-say { border-top-color: var(--bronze); }
+.room-card-name {
+  font-family: var(--serif);
+  font-size: 1.45rem;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  transition: color 0.3s ease;
+}
+.room-card > a:hover .room-card-name { color: var(--bronze); }
+.room-card-meta {
+  display: block;
+  color: var(--quiet);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin-top: 0.3rem;
+}
+.room-card-say .room-card-meta { margin-top: 0; }
+.room-card-name { display: block; }
+.room-card-count { white-space: nowrap; }
+/* La bande d'œuvres sous une salle : ce qu'on y verra en entrant. Elle
+   vit dans le lien, pas à côté — une carte est un seul objet cliquable,
+   et rien ne déborde sur la rangée suivante. */
+.room-card-strip {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+}
+/* En flex plutôt qu'en grille : une salle qui n'a que deux œuvres remplit
+   la bande à deux, au lieu de laisser un trou à droite. */
+.room-card-strip img {
+  flex: 1 1 0;
+  min-width: 0;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: var(--paper);
+  transition: opacity 0.35s ease;
+}
+.room-card > a:hover .room-card-strip img { opacity: 0.85; }
+
+/* La marque d'une offre haute — discrète, posée sur l'image. */
+.tag {
+  display: inline-block;
+  font-style: normal;
+  font-family: var(--sans);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bronze);
+  border: 1px solid color-mix(in srgb, var(--bronze) 45%, transparent);
+  padding: 0.16rem 0.45rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.room-card-flags {
+  position: absolute;
+  top: 0.7rem;
+  left: 0.7rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  z-index: 2;
+}
+.room-card-flags .tag {
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+/* ── L'en-tête d'une page publique ───────────────────────────────────── */
+
+.page-head {
+  padding: clamp(2.2rem, 5vw, 3.6rem) 0 clamp(1.6rem, 3vw, 2.4rem);
+  max-width: 48rem;
+}
+.page-head h1 {
+  font-size: clamp(2.5rem, 6vw, 4.2rem);
+  line-height: 1;
+}
+.page-head .lead { margin: 1.2rem 0 0; }
+
+/* La barre d'outils du répertoire. */
+.finder {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.7rem 1rem;
+  gap: 0.7rem 1.2rem;
+  margin: 1.8rem 0 0;
 }
-.hero-search { margin-top: 2rem; max-width: 34rem; }
-.room-search { margin-top: 1.6rem; }
-.hero-search .studio-filter,
-.room-search .studio-filter { flex: 1 1 14rem; max-width: 28rem; }
+.finder input[type="search"] {
+  flex: 1 1 16rem;
+  max-width: 26rem;
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 0.7rem 0.95rem;
+}
+.finder input[type="search"]:focus-visible {
+  outline: 2px solid var(--bronze);
+  outline-offset: 2px;
+}
 .room-count { margin: 0; color: var(--quiet); font-size: 0.9rem; }
 .room-chips {
   display: flex;
@@ -521,47 +962,354 @@ h1, h2 {
   background: transparent;
   color: var(--quiet);
   font: inherit;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   letter-spacing: 0.03em;
-  padding: 0.35rem 0.7rem;
+  padding: 0.4rem 0.8rem;
   cursor: pointer;
+  transition: border-color 0.3s ease, color 0.3s ease, background 0.3s ease;
 }
+.room-chips button:hover { border-color: var(--bronze); color: var(--ink); }
 .room-chips button.is-on {
-  background: var(--paper);
-  color: var(--ink);
-  border-color: var(--bronze);
+  background: var(--ink);
+  color: var(--wall);
+  border-color: var(--ink);
 }
 .room-letters {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.2rem 0.55rem;
+  gap: 0.2rem 0.6rem;
   margin: 1rem 0 0;
   font-size: 0.82rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
 }
 .room-letters a { text-decoration: none; color: var(--quiet); }
 .room-letters a:hover { color: var(--bronze); }
-.rooms-page .room-head { max-width: 48rem; }
+
+/* ── La salle d'un artiste ───────────────────────────────────────────── */
+
+/* L'image de fond va d'un bord à l'autre : c'est le mur qu'on voit en
+   entrant, pas une bannière posée dans une colonne. */
+.room-hero {
+  position: relative;
+  margin-top: 1.2rem;
+}
+.room-hero-cover {
+  position: relative;
+  overflow: hidden;
+  background: var(--paper);
+}
+.room-hero-cover img {
+  width: 100%;
+  height: clamp(16rem, 42vw, 32rem);
+  object-fit: cover;
+}
+/* Un voile en bas de l'image : le nom s'y pose et reste lisible quelle
+   que soit l'œuvre au-dessus. */
+.room-hero.has-cover .room-hero-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 35%,
+    color-mix(in srgb, var(--ink) 62%, transparent) 100%
+  );
+}
+.room-hero.has-cover .room-hero-say {
+  position: absolute;
+  left: clamp(1rem, 3vw, 2.6rem);
+  right: clamp(1rem, 3vw, 2.6rem);
+  bottom: clamp(1rem, 2.6vw, 2.2rem);
+  color: var(--paper);
+}
+.room-hero.has-cover .room-hero-say .eyebrow { color: color-mix(in srgb, var(--paper) 82%, var(--bronze)); }
+.room-hero.has-cover .room-hero-say .where { color: color-mix(in srgb, var(--paper) 78%, transparent); }
+.room-hero.has-cover .room-hero-say .tag {
+  color: var(--paper);
+  border-color: color-mix(in srgb, var(--paper) 55%, transparent);
+}
+.room-hero-say h1 {
+  font-size: clamp(2.4rem, 6.4vw, 5rem);
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+}
+.room-hero-say .where { color: var(--quiet); margin: 0.5rem 0 0; font-size: 1rem; }
+
+/* Sous l'image : la note d'intention à gauche, les faits à droite.
+   Les faits sont aussi ce qu'un moteur lit en premier. */
+.room-brief {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.75fr);
+  gap: clamp(1.6rem, 4vw, 4rem);
+  padding: clamp(1.8rem, 4vw, 3rem) 0 0;
+}
+.statement {
+  margin: 0;
+  line-height: 1.75;
+  font-size: 1.06rem;
+  max-width: var(--measure);
+}
+.statement + .statement { margin-top: 1rem; }
+.room-facts {
+  margin: 0;
+  display: grid;
+  gap: 0.85rem;
+  align-content: start;
+  font-size: 0.92rem;
+}
+.room-facts > div {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: 0.5rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--line);
+}
+.room-facts dt {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bronze);
+  padding-top: 0.16rem;
+}
+.room-facts dd { margin: 0; }
+.room-facts a { color: var(--ink); text-decoration-color: var(--line); }
+.room-facts a:hover { text-decoration-color: var(--bronze); }
+
+/* L'œuvre mise en avant : elle occupe la largeur, comme un accrochage
+   central. */
+.spotlight { display: block; }
+.spotlight a { text-decoration: none; display: block; }
+.spotlight-figure {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr);
+  gap: clamp(1.4rem, 3vw, 2.6rem);
+  align-items: center;
+  margin: 0;
+}
+.spotlight-figure img {
+  width: 100%;
+  height: auto;
+  max-height: 78vh;
+  object-fit: contain;
+}
+.spotlight figcaption strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: clamp(1.6rem, 3vw, 2.3rem);
+  font-weight: 500;
+  line-height: 1.1;
+  margin-top: 0.4rem;
+}
+.spotlight figcaption span {
+  display: block;
+  color: var(--quiet);
+  margin-top: 0.5rem;
+  line-height: 1.65;
+}
+
+/* L'accrochage. En colonnes : chaque toile garde sa forme. */
+.hang {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  columns: 3 18rem;
+  column-gap: clamp(1rem, 2.2vw, 2rem);
+}
+.hang li {
+  break-inside: avoid;
+  margin: 0 0 clamp(1.6rem, 3vw, 2.6rem);
+}
+.hang a { text-decoration: none; display: block; }
+/* L'accrochage « salon » : moins de colonnes, des pièces plus grandes. */
+.hang.salon { columns: 2 24rem; column-gap: clamp(1.6rem, 3.2vw, 3rem); }
+
+.collection-block + .collection-block { margin-top: clamp(2.4rem, 5vw, 4rem); }
+
+.empty-room, .room-contact { color: var(--quiet); padding: 2rem 0; }
+.room-contact a { color: var(--bronze); }
+
+/* ── La salle de vue — une œuvre seule ───────────────────────────────── */
+
 .solo {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(240px, 0.8fr);
-  gap: 3rem;
-  padding: 2rem 0 4rem;
+  grid-template-columns: minmax(0, 1.6fr) minmax(17rem, 0.7fr);
+  gap: clamp(1.6rem, 4vw, 3.5rem);
+  padding: 1.6rem 0 3rem;
   align-items: start;
 }
+/* Le mur de la salle de vue est plus sourd que celui du couloir : l'œil
+   se pose sur l'œuvre, pas sur le fond. */
 .solo-frame {
   margin: 0;
-  background: var(--paper);
-  padding: 2.4rem;
-  min-height: 50vh;
+  background: color-mix(in srgb, var(--ink) 6%, var(--paper));
+  padding: clamp(1.2rem, 3.5vw, 3.5rem);
   display: grid;
   place-items: center;
+  cursor: zoom-in;
 }
-.solo-frame img { max-height: 72vh; width: auto; }
-.cartel h1 { font-size: 2.4rem; }
-.cartel .meta, .cartel .note { color: var(--quiet); line-height: 1.6; }
-.walk { display: flex; gap: 1.2rem; margin-top: 2rem; }
-.walk a { color: var(--bronze); }
+.solo-frame img {
+  max-height: 78vh;
+  width: auto;
+  max-width: 100%;
+  box-shadow: 0 24px 50px -30px color-mix(in srgb, var(--ink) 70%, transparent);
+}
+.cartel { position: sticky; top: 1.5rem; }
+.cartel h1 {
+  font-size: clamp(1.9rem, 3.6vw, 2.7rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+.cartel .by { text-decoration: none; color: var(--bronze); }
+.cartel .by:hover { text-decoration: underline; }
+.cartel .meta, .cartel .note { color: var(--quiet); line-height: 1.7; }
+.cartel .meta { margin: 0.7rem 0 0; font-size: 0.95rem; }
+.cartel .note { margin: 1.2rem 0 0; }
+.cartel-facts {
+  margin: 1.4rem 0 0;
+  display: grid;
+  gap: 0.55rem;
+  font-size: 0.88rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1.1rem;
+}
+.cartel-facts > div { display: grid; grid-template-columns: 6.2rem minmax(0, 1fr); gap: 0.5rem; }
+.cartel-facts dt {
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bronze);
+  padding-top: 0.1rem;
+}
+.cartel-facts dd { margin: 0; }
+
+/* Précédente / suivante, en vignettes : on voit où l'on va. */
+.walk {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin: 1.6rem 0 0;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--line);
+}
+.walk a {
+  display: grid;
+  grid-template-columns: 3.6rem minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: center;
+  text-decoration: none;
+  color: var(--quiet);
+  font-size: 0.82rem;
+  min-width: 0;
+}
+.walk a img {
+  width: 3.6rem;
+  height: 3.6rem;
+  object-fit: cover;
+  background: var(--paper);
+}
+.walk a:hover { color: var(--bronze); }
+.walk .walk-next { grid-column: 2; text-align: right; }
+.walk .walk-next img { order: 2; }
+.walk .walk-next { grid-template-columns: minmax(0, 1fr) 3.6rem; }
+.walk b {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.4rem 0 0;
+}
+.share-row a, .share-row button {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--quiet);
+  font: inherit;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.3s ease, color 0.3s ease;
+}
+.share-row a:hover, .share-row button:hover { border-color: var(--bronze); color: var(--ink); }
+
+/* La suite de l'accrochage, sous l'œuvre : on ne quitte pas la salle par
+   une impasse. Et les moteurs y lisent le lien entre les pages d'une même
+   salle, ce qui compte autant que la visite. */
+.more-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: clamp(0.8rem, 1.8vw, 1.4rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.more-strip a { text-decoration: none; display: block; }
+.more-strip img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: var(--paper);
+  transition: opacity 0.35s ease;
+}
+.more-strip a:hover img { opacity: 0.82; }
+.more-strip .tag-line strong { font-size: 0.95rem; }
+.more-strip .tag-line span { font-size: 0.78rem; }
+.more-strip li.is-current { opacity: 0.4; pointer-events: none; }
+
+/* La visionneuse : cliquer une œuvre l'ouvre en grand, sur le mur sombre. */
+.viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 4vw, 3rem);
+  background: color-mix(in srgb, var(--ink) 93%, transparent);
+  cursor: zoom-out;
+  animation: viewer-in 0.3s ease both;
+}
+.viewer img {
+  max-width: 100%;
+  max-height: 88vh;
+  width: auto;
+  height: auto;
+  box-shadow: 0 30px 70px -30px #000;
+}
+.viewer-close {
+  position: absolute;
+  top: clamp(0.8rem, 2vw, 1.6rem);
+  right: clamp(0.8rem, 2vw, 1.6rem);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--paper) 45%, transparent);
+  color: var(--paper);
+  font: inherit;
+  font-size: 0.76rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.85rem;
+  cursor: pointer;
+}
+.viewer-close:hover { border-color: var(--paper); }
+@keyframes viewer-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Le formulaire de contact ────────────────────────────────────────── */
+
+.contact-block {
+  padding: clamp(1.6rem, 3vw, 2.4rem) 0 0;
+  max-width: var(--measure);
+}
+.contact-block h2 { font-size: clamp(1.6rem, 3vw, 2.1rem); margin-bottom: 0.4rem; }
 
 .auth-page main { display: grid; place-items: center; }
 .auth-card, .sheet {
@@ -668,7 +1416,9 @@ form small { display: block; color: var(--alerte); margin-top: 0.3rem; }
 }
 
 /* Atelier shell */
-.atelier-app main { padding: 0 0 3rem; }
+/* L'atelier et l'admin ne sont pas des pages de lecture : leur coquille
+   prend l'écran entier, colonne sombre comprise. */
+.atelier-app main, .admin-app main { max-width: none; padding: 0 0 3rem; }
 .atelier-app .site-foot { display: none; }
 .atelier-shell {
   display: grid;
@@ -1694,14 +2444,23 @@ form small { display: block; color: var(--alerte); margin-top: 0.3rem; }
 .table-wrap { overflow: auto; }
 table.data { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 table.data th, table.data td { text-align: left; padding: 0.8rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
-.tag {
-  font-style: normal;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ocre);
-  margin-left: 0.35rem;
+/* Le tableau des offres : la première colonne nomme la fonction, les
+   suivantes disent oui ou non — donc elles se lisent centrées, et la
+   colonne des noms reste collée à gauche même quand on fait défiler. */
+table.compare th[scope="col"], table.compare td { text-align: center; }
+table.compare th[scope="col"]:first-child, table.compare th[scope="row"] {
+  text-align: left;
+  font-weight: 400;
+  color: var(--quiet);
 }
+table.compare thead th {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--ink);
+  border-bottom-color: var(--bronze);
+}
+table.compare td .dim { color: var(--line); }
+table.compare tbody tr:hover th, table.compare tbody tr:hover td { background: var(--paper); }
 .row-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 .row-actions button {
   border: 1px solid var(--line);
@@ -1712,24 +2471,19 @@ table.data th, table.data td { text-align: left; padding: 0.8rem 0.5rem; border-
   cursor: pointer;
 }
 
-.room-list.rich a { justify-content: flex-start; align-items: center; gap: 1.2rem; }
-.room-list.rich img {
-  width: 7.5rem;
-  height: 5rem;
-  object-fit: cover;
-  background: var(--paper);
-}
-.contact-block { padding: 2rem 0 4rem; max-width: 38rem; }
-.contact-block h2 { font-size: 1.8rem; margin-bottom: 1rem; }
 .contact-form { padding: 0; }
 
 .offers-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* Quatre colonnes seulement quand elles tiennent : à quatre cent
+     cinquante pixels de large, un nom d'offre finissait coupé au milieu. */
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
   gap: 1.1rem;
   padding: 0 0 3rem;
+  align-items: stretch;
 }
 .offer-card {
+  position: relative;
   background: var(--paper);
   border: 1px solid var(--line);
   padding: 1.5rem 1.3rem 1.6rem;
@@ -1737,8 +2491,24 @@ table.data th, table.data td { text-align: left; padding: 0.8rem 0.5rem; border-
   flex-direction: column;
   gap: 0.55rem;
   min-height: 100%;
+  transition: border-color 0.35s ease, transform 0.35s ease;
 }
+.offer-card:hover { border-color: var(--teinte, var(--bronze)); transform: translateY(-3px); }
 .offer-card.is-featured { border-color: var(--ink); }
+/* L'offre conseillée porte une étiquette, pas seulement un cadre plus noir :
+   la nuance de bordure ne se voit pas sur un écran mal réglé. */
+.offer-card.is-featured::after {
+  content: "Le plus choisi";
+  position: absolute;
+  top: -0.72rem;
+  right: 1rem;
+  background: var(--ink);
+  color: var(--wall);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.24rem 0.55rem;
+}
 .offer-card.is-current { box-shadow: inset 0 0 0 1px var(--bronze); }
 /* Chaque offre porte son pigment : quatre colonnes se distinguent d’un
    coup d’œil, sans qu’on ait à lire les quatre titres. */
@@ -1766,8 +2536,36 @@ table.data th, table.data td { text-align: left; padding: 0.8rem 0.5rem; border-
   font-family: var(--serif);
   font-size: 2rem;
 }
-.offer-card ul { margin: 0 0 1rem; padding-left: 1rem; color: var(--quiet); line-height: 1.55; flex: 1; }
-.offer-card .btn { align-self: flex-start; margin-top: auto; }
+/* Les promesses de l'offre : une coche par ligne, pas une puce de liste —
+   on lit « inclus », pas « élément d'une énumération ». */
+.offer-card ul {
+  margin: 0.4rem 0 1.2rem;
+  padding: 0;
+  list-style: none;
+  color: var(--quiet);
+  line-height: 1.5;
+  font-size: 0.92rem;
+  flex: 1;
+  display: grid;
+  gap: 0.45rem;
+}
+.offer-card li { display: grid; grid-template-columns: 1rem minmax(0, 1fr); gap: 0.5rem; }
+.offer-card li::before {
+  content: "✓";
+  color: var(--teinte, var(--bronze));
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.offer-works {
+  margin: 0;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--teinte, var(--bronze));
+}
+.offer-card .btn { align-self: stretch; text-align: center; margin-top: auto; }
 .atelier-offers { padding-top: 0.4rem; }
 .flag-grid {
   display: grid;
@@ -2462,7 +3260,9 @@ code { overflow-wrap: anywhere; }
 
 @media (max-width: 1024px) {
   .atelier-shell, .admin-shell { grid-template-columns: 200px minmax(0, 1fr); }
-  .solo { grid-template-columns: minmax(0, 1.3fr) minmax(220px, 0.9fr); gap: 2rem; }
+  .solo { grid-template-columns: minmax(0, 1.3fr) minmax(15rem, 0.9fr); gap: 2rem; }
+  .foyer { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .wall-mosaic { columns: 3 15rem; }
   .draft-split { grid-template-columns: 1fr; }
   .post-preview { position: static; }
   .admin-offer-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -2525,20 +3325,23 @@ code { overflow-wrap: anywhere; }
 
 /* Sous 860px : les marges se resserrent, les colonnes s’empilent. */
 @media (max-width: 860px) {
-  .site-bar { padding: 1rem 6vw; }
+  main { padding-bottom: 3.5rem; }
+  .colophon { grid-template-columns: 1fr; }
 
-  main { padding: 0 6vw 3.5rem; }
-  .site-foot { padding: 1.4rem 6vw; }
-  .colophon { grid-template-columns: 1fr; padding: 2rem 6vw; }
-
-  .strip, .solo, .work-edit, .split, .account-grid,
+  .solo, .work-edit, .split, .account-grid, .foyer, .affiche,
+  .room-brief, .spotlight-figure, .steps,
   .mail-split, .admin-grid, .offers-grid, .flag-grid { grid-template-columns: 1fr; }
-  .strip { gap: 2rem; padding: 2.5rem 0 3.5rem; }
   .atelier-head { flex-direction: column; align-items: flex-start; gap: 1rem; }
-  .hero { padding: 3.5rem 0 3rem; }
+  .foyer { padding: 2.5rem 0 3rem; gap: 2.4rem; }
+  /* Le triptyque perd son décalage : empilé, il ferait des trous. */
+  .triptych li { transform: none !important; }
   .solo-frame { padding: 1.4rem; min-height: 0; }
   .solo-frame img { max-height: 60vh; }
-  .room-cover { max-height: 38vh; margin: 1.4rem 0 1.6rem; }
+  .cartel { position: static; }
+  .wall-mosaic { columns: 2 14rem; }
+  .hang, .hang.salon { columns: 2 14rem; }
+  .room-hero-cover img { height: clamp(12rem, 44vw, 20rem); }
+  .room-facts > div { grid-template-columns: 5.5rem minmax(0, 1fr); }
 
   /* Atelier et admin : la colonne devient un tiroir — là aussi, seulement
      si le bouton qui l’ouvre peut fonctionner. */
@@ -2565,23 +3368,32 @@ code { overflow-wrap: anywhere; }
 }
 
 @media (max-width: 620px) {
-  .hero h1 { font-size: clamp(2.5rem, 12vw, 3.6rem); }
+  .foyer h1 { font-size: clamp(2.5rem, 12vw, 3.6rem); }
   .lead { font-size: 1.05rem; margin: 1.2rem 0 1.8rem; }
   .auth-card h1, .atelier-head h1 { font-size: clamp(2rem, 9vw, 2.6rem); }
-  .rooms h2, .room-intro h1 { font-size: clamp(1.9rem, 8vw, 2.6rem); }
+  .band h2, .page-head h1, .room-hero-say h1 { font-size: clamp(1.9rem, 8vw, 2.6rem); }
   .cartel h1 { font-size: 1.9rem; }
   .panel-head h2 { font-size: 1.35rem; }
 
-  .hang { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.6rem 1rem; }
-  .hang img { height: 210px; padding: 0.7rem; }
   .studio-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.1rem; }
   .studio-grid img, .studio-grid.compact img { height: 165px; }
 
-  /* Une ligne de galerie tient mieux en deux temps qu’en une colonne serrée. */
-  .room-list a { flex-direction: column; gap: 0.2rem; padding: 1rem 0; }
-  .room-name { font-size: 1.3rem; }
-  .room-list.rich a { flex-direction: row; gap: 0.9rem; }
-  .room-list.rich img { width: 5rem; height: 3.6rem; }
+  /* Le mur reste à deux colonnes : une œuvre par ligne ferait une page
+     interminable, et l’accrochage se lit par comparaison. */
+  .wall-mosaic, .hang, .hang.salon { columns: 2 9rem; column-gap: 0.8rem; }
+  .rooms-grid { grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 1.4rem 0.9rem; }
+  .room-card-name { font-size: 1.15rem; }
+  .room-card-strip { display: none; }
+  /* Sur un téléphone, trois vignettes de cent pixels ne montrent rien.
+     La première pièce prend toute la largeur, les deux autres se partagent
+     la ligne d'en dessous : on voit enfin une œuvre en entrant. */
+  .triptych { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+  .triptych li:first-child { grid-column: 1 / -1; }
+  .triptych li:first-child .frame.is-cropped img { aspect-ratio: 5 / 4; }
+  .triptych .tag-line span { display: none; }
+  .walk { grid-template-columns: 1fr; }
+  .walk .walk-next { grid-column: 1; }
+  .more-strip { grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr)); }
 
   .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; margin-bottom: 1.8rem; }
   .stat-row li { padding: 0.9rem 0.8rem; }
@@ -2606,7 +3418,7 @@ code { overflow-wrap: anywhere; }
 
 /* Les plus petits écrans encore vendus (SE, Galaxy A0x). */
 @media (max-width: 420px) {
-  main { padding: 0 5vw 3rem; }
+  main { padding-bottom: 3rem; }
   .letter-page main { padding: 1.5rem 0.95rem 2rem; }
   .letter-page .letter {
     width: 100%;
@@ -2630,11 +3442,10 @@ code { overflow-wrap: anywhere; }
   .letter-offers li { grid-template-columns: 1fr; }
   .letter-offers .offer-cost { grid-row: auto; grid-column: 1; }
   .letter-rooms a { flex-direction: column; gap: 0.15rem; }
-  .site-bar, .site-foot { padding-left: 5vw; padding-right: 5vw; }
   .atelier-canvas, .admin-canvas, .atelier-side, .admin-side, .shell-toggle { padding-left: 5vw; padding-right: 5vw; }
   .mark { font-size: 1.15rem; }
-  .hang { grid-template-columns: 1fr; }
-  .hang img { height: 260px; }
+  .wall-mosaic, .hang, .hang.salon { columns: 1; }
+  .rooms-grid { grid-template-columns: 1fr; }
   .studio-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .studio-grid img, .studio-grid.compact img { height: 130px; }
   .hero-actions, .atelier-actions { gap: 0.6rem; }
@@ -2650,9 +3461,9 @@ code { overflow-wrap: anywhere; }
 /* Encoche et barre gestuelle iOS — uniquement là où la marge est déjà réduite. */
 @media (max-width: 860px) {
   @supports (padding: max(0px)) {
-    .site-bar, .site-foot, main {
-      padding-left: max(env(safe-area-inset-left), 6vw);
-      padding-right: max(env(safe-area-inset-right), 6vw);
+    .site-bar, .site-foot, .colophon, main {
+      padding-left: max(env(safe-area-inset-left), var(--gut));
+      padding-right: max(env(safe-area-inset-right), var(--gut));
     }
     .atelier-canvas, .admin-canvas, .atelier-side, .admin-side, .shell-toggle {
       padding-left: max(env(safe-area-inset-left), 6vw);
@@ -2663,7 +3474,7 @@ code { overflow-wrap: anywhere; }
 }
 @media (max-width: 420px) {
   @supports (padding: max(0px)) {
-    .site-bar, .site-foot, main, .atelier-canvas, .admin-canvas, .atelier-side, .admin-side, .shell-toggle {
+    .atelier-canvas, .admin-canvas, .atelier-side, .admin-side, .shell-toggle {
       padding-left: max(env(safe-area-inset-left), 5vw);
       padding-right: max(env(safe-area-inset-right), 5vw);
     }
@@ -2672,8 +3483,7 @@ code { overflow-wrap: anywhere; }
 
 /* Écrans très larges : le texte ne doit pas s’étirer indéfiniment. */
 @media (min-width: 1800px) {
-  main { padding-left: 12vw; padding-right: 12vw; }
-  .site-bar, .site-foot { padding-left: 12vw; padding-right: 12vw; }
+  .wall-mosaic { columns: 5 17rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

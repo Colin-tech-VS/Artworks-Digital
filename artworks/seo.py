@@ -56,3 +56,31 @@ def canonical_redirect():
         return None
     target = f"{scheme}://{host}{request.full_path.rstrip('?') if request.query_string else request.path}"
     return redirect(target, code=301)
+
+
+def media_url(filename: str | None, width: int | None = None) -> str:
+    """L'adresse d'un visuel, éventuellement à une largeur donnée."""
+    if not filename:
+        return url_for("static", filename="og-default.jpg")
+    if width:
+        return url_for("media_variant", width=width, filename=filename)
+    return url_for("media", filename=filename)
+
+
+def media_srcset(filename: str | None, natural_width: int = 0) -> str:
+    """Le jeu de largeurs d'un visuel, pour que le navigateur choisisse.
+
+    On n'annonce jamais une largeur que l'original n'a pas : promettre du
+    1600 px pour une image qui en fait 900 ferait télécharger le gros
+    fichier pour rien, exactement le contraire du but. Quand la largeur
+    d'origine est inconnue (les visuels d'avant la mesure), on s'arrête à
+    la déclinaison moyenne, qui ne trahit personne."""
+    from artworks.images import VARIANT_WIDTHS
+
+    if not filename:
+        return ""
+    ceiling = natural_width if natural_width and natural_width > 0 else VARIANT_WIDTHS[1]
+    parts = [f"{media_url(filename, w)} {w}w" for w in VARIANT_WIDTHS if w <= ceiling]
+    if natural_width and natural_width > VARIANT_WIDTHS[-1]:
+        parts.append(f"{media_url(filename)} {natural_width}w")
+    return ", ".join(parts)

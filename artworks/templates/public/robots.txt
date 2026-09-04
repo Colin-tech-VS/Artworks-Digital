@@ -8,9 +8,12 @@ User-agent: *
 Allow: /
 Allow: /galerie/
 Allow: /galeries
+Allow: /galeries/
+Allow: /galeries.atom
 Allow: /offres
 Allow: /contact
 Allow: /llms.txt
+Allow: /media/
 Disallow: /atelier
 Disallow: /admin
 Disallow: /connexion
@@ -50,6 +53,7 @@ User-agent: MistralAI-User
 User-agent: CCBot
 Allow: /
 Allow: /galerie/
+Allow: /galeries/
 Allow: /llms.txt
 Disallow: /atelier
 Disallow: /admin
@@ -63,3 +67,6 @@ Disallow: /api/kael
 Disallow: /galeries.json
 
 Sitemap: {{ sitemap }}
+
+# Les salles ouvertes récemment, en Atom.
+# {{ feed }}

@@ -178,11 +178,16 @@ const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("co
     });
     if (emptyEl) emptyEl.hidden = visible > 0;
     paintCount(visible, q);
-    const url = new URL(roomsPage, window.location.origin);
-    if (q) url.searchParams.set("q", q);
-    const next = `${url.pathname}${url.search}`;
-    if (next !== `${window.location.pathname}${window.location.search}`) {
-      history.replaceState(null, "", next);
+    // Sur une page de discipline (/galeries/photographie), l'adresse ne
+    // doit pas retomber sur le répertoire complet : le filtre affine ce
+    // qu'on regarde, il ne change pas de page.
+    if (window.location.pathname === roomsPage) {
+      const url = new URL(roomsPage, window.location.origin);
+      if (q) url.searchParams.set("q", q);
+      const next = `${url.pathname}${url.search}`;
+      if (next !== `${window.location.pathname}${window.location.search}`) {
+        history.replaceState(null, "", next);
+      }
     }
     if (headerField && headerField !== document.activeElement && headerField.value !== q) {
       headerField.value = q;
@@ -734,4 +739,80 @@ document.querySelectorAll("form[data-busy]").forEach((form) => {
   stamp();
   setInterval(stamp, 8000);
   setInterval(tick, 10000);
+})();
+
+/* La visionneuse — une œuvre en grand, sur le mur sombre.
+
+   Sur une page d'œuvre, le visuel affiché est une déclinaison : assez
+   pour la mise en page, pas pour regarder le grain. Un clic ouvre
+   l'original par-dessus la page. Rien n'est chargé tant que personne ne
+   clique — c'est tout l'intérêt de ne pas servir le grand fichier
+   d'entrée de jeu. */
+(function () {
+  const stage = document.querySelector("[data-viewer]");
+  if (!stage) return;
+
+  let sheet = null;
+  let opener = null;
+
+  const close = () => {
+    if (!sheet) return;
+    sheet.remove();
+    sheet = null;
+    document.body.style.removeProperty("overflow");
+    opener?.focus();
+  };
+
+  const open = () => {
+    if (sheet) return;
+    opener = document.activeElement;
+    sheet = document.createElement("div");
+    sheet.className = "viewer";
+    sheet.setAttribute("role", "dialog");
+    sheet.setAttribute("aria-modal", "true");
+    sheet.setAttribute("aria-label", stage.dataset.alt || "Œuvre en grand");
+
+    const image = document.createElement("img");
+    image.src = stage.dataset.full || stage.querySelector("img")?.src || "";
+    image.alt = stage.dataset.alt || "";
+
+    const shut = document.createElement("button");
+    shut.type = "button";
+    shut.className = "viewer-close";
+    shut.textContent = "Fermer";
+
+    sheet.append(image, shut);
+    sheet.addEventListener("click", close);
+    document.body.appendChild(sheet);
+    document.body.style.overflow = "hidden";
+    shut.focus();
+  };
+
+  stage.addEventListener("click", open);
+  // Au clavier, la figure est un bouton : elle se déclenche à l'entrée.
+  stage.setAttribute("role", "button");
+  stage.setAttribute("tabindex", "0");
+  stage.setAttribute("aria-label", "Voir l’œuvre en grand");
+  stage.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      open();
+    }
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") close();
+  });
+})();
+
+/* Les puces de discipline ouvrent la page de la discipline quand on les
+   active au clavier plutôt qu'à la souris : ainsi le filtre reste immédiat
+   pour qui clique, et l'adresse indexable reste atteignable pour qui
+   navigue autrement — ou pour un moteur. */
+(function () {
+  const chips = document.querySelector("[data-room-chips]");
+  if (!chips) return;
+  chips.addEventListener("dblclick", (event) => {
+    const href = event.target.closest("button")?.dataset.href;
+    if (href) window.location.assign(href);
+  });
 })();

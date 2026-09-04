@@ -8,13 +8,19 @@ from artworks.mailer import contact_inbox
 from artworks.models import Artist, MailMessage, Work, utcnow
 from artworks.search import (
     directory_facets,
+    discipline_slug,
+    disciplines_index,
     hung_works_by_artist,
+    kin_rooms,
     open_rooms,
     public_work_counts,
     room_haystack,
     room_letter,
+    room_previews,
     rooms_index,
+    rooms_of_discipline,
     search_rooms,
+    wall_works,
 )
 from artworks.seo import canonical_url
 
@@ -106,20 +112,38 @@ def home():
             letter_date=LETTER_MODIFIED,
         )
     rooms = open_rooms()
-    featured = [artist for artist in rooms if artist.has_feature("featured")][:6]
+    counts = public_work_counts(rooms)
+    previews = room_previews(rooms, per_room=4)
+
+    # La salle à l'affiche : la première des salles mises en avant qui ait
+    # de quoi être montrée. Une salle vide en tête d'accueil dirait que la
+    # maison est vide.
+    affiche = next(
+        (
+            artist
+            for artist in rooms
+            if artist.has_feature("featured") and counts.get(artist.id)
+        ),
+        next((artist for artist in rooms if counts.get(artist.id)), None),
+    )
+
     g.track_title = "Artworksdigital"
     return render_template(
         "public/home.html",
         rooms=rooms,
-        featured_rooms=featured,
-        room_counts=public_work_counts(rooms),
+        room_counts=counts,
+        previews=previews,
+        affiche=affiche,
+        affiche_works=previews.get(affiche.id, []) if affiche else [],
+        triptych=wall_works(rooms, limit=3, per_room=1),
+        wall=wall_works(rooms, limit=12, per_room=2),
+        disciplines=disciplines_index(rooms)[:8],
+        faq=SITE_FAQ[:4],
     )
 
 
-@public_bp.route("/galeries")
-def galleries():
-    rooms = open_rooms()
-    query = (request.args.get("q") or request.args.get("query") or "").strip()
+def _directory(rooms, *, query="", discipline=None):
+    """Le répertoire, dans sa forme complète ou restreint à une discipline."""
     shown = search_rooms(rooms, query) if query else rooms
     shown_ids = {artist.id for artist in shown}
     facets = directory_facets(rooms)
@@ -127,19 +151,47 @@ def galleries():
     for artist in rooms:
         letter = room_letter(artist.display_name)
         letter_ids.setdefault(letter, artist.id)
+    return {
+        "rooms": rooms,
+        "shown": shown,
+        "shown_ids": shown_ids,
+        "query": query,
+        "discipline": discipline,
+        "room_counts": public_work_counts(rooms),
+        "previews": room_previews(rooms),
+        "letters": facets["letters"],
+        "disciplines": disciplines_index(rooms),
+        "letter_ids": letter_ids,
+        "room_haystack": room_haystack,
+        "room_letter": room_letter,
+    }
+
+
+@public_bp.route("/galeries")
+def galleries():
+    rooms = open_rooms()
+    query = (request.args.get("q") or request.args.get("query") or "").strip()
     g.track_title = "Recherche de salles" if query else "Galeries"
+    return render_template("public/galleries.html", **_directory(rooms, query=query))
+
+
+@public_bp.route("/galeries/<slug>")
+def discipline(slug: str):
+    """Le répertoire d'une discipline — « les galeries de photographie ».
+
+    Personne ne cherche « une galerie » : on cherche une galerie de
+    peinture, de gravure, de photographie. Ces adresses-là existent donc
+    pour de bon, avec leur propre titre et leur propre plan du site,
+    plutôt que d'être un filtre en JavaScript qu'aucun moteur ne voit."""
+    rooms = open_rooms()
+    found = rooms_of_discipline(rooms, slug)
+    if not found:
+        abort(404)
+    label = found[0].discipline
+    g.track_title = f"Galeries — {label}"
     return render_template(
         "public/galleries.html",
-        rooms=rooms,
-        shown=shown,
-        shown_ids=shown_ids,
-        query=query,
-        room_counts=public_work_counts(rooms),
-        letters=facets["letters"],
-        disciplines=facets["disciplines"],
-        letter_ids=letter_ids,
-        room_haystack=room_haystack,
-        room_letter=room_letter,
+        **_directory(found, discipline={"slug": slug, "name": label, "count": len(found)}),
     )
 
 
@@ -157,6 +209,28 @@ def rooms_feed():
     body = jsonify({"rooms": rooms_index(rooms), "count": len(rooms)})
     body.headers["Cache-Control"] = "public, max-age=120"
     return body
+
+
+@public_bp.route("/galeries.atom")
+def rooms_atom():
+    """Les salles ouvertes récemment, en Atom.
+
+    Une galerie qui ouvre est une nouvelle. Un flux la fait voyager — vers
+    un agrégateur, vers un lecteur, vers un robot qui repasse — sans que
+    personne ait à recharger le répertoire pour voir ce qui a changé."""
+    rooms = open_rooms()
+    fresh = sorted(rooms, key=lambda a: a.updated_at or a.created_at, reverse=True)[:40]
+    updated = max((a.updated_at or a.created_at for a in fresh), default=utcnow())
+    body = render_template(
+        "public/rooms.atom",
+        rooms=fresh,
+        counts=public_work_counts(fresh),
+        updated=updated,
+    )
+    return body, 200, {
+        "Content-Type": "application/atom+xml; charset=utf-8",
+        "Cache-Control": "public, max-age=900",
+    }
 
 
 @public_bp.route("/opensearch.xml")
@@ -244,6 +318,7 @@ def gallery(slug: str):
         send_new_message(artist, message.from_name, message.from_email, body)
         send_contact_receipt(message.from_name, message.from_email, body, artist=artist)
         return redirect(url_for("public.gallery", slug=artist.slug, sent=1))
+    rooms = open_rooms()
     return render_template(
         "public/gallery.html",
         artist=artist,
@@ -253,6 +328,14 @@ def gallery(slug: str):
         groups=groups,
         form=form,
         sent=request.args.get("sent") == "1",
+        kin=kin_rooms(rooms, artist),
+        kin_counts=public_work_counts(rooms),
+        kin_previews=room_previews(rooms),
+        discipline_href=(
+            url_for("public.discipline", slug=discipline_slug(artist.discipline))
+            if artist.discipline and rooms_of_discipline(rooms, discipline_slug(artist.discipline))
+            else None
+        ),
     )
 
 
@@ -281,6 +364,11 @@ def artwork(slug: str, work_id: int):
         work=work,
         prev_work=prev_work,
         next_work=next_work,
+        position=index + 1,
+        total=len(hung),
+        # La suite de l'accrochage sous l'œuvre : la visite continue, et
+        # les pages d'une même salle se tiennent par la main.
+        siblings=[item for item in hung if item.id != work.id][:8],
     )
 
 
@@ -299,7 +387,18 @@ def sitemap():
         {"loc": canonical_url("/offres"), "changefreq": "weekly", "priority": "0.8", "lastmod": utcnow(), "images": []},
         {"loc": canonical_url("/contact"), "changefreq": "monthly", "priority": "0.5", "lastmod": utcnow(), "images": []},
         {"loc": canonical_url("/llms.txt"), "changefreq": "monthly", "priority": "0.3", "lastmod": utcnow(), "images": []},
+        {"loc": canonical_url("/galeries.atom"), "changefreq": "daily", "priority": "0.3", "lastmod": freshest, "images": []},
     ]
+    # Les répertoires par discipline : ce sont eux que l'on cherche —
+    # « galerie de photographie », pas « galerie ».
+    for row in disciplines_index(rooms):
+        pages.append({
+            "loc": canonical_url(url_for("public.discipline", slug=row["slug"])),
+            "changefreq": "weekly",
+            "priority": "0.75",
+            "lastmod": freshest,
+            "images": [],
+        })
     for artist in rooms:
         works = hung.get(artist.id, [])
         room_images = []
@@ -348,6 +447,7 @@ def robots():
         "public/robots.txt",
         sitemap=canonical_url("/sitemap.xml"),
         llms=canonical_url("/llms.txt"),
+        feed=canonical_url("/galeries.atom"),
     )
     return body, 200, {"Content-Type": "text/plain; charset=utf-8"}
 
@@ -368,6 +468,7 @@ def llms():
         contact=contact_inbox(),
         rooms=rooms,
         room_counts=public_work_counts(rooms),
+        disciplines=disciplines_index(rooms),
         offers=active_offers(),
         faq=SITE_FAQ,
         site_open=site_is_open(),

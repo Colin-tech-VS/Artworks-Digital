@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Contact — Artworksdigital{% endblock %}
-{% block description %}Écrire à Artworksdigital. Une question, un atelier, une galerie.{% endblock %}
+{% block title %}Contact — écrire à Artworksdigital{% endblock %}
+{% block description %}Une question sur votre atelier, votre galerie ou votre offre ? Écrivez à l’équipe Artworksdigital. Pour joindre un artiste, le formulaire se trouve dans sa salle.{% endblock %}
 {% block og_image_width %}1200{% endblock %}
 {% block og_image_height %}630{% endblock %}
 {% block body_class %}contact-page{% endblock %}
@@ -36,10 +36,15 @@
   {"name": "Contact"}
 ] %}
 {% include "_crumbs.html" %}
-<section class="room-head">
+<section class="page-head">
   <p class="eyebrow">Écrire</p>
   <h1>Contact</h1>
-  <p class="lead">Un message arrive sur contact@artworksdigital.fr. Pas de formulaire anonyme, pas de newsletter forcée.</p>
+  <p class="lead">
+    Un message arrive sur <a href="mailto:{{ site_contact_email }}">{{ site_contact_email }}</a>,
+    et quelqu’un le lit. Pas de formulaire anonyme, pas de newsletter forcée.
+    Pour écrire à un artiste, le mieux reste d’aller dans
+    <a href="{{ url_for('public.galleries') }}">sa salle</a> : le message part chez lui, pas chez nous.
+  </p>
 </section>
 
 <section class="contact-block">
