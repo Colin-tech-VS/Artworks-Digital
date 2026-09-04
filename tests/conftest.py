@@ -24,8 +24,17 @@ import tempfile
 # touche la base avant que le moindre réglage de test puisse s'appliquer.
 # La base de test doit donc être choisie ici, avant l'import — sinon les
 # tests écrivent dans `instance/artworks.db`, la base de développement.
+#
+# Par défaut, un SQLite jetable : la suite tourne partout, sans service à
+# lancer. Mais la production est sur PostgreSQL, et les deux moteurs ne
+# répondent pas pareil — booléens, types de dates, `ALTER TABLE`. Poser
+# `ARTWORKS_TEST_DATABASE_URL` fait jouer exactement la même suite sur le
+# moteur réel, ce qui est le seul moyen de vérifier que le schéma tient
+# là-bas aussi.
 _DB = os.path.join(tempfile.mkdtemp(prefix="artworks-tests-"), "test.db")
-os.environ["DATABASE_URL"] = f"sqlite:///{_DB}"
+os.environ["DATABASE_URL"] = (
+    os.environ.get("ARTWORKS_TEST_DATABASE_URL") or f"sqlite:///{_DB}"
+)
 os.environ.setdefault("SECRET_KEY", "clé-de-test")
 os.environ.setdefault("CANONICAL_REDIRECT", "0")
 

@@ -139,6 +139,34 @@ des deux côtés : les artistes se reconnectent avec leur mot de passe. Les
 visuels sont retéléchargés depuis leur URL et stockés en base. L’import est
 idempotent — un e-mail déjà présent est ignoré.
 
+## Tests
+
+```bash
+python -m pytest -q                 # SQLite jetable, rien à lancer
+```
+
+La production tourne sur PostgreSQL, et les deux moteurs ne répondent pas
+pareil — booléens, types de dates, les `ALTER TABLE` de `ensure_schema()`.
+La même suite se rejoue donc sur le moteur réel :
+
+```bash
+ARTWORKS_TEST_DATABASE_URL=postgresql://… python -m pytest -q
+```
+
+La CI fait les deux à chaque poussée, et vérifie en plus que gunicorn
+démarre avec la commande du `Procfile`.
+
+## Variables indispensables en production
+
+| Variable | Sans elle |
+|---|---|
+| `SECRET_KEY` | sessions **et** liens de réinitialisation signés avec la clé du dépôt, donc falsifiables |
+| `DATABASE_URL` | la base tombe sur un SQLite éphémère, effacé à chaque redéploiement |
+| `STRIPE_WEBHOOK_SECRET` | les événements Stripe sont refusés faute de signature vérifiable : les changements d’offre ne s’appliquent plus |
+
+Les deux premières manquantes se signalent dans les logs au démarrage,
+la troisième aussi dès que `STRIPE_SECRET_KEY` est posée.
+
 ## Déploiement Scalingo
 
 App `new-artworks-digital` — [https://new-artworks-digital.osc-fr1.scalingo.io](https://new-artworks-digital.osc-fr1.scalingo.io)

@@ -19,6 +19,24 @@ class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-artworks-digital")
     SITE_UNLOCK_PASSWORD = os.environ.get("SITE_UNLOCK_PASSWORD", "")
     PERMANENT_SESSION_LIFETIME = timedelta(days=30)
+    # Le cookie de session porte la connexion — celle de l'artiste comme
+    # celle de l'admin. Il était le seul à repartir avec les réglages par
+    # défaut de Flask, donc sans `Secure` et sans `SameSite`, alors que le
+    # cookie de mesure d'audience, lui, était déjà protégé. C'était le
+    # moins important qui était le mieux gardé.
+    #
+    # `Secure` n'est posé qu'en posture de production : en local et dans
+    # les tests, le site répond en clair et un cookie `Secure` ne
+    # reviendrait jamais — personne ne pourrait plus se connecter.
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SECURE = (
+        os.environ.get("CANONICAL_SCHEME", "https") == "https"
+        and os.environ.get("CANONICAL_REDIRECT", "1") != "0"
+    )
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SAMESITE = "Lax"
+    REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
     SQLALCHEMY_DATABASE_URI = database_uri()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}

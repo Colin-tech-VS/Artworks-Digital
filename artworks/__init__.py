@@ -28,6 +28,35 @@ def create_app(config_class=Config) -> Flask:
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
     (Path(app.instance_path) / "uploads").mkdir(exist_ok=True)
 
+    # `SECRET_KEY` ne signe pas que la session : il signe aussi les liens de
+    # réinitialisation de mot de passe. Laissé à sa valeur de repli, celle
+    # qui est écrite dans le dépôt, n'importe qui sachant lire ce fichier
+    # peut fabriquer un lien valide pour n'importe quel artiste. Le repli
+    # reste, pour que `python run.py` marche sans rien configurer — mais il
+    # ne doit plus pouvoir passer inaperçu au démarrage en production.
+    if app.config.get("SECRET_KEY") == "dev-artworks-digital" and app.config.get(
+        "CANONICAL_REDIRECT"
+    ):
+        app.logger.warning(
+            "SECRET_KEY est resté sur sa valeur par défaut alors que le site "
+            "tourne en posture de production : les sessions et les liens de "
+            "réinitialisation de mot de passe sont falsifiables. Posez "
+            "SECRET_KEY dans l'environnement."
+        )
+
+    # Même logique pour le webhook Stripe : il est désormais refusé sans
+    # secret, donc l'oubli ne laisse plus de porte ouverte — mais il ferait
+    # échouer silencieusement tout changement d'offre après paiement. Le
+    # dire au démarrage, c'est la différence entre une variable oubliée
+    # qu'on voit tout de suite et une facturation qui ne s'applique plus
+    # sans que personne ne comprenne pourquoi.
+    if app.config.get("STRIPE_SECRET_KEY") and not app.config.get("STRIPE_WEBHOOK_SECRET"):
+        app.logger.warning(
+            "Stripe est configuré mais STRIPE_WEBHOOK_SECRET est absent : les "
+            "événements Stripe seront refusés faute de signature vérifiable, "
+            "et les changements d'offre ne s'appliqueront pas automatiquement."
+        )
+
     if app.config["SQLALCHEMY_DATABASE_URI"] == "sqlite:///artworks.db":
         db_path = Path(app.instance_path) / "artworks.db"
         app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path.as_posix()}"

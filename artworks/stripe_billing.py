@@ -204,15 +204,29 @@ def cancel_to_free(artist: Artist) -> tuple[bool, str]:
 
 
 def handle_webhook(payload: bytes, signature: str) -> None:
+    """Applique un événement Stripe — après avoir vérifié qu'il vient bien
+    de Stripe.
+
+    C'est la seule route du site qui écrit sans session ni jeton : elle
+    change l'offre d'un artiste sur la foi d'un corps JSON. Sa signature
+    est donc sa seule défense, et elle n'est pas facultative. Tant qu'elle
+    l'était, un `POST` anonyme portant `checkout.session.completed` et
+    l'identifiant d'un artiste suffisait à s'attribuer l'offre haute sans
+    payer.
+
+    Sans `STRIPE_WEBHOOK_SECRET`, on refuse donc l'événement au lieu de le
+    croire : mieux vaut un webhook qui ne s'applique pas — et qui se voit,
+    dans le tableau de bord Stripe comme dans les logs — qu'une porte
+    ouverte que personne ne regarde.
+    """
     secret = current_app.config.get("STRIPE_WEBHOOK_SECRET") or ""
-    api = _api()
-    if secret:
-        event = api.Webhook.construct_event(payload, signature, secret)
-    else:
-        event = api.Event.construct_from(
-            __import__("json").loads(payload.decode("utf-8")),
-            api.api_key,
+    if not secret:
+        raise RuntimeError(
+            "STRIPE_WEBHOOK_SECRET absent : l'événement Stripe ne peut pas "
+            "être authentifié, il est refusé."
         )
+    api = _api()
+    event = api.Webhook.construct_event(payload, signature, secret)
     kind = event["type"]
     data = event["data"]["object"]
     if kind == "checkout.session.completed":
