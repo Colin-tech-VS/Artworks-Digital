@@ -2,11 +2,11 @@
 {#- Porte fermée, cette lettre est le site entier : ni barre, ni pied. Ce que
     la navigation disait, la lettre le dit elle-même — en-tête, actes,
     signature — et le dit assez clairement pour être cité. -#}
-{% block title %}Artworksdigital revient — la galerie qui appartient à l’artiste{% endblock %}
-{% block description %}Artworksdigital revient : une nouvelle version se prépare. Chaque artiste y ouvre sa galerie à son adresse — un atelier privé, un accrochage, une note d’intention. Pas de marketplace, pas de catalogue partagé, pas de commission.{% endblock %}
+{% block title %}Créer un portfolio artistique en ligne | Artworksdigital{% endblock %}
+{% block description %}Créez votre portfolio d'art numérique en ligne avec Artworksdigital. Galerie personnalisée, accrochage d'œuvres, note d'intention. Pas de marketplace, pas de commission. Ouvrez votre atelier gratuit dès maintenant.{% endblock %}
 {% block robots %}index, follow, max-image-preview:large, max-snippet:-1{% endblock %}
-{% block og_title %}Artworksdigital revient{% endblock %}
-{% block og_description %}Une nouvelle version se prépare : votre salle, vos œuvres, rien d’autre. Les salles déjà ouvertes restent visitables.{% endblock %}
+{% block og_title %}Créer un portfolio artistique en ligne | Artworksdigital{% endblock %}
+{% block og_description %}Créez votre portfolio d'art numérique en ligne avec Artworksdigital. Galerie personnalisée, accrochage d'œuvres, note d'intention. Pas de marketplace, pas de commission.{% endblock %}
 {% block og_image_width %}1200{% endblock %}
 {% block og_image_height %}630{% endblock %}
 {% block body_class %}letter-page{% endblock %}
@@ -24,7 +24,7 @@
       "@type": "WebPage",
       "@id": {{ (canonical_url('/') ~ '#accueil') | tojson }},
       "url": {{ canonical_url('/') | tojson }},
-      "name": "Artworksdigital revient — la galerie qui appartient à l’artiste",
+      "name": "Créer un portfolio artistique en ligne | Artworksdigital",
       "description": {{ self.description() | tojson }},
       "inLanguage": "fr-FR",
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
@@ -49,7 +49,7 @@
     {
       "@type": "Article",
       "@id": {{ (canonical_url('/') ~ '#lettre') | tojson }},
-      "headline": "Artworksdigital revient",
+      "headline": "Créer un portfolio artistique en ligne | Artworksdigital",
       "description": "Lettre ouverte aux artistes : pourquoi Artworksdigital a fermé, ce qui revient, et ce que la nouvelle version leur donne.",
       "inLanguage": "fr-FR",
       "datePublished": {{ letter_published | tojson }},
@@ -133,7 +133,7 @@
 
   <header class="letter-head">
     <p class="eyebrow">Lettre ouverte aux artistes</p>
-    <h1>Artworksdigital <em>revient</em></h1>
+    <h1>Créer un portfolio artistique en ligne<br><span class="highlight">portfolio d'art numérique</span> et <span class="highlight">artworks</span></h1>
   </header>
 
   <section class="letter-act" aria-label="L’explication">
@@ -278,7 +278,7 @@
     </p>
     <p class="sign">
       <button type="button" class="gate-dot" id="gate-dot" aria-label="Accès">—</button>
-      L’équipe Artworksdigital
+      L'équipe Artworksdigital
     </p>
     <form class="gate{% if gate_error %} is-on{% endif %}" id="gate" method="post" {% if not gate_error %}hidden{% endif %}>
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
