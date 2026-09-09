@@ -2,11 +2,11 @@
 {#- Porte fermée, cette lettre est le site entier : ni barre, ni pied. Ce que
     la navigation disait, la lettre le dit elle-même — en-tête, actes,
     signature — et le dit assez clairement pour être cité. -#}
-{% block title %}Créer un portfolio artistique en ligne | Artworksdigital{% endblock %}
-{% block description %}Créez votre portfolio d'art numérique en ligne avec Artworksdigital. Galerie personnalisée, accrochage d'œuvres, note d'intention. Pas de marketplace, pas de commission. Ouvrez votre atelier gratuit dès maintenant.{% endblock %}
+{% block title %}Créer votre portfolio artistique en ligne – Artworks Digital{% endblock %}
+{% block description %}Apprenez à créer un portfolio d'art numérique professionnel en quelques étapes simples. Boostez votre visibilité en ligne.{% endblock %}
 {% block robots %}index, follow, max-image-preview:large, max-snippet:-1{% endblock %}
-{% block og_title %}Créer un portfolio artistique en ligne | Artworksdigital{% endblock %}
-{% block og_description %}Créez votre portfolio d'art numérique en ligne avec Artworksdigital. Galerie personnalisée, accrochage d'œuvres, note d'intention. Pas de marketplace, pas de commission.{% endblock %}
+{% block og_title %}Créer votre portfolio artistique en ligne – Artworks Digital{% endblock %}
+{% block og_description %}Apprenez à créer un portfolio d'art numérique professionnel en quelques étapes simples. Boostez votre visibilité en ligne.{% endblock %}
 {% block og_image_width %}1200{% endblock %}
 {% block og_image_height %}630{% endblock %}
 {% block body_class %}letter-page{% endblock %}
@@ -24,7 +24,7 @@
       "@type": "WebPage",
       "@id": {{ (canonical_url('/') ~ '#accueil') | tojson }},
       "url": {{ canonical_url('/') | tojson }},
-      "name": "Créer un portfolio artistique en ligne | Artworksdigital",
+      "name": "Créer votre portfolio artistique en ligne – Artworks Digital",
       "description": {{ self.description() | tojson }},
       "inLanguage": "fr-FR",
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
@@ -49,7 +49,7 @@
     {
       "@type": "Article",
       "@id": {{ (canonical_url('/') ~ '#lettre') | tojson }},
-      "headline": "Créer un portfolio artistique en ligne | Artworksdigital",
+      "headline": "Créer votre portfolio artistique en ligne – Artworks Digital",
       "description": "Lettre ouverte aux artistes : pourquoi Artworksdigital a fermé, ce qui revient, et ce que la nouvelle version leur donne.",
       "inLanguage": "fr-FR",
       "datePublished": {{ letter_published | tojson }},
@@ -125,10 +125,10 @@
 
 {% block content %}
 <article class="letter">
-  {#- L’en-tête tient lieu de barre : qui écrit, d’où, quand. -#}
+  {#- L'en-tête tient lieu de barre : qui écrit, d'où, quand. -#}
   <header class="letter-mast">
     <p class="mark">Artworks <em>Digital</em></p>
-    <p class="letter-place">Galerie d’artiste en ligne · France</p>
+    <p class="letter-place">Galerie d'artiste en ligne · France</p>
   </header>
 
   <header class="letter-head">
@@ -136,15 +136,15 @@
     <h1>Créer un portfolio artistique en ligne<br><span class="highlight">portfolio d'art numérique</span> et <span class="highlight">artworks</span></h1>
   </header>
 
-  <section class="letter-act" aria-label="L’explication">
+  <section class="letter-act" aria-label="L'explication">
     <p class="letter-act-mark" aria-hidden="true">I</p>
     <p class="letter-open">Nous vous devons une petite explication.</p>
     <p>Il y a quelques mois, Artworksdigital a été temporairement fermé.</p>
     <p>Nous avons pris cette décision pour prendre du recul, écouter les retours de nos artistes et surtout réfléchir à une question simple :</p>
     <p class="emphasis emphasis-ask">Comment faire d’Artworksdigital un outil réellement utile aux artistes ?</p>
-    <p>Nous aurions pu simplement remettre l’ancienne version en ligne.</p>
+    <p>Nous aurions pu simplement remettre l'ancienne version en ligne.</p>
     <p>Mais nous avons préféré prendre le temps de repenser le projet.</p>
-    <p>Aujourd’hui, Artworksdigital est donc de retour en préparation, avec une nouvelle vision, une nouvelle expérience et surtout une version beaucoup plus ambitieuse.</p>
+    <p>Aujourd'hui, Artworksdigital est donc de retour en préparation, avec une nouvelle vision, une nouvelle expérience et surtout une version beaucoup plus ambitieuse.</p>
   </section>
 
   <section class="letter-act" aria-labelledby="letter-thanks">
@@ -160,13 +160,13 @@
     <p>On revient bientôt.</p>
   </section>
 
-  {#- Acte III : la définition. C’est ce paragraphe qu’un moteur — un lecteur
+  {#- Acte III : la définition. C'est ce paragraphe qu'un moteur — un lecteur
       humain comme un moteur génératif — doit pouvoir citer sans se tromper. -#}
   <section class="letter-act" aria-labelledby="letter-what">
     <p class="letter-act-mark" aria-hidden="true">III</p>
-    <h2 id="letter-what">Ce qu’est Artworksdigital</h2>
+    <h2 id="letter-what">Ce qu'est Artworksdigital</h2>
     <p><strong>Artworksdigital ouvre à chaque artiste une galerie qui lui appartient.</strong> Un atelier privé pour préparer la salle, une adresse publique pour la montrer : <span class="nowrap">artworksdigital.fr/galerie/votre-nom</span>.</p>
-    <p>Ce n’est ni une marketplace, ni une vitrine collective, ni une boutique. Il n’y a pas de catalogue partagé où votre travail se noierait, pas de panier, pas de commission sur ce que vous vendez ailleurs. La salle est à vous ; nous ne sommes pas le commissaire de votre exposition.</p>
+    <p>Ce n'est ni une marketplace, ni une vitrine collective, ni une boutique. Il n'y a pas de catalogue partagé où votre travail se noierait, pas de panier, pas de commission sur ce que vous vendez ailleurs. La salle est à vous ; nous ne sommes pas le commissaire de votre exposition.</p>
 
     <div class="letter-contrast">
       <section aria-labelledby="letter-yes">
@@ -175,12 +175,12 @@
           <li>Un compte artiste, et un atelier privé</li>
           <li>Une salle publique à votre nom</li>
           <li>Un cartel par œuvre — titre, année, technique, dimensions</li>
-          <li>Une note d’intention, écrite par vous</li>
+          <li>Une note d'intention, écrite par vous</li>
           <li>Un visiteur qui vous écrit directement</li>
         </ul>
       </section>
       <section class="is-not" aria-labelledby="letter-no">
-        <h3 id="letter-no">Il n’y a pas</h3>
+        <h3 id="letter-no">Il n'y a pas</h3>
         <ul>
           <li>De marketplace ni de catalogue partagé</li>
           <li>De panier, de vente, de commission</li>
@@ -195,15 +195,15 @@
       <li>
         <span class="move-no" aria-hidden="true">01</span>
         <div>
-          <h3>L’atelier</h3>
-          <p>Un espace privé pour préparer la salle : nom, discipline, note d’intention, image de fond.</p>
+          <h3>L'atelier</h3>
+          <p>Un espace privé pour préparer la salle : nom, discipline, note d'intention, image de fond.</p>
         </div>
       </li>
       <li>
         <span class="move-no" aria-hidden="true">02</span>
         <div>
-          <h3>L’accrochage</h3>
-          <p>Chaque œuvre a son cartel et son visuel. Vous choisissez l’ordre, comme sur un mur.</p>
+          <h3>L'accrochage</h3>
+          <p>Chaque œuvre a son cartel et son visuel. Vous choisissez l'ordre, comme sur un mur.</p>
         </div>
       </li>
       <li>
@@ -216,11 +216,11 @@
     </ol>
 
     <dl class="letter-facts">
-      <div><dt>Quoi</dt><dd>Galerie d’artiste en ligne, une par artiste</dd></div>
+      <div><dt>Quoi</dt><dd>Galerie d'artiste en ligne, une par artiste</dd></div>
       <div><dt>Pour qui</dt><dd>Artistes — peinture, dessin, photo, sculpture, numérique</dd></div>
       <div><dt>Où</dt><dd>France, en français, sur le web</dd></div>
       <div><dt>Combien</dt><dd>À partir de 0 €/mois</dd></div>
-      <div><dt>Adresse d’une salle</dt><dd>artworksdigital.fr/galerie/&lt;nom&gt;</dd></div>
+      <div><dt>Adresse d'une salle</dt><dd>artworksdigital.fr/galerie/&lt;nom&gt;</dd></div>
       <div><dt>Écrire</dt><dd><a href="mailto:{{ site_contact_email }}">{{ site_contact_email }}</a></dd></div>
     </dl>
   </section>
@@ -229,7 +229,7 @@
   <section class="letter-act" aria-labelledby="letter-rooms-title">
     <p class="letter-act-mark" aria-hidden="true">IV</p>
     <h2 id="letter-rooms-title">Les salles déjà ouvertes</h2>
-    <p>La nouvelle version se prépare, mais ces galeries-là sont en ligne aujourd’hui. Entrez :</p>
+    <p>La nouvelle version se prépare, mais ces galeries-là sont en ligne aujourd'hui. Entrez :</p>
     <ul class="letter-rooms">
       {% for artist in rooms[:8] %}
         <li>
@@ -268,7 +268,7 @@
 
   <section class="letter-act" aria-label="Questions fréquentes">
     <p class="letter-act-mark" aria-hidden="true">{% if rooms and offers %}VI{% elif rooms or offers %}V{% else %}IV{% endif %}</p>
-    {% set faq_title = "Les questions qu’on nous pose" %}
+    {% set faq_title = "Les questions qu'on nous pose" %}
     {% include "_faq.html" %}
   </section>
 
