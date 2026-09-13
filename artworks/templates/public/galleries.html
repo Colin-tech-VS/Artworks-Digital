@@ -3,8 +3,8 @@
     restreint à une discipline. Elles ne diffèrent que par leur titre,
     leur adresse canonique et le jeu de salles reçu. #}
 {% set here = url_for('public.discipline', slug=discipline.slug) if discipline else url_for('public.galleries') %}
-{% block title %}{% if query %}« {{ query }} » — galeries d’artistes{% elif discipline %}Galeries de {{ discipline.name | lower }} — {{ discipline.count }} salle{% if discipline.count != 1 %}s{% endif %} | Artworksdigital{% else %}Galeries d’artistes en ligne — toutes les salles ouvertes | Artworksdigital{% endif %}{% endblock %}
-{% block description %}{% if query %}Salles d’artistes correspondant à « {{ query }} » sur Artworksdigital.{% elif discipline %}Les galeries de {{ discipline.name | lower }} sur Artworksdigital : {{ discipline.count }} salle{% if discipline.count != 1 %}s{% endif %} d’artiste{% if discipline.count != 1 %}s{% endif %}, chacune à sa propre adresse, avec son accrochage et sa note d’intention.{% else %}Toutes les galeries d’artistes ouvertes sur Artworksdigital : peinture, dessin, photographie, sculpture, gravure, art numérique. Une salle par artiste, avec son accrochage et son adresse.{% endif %}{% endblock %}
+{% block title %}Galeries d'art en ligne | Artworksdigital{% endblock %}
+{% block description %}Galeries d'art en ligne : découvrez les portfolios artistiques. Peinture, photographie, sculpture, art numérique.{% endblock %}
 {% block robots %}{% if query %}noindex, follow, max-image-preview:large{% else %}index, follow, max-image-preview:large{% endif %}{% endblock %}
 {% block canonical %}{{ canonical_url(here) }}{% endblock %}
 {% block og_image %}{% if shown and shown[0].cover_path %}{{ absolute_media(shown[0].cover_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
