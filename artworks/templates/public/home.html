@@ -5,8 +5,8 @@
 {% block og_image_alt %}{% if triptych %}{{ triptych[0].title }}, {{ triptych[0].artist.display_name }} — Artworksdigital{% else %}Artworksdigital{% endif %}{% endblock %}
 {% block body_class %}home{% endblock %}
 {% block preload %}
-  {#- La première image de l’accueil est aussi son LCP : le navigateur la
-      demande avant d’avoir fini de lire la feuille de style. #}
+  {#- La première image de l'accueil est aussi son LCP : le navigateur la
+      demande avant d'avoir fini de lire la feuille de style. #}
   {%- if triptych %}
   <link rel="preload" as="image" href="{{ media_url(triptych[0].image_path, 960) }}" imagesrcset="{{ media_srcset(triptych[0].image_path, triptych[0].image_w) }}" imagesizes="(max-width: 900px) 33vw, 20vw" fetchpriority="high">
   {%- endif %}
@@ -46,10 +46,10 @@
         }{% if not loop.last %},{% endif %}
         {% endfor %}
       ]
-    }{% if rooms %},\n    {
+    }{% if rooms %},\\n    {
       "@type": "ItemList",
       "@id": {{ (canonical_url('/') ~ '#salles') | tojson }},
-      "name": "Galeries d’artistes ouvertes sur Artworksdigital",
+      "name": "Galeries d'artistes ouvertes sur Artworksdigital",
       "url": {{ canonical_url('/galeries') | tojson }},
       "numberOfItems": {{ rooms | length }},
       "itemListElement": [
@@ -64,12 +64,12 @@
             "name": {{ artist.display_name | tojson }},
             "url": {{ canonical_url(url_for('public.gallery', slug=artist.slug)) | tojson }}{% if artist.discipline %},
             "jobTitle": {{ artist.discipline | tojson }}{% endif %}{% if artist.location %},
-            "homeLocation": {"@type": "Place", "name": {{ artist.location | tojson }}}{% endif %}
+            "homeLocation": {"@type": "Place", "name": {{ artist.location | tojson }}},{% endif %}
           }
         }{% if not loop.last %},{% endif %}
         {% endfor %}
       ]
-    }{% endif %}{% if wall %},\n    {
+    }{% endif %}{% if wall %},\\n    {
       "@type": "ImageGallery",
       "@id": {{ (canonical_url('/') ~ '#mur') | tojson }},
       "name": "Œuvres accrochées en ce moment",

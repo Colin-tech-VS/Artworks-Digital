@@ -156,9 +156,9 @@
             <span class="room-card-cover is-bare" aria-hidden="true"><span>{{ artist.initial }}</span></span>
           {% endif %}
           {% if shots|length > 1 %}
-            {#- Un aperçu de l’accrochage sous la salle : on sait ce qu’on
+            {#- Un aperçu de l'accrochage sous la salle : on sait ce qu'on
                 va voir avant de pousser la porte. Décoratif au sens des
-                lecteurs d’écran — le lien est déjà nommé par le titre. #}
+                lecteurs d'écran — le lien est déjà nommé par le titre. #}
             <span class="room-card-strip" aria-hidden="true">
               {% for work in shots[:3] %}
                 <img src="{{ media_url(work.image_path, 480) }}" alt="" loading="lazy" decoding="async" width="200" height="200">

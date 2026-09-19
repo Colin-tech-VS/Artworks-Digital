@@ -2,7 +2,7 @@
 {#- Porte fermée, cette lettre est le site entier : ni barre, ni pied. Ce que
     la navigation disait, la lettre le dit elle-même — en-tête, actes,
     signature — et le dit assez clairement pour être cité. -#}
-{% block title %}Créer votre portfolio artistique – Artworksdigital{% endblock %}
+{% block title %}Créer votre portfolio artistique en ligne – Artworksdigital{% endblock %}
 {% block description %}Créez facilement votre portfolio artistique en ligne sur Artworksdigital. Accrochez vos œuvres et développez votre visibilité.{% endblock %}
 {% block robots %}index, follow, max-image-preview:large, max-snippet:-1{% endblock %}
 {% block og_title %}Créer votre portfolio artistique en ligne – Artworksdigital{% endblock %}
@@ -104,7 +104,7 @@
     {
       "@type": "ItemList",
       "@id": {{ (canonical_url('/') ~ '#salles') | tojson }},
-      "name": "Galeries d’artistes déjà ouvertes",
+      "name": "Galeries d'artistes déjà ouvertes",
       "url": {{ canonical_url('/galeries') | tojson }},
       "numberOfItems": {{ rooms | length }},
       "itemListElement": [
@@ -252,7 +252,7 @@
   <section class="letter-act" aria-labelledby="letter-offers-title">
     <p class="letter-act-mark" aria-hidden="true">{% if rooms %}V{% else %}IV{% endif %}</p>
     <h2 id="letter-offers-title">Ce que coûtera une salle</h2>
-    <p>Quatre offres, un abonnement mensuel, aucune commission sur vos ventes. On commence gratuitement.</p>
+    <p>Quatre offres, un abonnement mensuel, aucune commission sur les ventes. On commence gratuitement.</p>
     <ul class="letter-offers">
       {% for offer in offers %}
         <li>
