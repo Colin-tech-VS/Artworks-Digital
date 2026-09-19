@@ -3,8 +3,8 @@
     restreint à une discipline. Elles ne diffèrent que par leur titre,
     leur adresse canonique et le jeu de salles reçu. #}
 {% set here = url_for('public.discipline', slug=discipline.slug) if discipline else url_for('public.galleries') %}
-{% block title %}Galeries d'art en ligne – Artworks Digital{% endblock %}
-{% block description %}Découvrez les galeries d'artistes en ligne sur Artworksdigital. Explorez les portfolios artistiques, accrochez des œuvres et découvrez l'art de manière interactive.{% endblock %}
+{% block title %}Galeries d'artistes en ligne – Artworksdigital{% endblock %}
+{% block description %}Découvrez les galeries d'artistes en ligne sur Artworksdigital. Explorez les portfolios artistiques et accrochez des œuvres.{% endblock %}
 {% block robots %}{% if query %}noindex, follow, max-image-preview:large{% else %}index, follow, max-image-preview:large{% endif %}{% endblock %}
 {% block canonical %}{{ canonical_url(here) }}{% endblock %}
 {% block og_image %}{% if shown and shown[0].cover_path %}{{ absolute_media(shown[0].cover_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
@@ -44,8 +44,8 @@
                 "creditText": {{ artist.display_name | tojson }}
               }{% endif %}{% if artist.discipline %},
               "jobTitle": {{ artist.discipline | tojson }},
-              "hasOccupation": {"@type": "Occupation", "name": {{ artist.discipline | tojson }}}{% endif %}{% if artist.location %},
-              "homeLocation": {"@type": "Place", "name": {{ artist.location | tojson }}}{% endif %}
+              "hasOccupation": {"@type": "Occupation", "name": {{ artist.discipline | tojson }}},{% endif %}{% if artist.location %},
+              "homeLocation": {"@type": "Place", "name": {{ artist.location | tojson }}},{% endif %}
             }
           }{% if not loop.last %},{% endif %}
           {% endfor %}
@@ -56,8 +56,9 @@
       "@type": "BreadcrumbList",
       "itemListElement": [
         {"@type": "ListItem", "position": 1, "name": "Accueil", "item": {{ canonical_url('/') | tojson }}},
-        {"@type": "ListItem", "position": 2, "name": "Galeries", "item": {{ canonical_url('/galeries') | tojson }}}{% if discipline %},
-        {"@type": "ListItem", "position": 3, "name": {{ discipline.name | tojson }}, "item": {{ canonical_url(here) | tojson }}}{% endif %}
+        {"@type": "ListItem", "position": 2, "name": "Galeries", "item": {{ canonical_url('/galeries') | tojson }}}
+        {% if discipline %},{% if discipline %},
+        {"@type": "ListItem", "position": 3, "name": {{ discipline.name | tojson }}, "item": {{ canonical_url(here) | tojson }}{% endif %}{% endif %}
       ]
     }
   ]

@@ -2,11 +2,11 @@
 {#- Porte fermée, cette lettre est le site entier : ni barre, ni pied. Ce que
     la navigation disait, la lettre le dit elle-même — en-tête, actes,
     signature — et le dit assez clairement pour être cité. -#}
-{% block title %}Créer votre portfolio artistique en ligne – Artworks Digital{% endblock %}
-{% block description %}Créez facilement votre portfolio artistique en ligne sur Artworksdigital. Accrochez vos œuvres, partagez votre art et développez votre visibilité avec notre plateforme dédiée aux artistes.{% endblock %}
+{% block title %}Créer votre portfolio artistique – Artworksdigital{% endblock %}
+{% block description %}Créez facilement votre portfolio artistique en ligne sur Artworksdigital. Accrochez vos œuvres et développez votre visibilité.{% endblock %}
 {% block robots %}index, follow, max-image-preview:large, max-snippet:-1{% endblock %}
-{% block og_title %}Créer votre portfolio artistique en ligne – Artworks Digital{% endblock %}
-{% block og_description %}Créez facilement votre portfolio artistique en ligne sur Artworksdigital. Accrochez vos œuvres, partagez votre art et développez votre visibilité avec notre plateforme dédiée aux artistes.{% endblock %}
+{% block og_title %}Créer votre portfolio artistique en ligne – Artworksdigital{% endblock %}
+{% block og_description %}Créez facilement votre portfolio artistique en ligne sur Artworksdigital. Accrochez vos œuvres et développez votre visibilité.{% endblock %}
 {% block og_image_width %}1200{% endblock %}
 {% block og_image_height %}630{% endblock %}
 {% block body_class %}letter-page{% endblock %}
@@ -24,7 +24,7 @@
       "@type": "WebPage",
       "@id": {{ (canonical_url('/') ~ '#accueil') | tojson }},
       "url": {{ canonical_url('/') | tojson }},
-      "name": "Créer votre portfolio artistique en ligne – Artworks Digital",
+      "name": "Créer votre portfolio artistique en ligne – Artworksdigital",
       "description": {{ self.description() | tojson }},
       "inLanguage": "fr-FR",
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
@@ -49,7 +49,7 @@
     {
       "@type": "Article",
       "@id": {{ (canonical_url('/') ~ '#lettre') | tojson }},
-      "headline": "Créer votre portfolio artistique en ligne – Artworks Digital",
+      "headline": "Créer votre portfolio artistique en ligne – Artworksdigital",
       "description": "Lettre ouverte aux artistes : pourquoi Artworksdigital a fermé, ce qui revient, et ce que la nouvelle version leur donne.",
       "inLanguage": "fr-FR",
       "datePublished": {{ letter_published | tojson }},
@@ -149,7 +149,7 @@
 
   <section class="letter-act" aria-labelledby="letter-thanks">
     <p class="letter-act-mark" aria-hidden="true">II</p>
-    <h2 id="letter-thanks">Merci d’être restés là</h2>
+    <h2 id="letter-thanks">Merci d'être restés là</h2>
     <p>Vous étiez déjà nombreux à nous avoir fait confiance avant la fermeture.</p>
     <p>Vos œuvres, vos retours et vos messages nous ont montré qu’Artworksdigital avait sa place.</p>
     <p>Nous sommes désolés pour cette interruption et pour le manque de communication pendant cette période.</p>

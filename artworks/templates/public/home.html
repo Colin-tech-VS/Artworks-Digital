@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Artworksdigital — la galerie en ligne de chaque artiste{% endblock %}
-{% block description %}Chaque artiste a sa galerie à son adresse : un accrochage, des cartels, une note d’intention. Pas de marketplace, pas de catalogue partagé. Visitez les salles ouvertes ou ouvrez la vôtre.{% endblock %}
+{% block title %}Galerie d'artiste en ligne – Artworksdigital{% endblock %}
+{% block description %}Créez votre galerie d'artiste en ligne sur Artworksdigital. Accrochez vos œuvres et développez votre visibilité.{% endblock %}
 {% block og_image %}{% if triptych %}{{ absolute_media(triptych[0].image_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
 {% block og_image_alt %}{% if triptych %}{{ triptych[0].title }}, {{ triptych[0].artist.display_name }} — Artworksdigital{% else %}Artworksdigital{% endif %}{% endblock %}
 {% block body_class %}home{% endblock %}
@@ -20,7 +20,7 @@
       "@type": "WebPage",
       "@id": {{ (canonical_url('/') ~ '#accueil') | tojson }},
       "url": {{ canonical_url('/') | tojson }},
-      "name": "Artworksdigital — la galerie en ligne de chaque artiste",
+      "name": "Galerie d'artiste en ligne – Artworksdigital",
       "description": {{ self.description() | tojson }},
       "inLanguage": "fr-FR",
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
@@ -46,8 +46,7 @@
         }{% if not loop.last %},{% endif %}
         {% endfor %}
       ]
-    }{% if rooms %},
-    {
+    }{% if rooms %},\n    {
       "@type": "ItemList",
       "@id": {{ (canonical_url('/') ~ '#salles') | tojson }},
       "name": "Galeries d’artistes ouvertes sur Artworksdigital",
@@ -70,8 +69,7 @@
         }{% if not loop.last %},{% endif %}
         {% endfor %}
       ]
-    }{% endif %}{% if wall %},
-    {
+    }{% endif %}{% if wall %},\n    {
       "@type": "ImageGallery",
       "@id": {{ (canonical_url('/') ~ '#mur') | tojson }},
       "name": "Œuvres accrochées en ce moment",
@@ -106,8 +104,8 @@
 {% block content %}
 <section class="foyer">
   <div class="foyer-say">
-    <p class="eyebrow">Galeries d’artistes</p>
-    <h1>Votre salle.<br>Vos œuvres.<br><em>Rien d’autre.</em></h1>
+    <p class="eyebrow">Galeries d'artistes</p>
+    <h1>Votre salle.<br>Vos œuvres.<br><em>Rien d'autre.</em></h1>
     <p class="lead">
       Artworksdigital n’est ni une marketplace ni une vitrine collective.
       C’est un atelier pour composer <em>votre</em> galerie — une adresse à vous,
@@ -150,7 +148,7 @@
 <section id="a-l-affiche">
   <div class="band">
     <div>
-      <p class="eyebrow">À l’affiche</p>
+      <p class="eyebrow">À l'affiche</p>
       <h2>La salle du moment</h2>
     </div>
     <a class="band-link" href="{{ url_for('public.galleries') }}">Toutes les salles</a>
@@ -235,7 +233,7 @@
   <div class="band">
     <div>
       <p class="eyebrow">Par discipline</p>
-      <h2>Ce qui s’accroche ici</h2>
+      <h2>Ce qui s'accroche ici</h2>
     </div>
   </div>
   <ul class="disciplines">
@@ -261,13 +259,13 @@
   <ol class="steps">
     <li>
       <b>01</b>
-      <h3>L’atelier</h3>
-      <p>Un espace privé pour préparer la salle : nom, discipline, ville, note d’intention, image de fond.</p>
+      <h3>L'atelier</h3>
+      <p>Un espace privé pour préparer la salle : nom, discipline, note d'intention, image de fond.</p>
     </li>
     <li>
       <b>02</b>
-      <h3>L’accrochage</h3>
-      <p>Chaque œuvre a son cartel — titre, année, technique, dimensions — et son visuel. Vous choisissez l’ordre.</p>
+      <h3>L'accrochage</h3>
+      <p>Chaque œuvre a son cartel — titre, année, technique, dimensions — et son visuel. Vous choisissez l'ordre.</p>
     </li>
     <li>
       <b>03</b>
