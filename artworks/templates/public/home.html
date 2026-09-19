@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Galerie d'artiste en ligne – Artworksdigital{% endblock %}
-{% block description %}Créez votre galerie d'artiste en ligne sur Artworksdigital. Accrochez vos œuvres et développez votre visibilité.{% endblock %}
+{% block title %}Artworksdigital – Créer sa galerie d'artiste en ligne | Galeries d'art en ligne{% endblock %}
+{% block description %}Créez votre galerie d'artiste en ligne sur Artworksdigital. Accrochez vos œuvres et développez votre visibilité. Galeries d'art en ligne gratuites, portfolio artistique en ligne.{% endblock %}
 {% block og_image %}{% if triptych %}{{ absolute_media(triptych[0].image_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
 {% block og_image_alt %}{% if triptych %}{{ triptych[0].title }}, {{ triptych[0].artist.display_name }} — Artworksdigital{% else %}Artworksdigital{% endif %}{% endblock %}
 {% block body_class %}home{% endblock %}
@@ -105,7 +105,7 @@
 <section class="foyer">
   <div class="foyer-say">
     <p class="eyebrow">Galeries d'artistes</p>
-    <h1>Votre salle.<br>Vos œuvres.<br><em>Rien d'autre.</em></h1>
+    <h1>Créez votre galerie d'artiste en ligne avec Artworksdigital</h1>
     <p class="lead">
       Artworksdigital n’est ni une marketplace ni une vitrine collective.
       C’est un atelier pour composer <em>votre</em> galerie — une adresse à vous,
