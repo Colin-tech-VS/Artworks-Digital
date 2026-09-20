@@ -4,7 +4,7 @@
     leur adresse canonique et le jeu de salles reçu. #}
 {% set here = url_for('public.discipline', slug=discipline.slug) if discipline else url_for('public.galleries') %}
 {% block title %}Galeries d'art en ligne | Portfolios d'artistes | Artworksdigital - Créer votre galerie d'artiste{% endblock %}
-{% block description %}Découvrez les galeries d'artistes en ligne. Portfolio artistique gratuit, accrochez vos œuvres. Explorez les galeries d'art en ligne pour trouver des artistes et leurs portfolios. Artworksdigital - Plateforme d'art en ligne pour artistes.{% endblock %}
+{% block description %}Découvrez les galeries d'artistes en ligne sur Artworksdigital. Portfolio artistique gratuit, accrochez vos œuvres. Explorez les galeries d'art en ligne pour trouver des artistes et leurs portfolios. Plateforme d'art en ligne pour artistes avec galerie personnalisée.{% endblock %}
 {% block robots %}{% if query %}noindex, follow, max-image-preview:large{% else %}index, follow, max-image-preview:large{% endif %}{% endblock %}
 {% block canonical %}{{ canonical_url(here) }}{% endblock %}
 {% block og_image %}{% if shown and shown[0].cover_path %}{{ absolute_media(shown[0].cover_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
