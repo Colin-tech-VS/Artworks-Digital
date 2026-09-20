@@ -1,11 +1,14 @@
 {% extends "base.html" %}
-{#- Deux pages en un gabarit : le répertoire complet, et le répertoire\n    restreint à une discipline. Elles ne diffèrent que par leur titre,\n    leur adresse canonique et le jeu de salles reçu. #}
+{#- Deux pages en un gabarit : le répertoire complet, et le répertoire
+    restreint à une discipline. Elles ne diffèrent que par leur titre,
+    leur adresse canonique et le jeu de salles reçu. #}
 {% set here = url_for('public.discipline', slug=discipline.slug) if discipline else url_for('public.galleries') %}
-{% block title %}Galeries d'art en ligne | Artworksdigital{% endblock %}
-{% block description %}Découvrez les galeries d'artistes en ligne. Portfolio artistique gratuit, accrochez vos œuvres.{% endblock %}
+{% block title %}Galeries d'art en ligne | Portfolios d'artistes | Artworksdigital{% endblock %}
+{% block description %}Découvrez les galeries d'artistes en ligne. Portfolio artistique gratuit, accrochez vos œuvres. Explorez les galeries d'art en ligne pour trouver des artistes et leurs portfolios.{% endblock %}
 {% block robots %}{% if query %}noindex, follow, max-image-preview:large{% else %}index, follow, max-image-preview:large{% endif %}{% endblock %}
 {% block canonical %}{{ canonical_url(here) }}{% endblock %}
 {% block og_image %}{% if shown and shown[0].cover_path %}{{ absolute_media(shown[0].cover_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
+{% block og_image_alt %}{% if shown and shown[0].cover_path %}Galerie de {{ shown[0].display_name }} — Artworksdigital{% else %}Artworksdigital{% endif %}{% endblock %}
 {% block body_class %}rooms-page{% endblock %}
 {% block jsonld %}
 <script type="application/ld+json">
@@ -96,7 +99,8 @@
     </p>
   </form>
   {% if disciplines and not discipline %}
-    {#- Les puces filtrent tout de suite, sans recharger ; le lien « voir la\n        page » sous chacune mène à l’adresse indexable de la discipline. #}
+    {#- Les puces filtrent tout de suite, sans recharger ; le lien « voir la
+        page » sous chacune mène à l’adresse indexable de la discipline. #}
     <p class="room-chips" data-room-chips>
       <button type="button" class="is-on" data-discipline="">Toutes</button>
       {% for row in disciplines %}
@@ -153,7 +157,9 @@
             <span class="room-card-cover is-bare" aria-hidden="true"><span>{{ artist.initial }}</span></span>
           {% endif %}
           {% if shots|length > 1 %}
-            {#- Un aperçu de l'accrochage sous la salle : on sait ce qu'on\n                va voir avant de pousser la porte. Décoratif au sens des\n                lecteurs d'écran — le lien est déjà nommé par le titre. #}
+            {#- Un aperçu de l'accrochage sous la salle : on sait ce qu'on
+                va voir avant de pousser la porte. Décoratif au sens des
+                lecteurs d'écran — le lien est déjà nommé par le titre. #}
             <span class="room-card-strip" aria-hidden="true">
               {% for work in shots[:3] %}
                 <img src="{{ media_url(work.image_path, 480) }}" alt="" loading="lazy" decoding="async" width="200" height="200">

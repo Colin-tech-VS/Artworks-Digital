@@ -1,11 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Galerie d'artiste en ligne | Artworksdigital{% endblock %}
-{% block description %}Créez votre galerie d'artiste en ligne. Portfolio artistique gratuit, accrochez vos œuvres.{% endblock %}
+{% block title %}Artworks Digital – Galeries d'art en ligne | Portfolios d'artistes{% endblock %}
+{% block description %}Découvrez les galeries d'art en ligne sur Artworksdigital. Créez votre galerie, accrochez vos œuvres et partagez votre art avec le monde. Trouvez facilement des galeries d'artistes pour votre travail.{% endblock %}
 {% block og_image %}{% if triptych %}{{ absolute_media(triptych[0].image_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
 {% block og_image_alt %}{% if triptych %}{{ triptych[0].title }}, {{ triptych[0].artist.display_name }} — Artworksdigital{% else %}Artworksdigital{% endif %}{% endblock %}
 {% block body_class %}home{% endblock %}
 {% block preload %}
-  {#- La première image de l'accueil est aussi son LCP : le navigateur la\n      demande avant d'avoir fini de lire la feuille de style. #}
+  {#- La première image de l'accueil est aussi son LCP : le navigateur la
+      demande avant d'avoir fini de lire la feuille de style. #}
   {%- if triptych %}
   <link rel="preload" as="image" href="{{ media_url(triptych[0].image_path, 960) }}" imagesrcset="{{ media_srcset(triptych[0].image_path, triptych[0].image_w) }}" imagesizes="(max-width: 900px) 33vw, 20vw" fetchpriority="high">
   {%- endif %}
@@ -19,7 +20,7 @@
       "@type": "WebPage",
       "@id": {{ (canonical_url('/') ~ '#accueil') | tojson }},
       "url": {{ canonical_url('/') | tojson }},
-      "name": "Galerie d'artiste en ligne – Artworksdigital",
+      "name": "Artworks Digital – Galeries d'art en ligne | Portfolios d'artistes",
       "description": {{ self.description() | tojson }},
       "inLanguage": "fr-FR",
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
@@ -45,7 +46,7 @@
         }{% if not loop.last %},{% endif %}
         {% endfor %}
       ]
-    }{% if rooms %},\\n    {
+    }{% if rooms %},\\\\n    {
       "@type": "ItemList",
       "@id": {{ (canonical_url('/') ~ '#salles') | tojson }},
       "name": "Galeries d'artistes ouvertes sur Artworksdigital",
@@ -68,7 +69,7 @@
         }{% if not loop.last %},{% endif %}
         {% endfor %}
       ]
-    }{% endif %}{% if wall %},\\\\n    {
+    }{% endif %}{% if wall %},\\\\\\\\n    {
       "@type": "ImageGallery",
       "@id": {{ (canonical_url('/') ~ '#mur') | tojson }},
       "name": "Œuvres accrochées en ce moment",
