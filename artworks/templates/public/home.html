@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Artworks Digital – Plateforme d'art en ligne | Galeries d'art en ligne{% endblock %}
-{% block description %}Artworks Digital est la plateforme d'art en ligne pour créer votre galerie d'artiste. Accrochez vos œuvres, partagez votre art et trouvez facilement des galeries d'artistes. Plateforme d'art en ligne pour artistes.{% endblock %}
+{% block title %}Artworksdigital - Créer une galerie d'artiste en ligne | Galeries d'art en ligne{% endblock %}
+{% block description %}Artworksdigital est la plateforme d'art en ligne pour créer votre galerie d'artiste. Accrochez vos œuvres, partagez votre art et trouvez facilement des galeries d'artistes. Plateforme d'art en ligne pour artistes.{% endblock %}
 {% block og_image %}{% if triptych %}{{ absolute_media(triptych[0].image_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
 {% block og_image_alt %}{% if triptych %}{{ triptych[0].title }}, {{ triptych[0].artist.display_name }} — Artworksdigital{% else %}Artworksdigital{% endif %}{% endblock %}
 {% block body_class %}home{% endblock %}
@@ -20,7 +20,7 @@
       "@type": "WebPage",
       "@id": {{ (canonical_url('/') ~ '#accueil') | tojson }},
       "url": {{ canonical_url('/') | tojson }},
-      "name": "Artworks Digital – Plateforme d'art en ligne | Galeries d'art en ligne",
+      "name": "Artworksdigital - Créer une galerie d'artiste en ligne | Galeries d'art en ligne",
       "description": {{ self.description() | tojson }},
       "inLanguage": "fr-FR",
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
@@ -46,7 +46,7 @@
         }{% if not loop.last %},{% endif %}
         {% endfor %}
       ]
-    }{% if rooms %},\\
+    }{% if rooms %},\
     {
       "@type": "ItemList",
       "@id": {{ (canonical_url('/') ~ '#salles') | tojson }},
@@ -70,7 +70,7 @@
         }{% if not loop.last %},{% endif %}
         {% endfor %}
       ]
-    }{% endif %}{% if wall %},\\
+    }{% endif %}{% if wall %},\
     {
       "@type": "ImageGallery",
       "@id": {{ (canonical_url('/') ~ '#mur') | tojson }},
