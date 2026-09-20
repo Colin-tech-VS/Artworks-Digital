@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Artworks Digital – Galeries d'art en ligne | Portfolios d'artistes{% endblock %}
-{% block description %}Découvrez les galeries d'art en ligne sur Artworksdigital. Créez votre galerie, accrochez vos œuvres et partagez votre art avec le monde. Trouvez facilement des galeries d'artistes pour votre travail. Artworks vous permet de créer votre portfolio artistique en ligne.{% endblock %}
+{% block title %}Artworks Digital – Plateforme d'art en ligne | Galeries d'art en ligne{% endblock %}
+{% block description %}Artworks Digital est la plateforme d'art en ligne pour créer votre galerie d'artiste. Accrochez vos œuvres, partagez votre art et trouvez facilement des galeries d'artistes. Plateforme d'art en ligne pour artistes.{% endblock %}
 {% block og_image %}{% if triptych %}{{ absolute_media(triptych[0].image_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
 {% block og_image_alt %}{% if triptych %}{{ triptych[0].title }}, {{ triptych[0].artist.display_name }} — Artworksdigital{% else %}Artworksdigital{% endif %}{% endblock %}
 {% block body_class %}home{% endblock %}
@@ -20,7 +20,7 @@
       "@type": "WebPage",
       "@id": {{ (canonical_url('/') ~ '#accueil') | tojson }},
       "url": {{ canonical_url('/') | tojson }},
-      "name": "Artworks Digital – Galeries d'art en ligne | Portfolios d'artistes",
+      "name": "Artworks Digital – Plateforme d'art en ligne | Galeries d'art en ligne",
       "description": {{ self.description() | tojson }},
       "inLanguage": "fr-FR",
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
@@ -46,7 +46,8 @@
         }{% if not loop.last %},{% endif %}
         {% endfor %}
       ]
-    }{% if rooms %},\\\\\\\\n    {
+    }{% if rooms %},\\
+    {
       "@type": "ItemList",
       "@id": {{ (canonical_url('/') ~ '#salles') | tojson }},
       "name": "Galeries d'artistes ouvertes sur Artworksdigital",
@@ -69,7 +70,8 @@
         }{% if not loop.last %},{% endif %}
         {% endfor %}
       ]
-    }{% endif %}{% if wall %},\\\\\\\\\\\\\\\\n    {
+    }{% endif %}{% if wall %},\\
+    {
       "@type": "ImageGallery",
       "@id": {{ (canonical_url('/') ~ '#mur') | tojson }},
       "name": "Œuvres accrochées en ce moment",
@@ -127,9 +129,9 @@
                    srcset="{{ media_srcset(work.image_path, work.image_w) }}"
                    sizes="(max-width: 900px) 33vw, 20vw"
                    alt="{{ work.title }}, {{ work.artist.display_name }}{% if work.year %}, {{ work.year }}{% endif %}"
-                   {% if loop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
+                   {% if loop.first %}fetchpriority="high" {% else %}loading="lazy" {% endif %}
                    decoding="async"
-                   {%- if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
+                   {%- if (work.image_w or 0) > 0 %} width="{{ work.image_w }}\" height="{{ work.image_h }}\"{% endif %}>
             </figure>
             <span class="tag-line">
               <strong>{{ work.title }}</strong>
@@ -214,7 +216,7 @@
                  sizes="(max-width: 640px) 92vw, (max-width: 1100px) 46vw, 22vw"
                  alt="{{ work.title }}, {{ work.artist.display_name }}{% if work.year %}, {{ work.year }}{% endif %}{% if work.medium %} — {{ work.medium }}{% endif %}"
                  loading="lazy" decoding="async"
-                 {%- if (work.image_w or 0) > 0 %} width="{{ work.image_w }}" height="{{ work.image_h }}"{% endif %}>
+                 {%- if (work.image_w or 0) > 0 %} width="{{ work.image_w }}\" height="{{ work.image_h }}\"{% endif %}>
           </figure>
           <span class="tag-line">
             <strong>{{ work.title }}</strong>

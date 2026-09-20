@@ -40,7 +40,7 @@ SITE_FAQ = (
         "q": "Qu’est-ce qu’Artworksdigital ?",
         "a": (
             "Artworksdigital ouvre à chaque artiste une galerie qui lui appartient : "
-            "un atelier privé pour préparer la salle, une adresse publique pour la "
+            "un atelier privé pour composer la salle, une adresse publique pour la "
             "montrer. Ce n’est ni une marketplace, ni une vitrine collective."
         ),
     },
@@ -139,6 +139,26 @@ def home():
         wall=wall_works(rooms, limit=12, per_room=2),
         disciplines=disciplines_index(rooms)[:8],
         faq=SITE_FAQ[:4],
+    )
+
+
+@public_bp.route("/creer-portfolio-artistique-enligne")
+def create_portfolio():
+    """Page pour créer un portfolio artistique en ligne."""
+    g.track_title = "Créer un portfolio artistique en ligne | Artworksdigital"
+    return render_template(
+        "public/create_portfolio.html",
+        faq=SITE_FAQ
+    )
+
+
+@public_bp.route("/comment-trouver-une-galerie-d-art-pour-votre-travail")
+def how_to_find_gallery():
+    """Page de guide pour trouver une galerie d'art pour votre travail."""
+    g.track_title = "Comment trouver une galerie d'art pour votre travail"
+    return render_template(
+        "public/how_to_find_gallery.html",
+        faq=SITE_FAQ
     )
 
 
