@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Artworks Digital – Galeries d'art en ligne | Portfolios d'artistes{% endblock %}
-{% block description %}Découvrez les galeries d'art en ligne sur Artworksdigital. Créez votre galerie, accrochez vos œuvres et partagez votre art avec le monde. Trouvez facilement des galeries d'artistes pour votre travail.{% endblock %}
+{% block description %}Découvrez les galeries d'art en ligne sur Artworksdigital. Créez votre galerie, accrochez vos œuvres et partagez votre art avec le monde. Trouvez facilement des galeries d'artistes pour votre travail. Artworks vous permet de créer votre portfolio artistique en ligne.{% endblock %}
 {% block og_image %}{% if triptych %}{{ absolute_media(triptych[0].image_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
 {% block og_image_alt %}{% if triptych %}{{ triptych[0].title }}, {{ triptych[0].artist.display_name }} — Artworksdigital{% else %}Artworksdigital{% endif %}{% endblock %}
 {% block body_class %}home{% endblock %}
@@ -46,7 +46,7 @@
         }{% if not loop.last %},{% endif %}
         {% endfor %}
       ]
-    }{% if rooms %},\\\\n    {
+    }{% if rooms %},\\\\\\\\n    {
       "@type": "ItemList",
       "@id": {{ (canonical_url('/') ~ '#salles') | tojson }},
       "name": "Galeries d'artistes ouvertes sur Artworksdigital",
@@ -69,7 +69,7 @@
         }{% if not loop.last %},{% endif %}
         {% endfor %}
       ]
-    }{% endif %}{% if wall %},\\\\\\\\n    {
+    }{% endif %}{% if wall %},\\\\\\\\\\\\\\\\n    {
       "@type": "ImageGallery",
       "@id": {{ (canonical_url('/') ~ '#mur') | tojson }},
       "name": "Œuvres accrochées en ce moment",
@@ -105,7 +105,7 @@
 <section class="foyer">
   <div class="foyer-say">
     <p class="eyebrow">Galeries d'artistes</p>
-    <h1>Créez votre galerie d'artiste en ligne avec Artworksdigital</h1>
+    <h1>Comment trouver une galerie d'art pour votre travail avec Artworks</h1>
     <p class="lead">
       Artworksdigital n’est ni une marketplace ni une vitrine collective.
       C’est un atelier pour composer <em>votre</em> galerie — une adresse à vous,
