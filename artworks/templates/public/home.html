@@ -1,12 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Artworksdigital – Créer sa galerie d'artiste en ligne | Galeries d'art en ligne{% endblock %}
-{% block description %}Créez votre galerie d'artiste en ligne sur Artworksdigital. Accrochez vos œuvres et développez votre visibilité. Galeries d'art en ligne gratuites, portfolio artistique en ligne.{% endblock %}
+{% block title %}Galerie d'artiste en ligne | Artworksdigital{% endblock %}
+{% block description %}Créez votre galerie d'artiste en ligne. Portfolio artistique gratuit, accrochez vos œuvres.{% endblock %}
 {% block og_image %}{% if triptych %}{{ absolute_media(triptych[0].image_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
 {% block og_image_alt %}{% if triptych %}{{ triptych[0].title }}, {{ triptych[0].artist.display_name }} — Artworksdigital{% else %}Artworksdigital{% endif %}{% endblock %}
 {% block body_class %}home{% endblock %}
 {% block preload %}
-  {#- La première image de l'accueil est aussi son LCP : le navigateur la
-      demande avant d'avoir fini de lire la feuille de style. #}
+  {#- La première image de l'accueil est aussi son LCP : le navigateur la\n      demande avant d'avoir fini de lire la feuille de style. #}
   {%- if triptych %}
   <link rel="preload" as="image" href="{{ media_url(triptych[0].image_path, 960) }}" imagesrcset="{{ media_srcset(triptych[0].image_path, triptych[0].image_w) }}" imagesizes="(max-width: 900px) 33vw, 20vw" fetchpriority="high">
   {%- endif %}
@@ -69,7 +68,7 @@
         }{% if not loop.last %},{% endif %}
         {% endfor %}
       ]
-    }{% endif %}{% if wall %},\\n    {
+    }{% endif %}{% if wall %},\\\\n    {
       "@type": "ImageGallery",
       "@id": {{ (canonical_url('/') ~ '#mur') | tojson }},
       "name": "Œuvres accrochées en ce moment",
@@ -133,7 +132,7 @@
             </figure>
             <span class="tag-line">
               <strong>{{ work.title }}</strong>
-              <span class="by">{{ work.artist.display_name }}</span>
+              <span class="by"> {{ work.artist.display_name }}</span>
             </span>
           </a>
         </li>
