@@ -3,7 +3,7 @@
     restreint à une discipline. Elles ne diffèrent que par leur titre,
     leur adresse canonique et le jeu de salles reçu. #}
 {% set here = url_for('public.discipline', slug=discipline.slug) if discipline else url_for('public.galleries') %}
-{% block title %}Galeries d'art en ligne – Artworks Digital | Portfolios d'artistes{% endblock %}
+{% block title %}Galeries d'art en ligne | Art digital | Portfolio artistique{% endblock %}
 {% block description %}Découvrez les galeries d'artistes en ligne sur Artworksdigital. Portfolio artistique gratuit, accrochez vos œuvres. Explorez les galeries d'art en ligne pour trouver des artistes et leurs portfolios. Plateforme d'art en ligne pour artistes avec galerie personnalisée.{% endblock %}
 {% block robots %}{% if query %}noindex, follow, max-image-preview:large{% else %}index, follow, max-image-preview:large{% endif %}{% endblock %}
 {% block canonical %}{{ canonical_url(here) }}{% endblock %}
@@ -100,7 +100,7 @@
   </form>
   {% if disciplines and not discipline %}
     {#- Les puces filtrent tout de suite, sans recharger ; le lien « voir la
-        page » sous chacune mène à l’adresse indexable de la discipline. #}
+        page » sous chacune mène à l'adresse indexable de la discipline. #}
     <p class="room-chips" data-room-chips>
       <button type="button" class="is-on" data-discipline="">Toutes</button>
       {% for row in disciplines %}

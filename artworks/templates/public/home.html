@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Artworksdigital - Créer une galerie d'artiste en ligne | Galeries d'art en ligne{% endblock %}
+{% block title %}Art digital en ligne | Portfolio artistique | Galeries d'art en ligne{% endblock %}
 {% block description %}Créez votre galerie d'artiste en ligne sur Artworksdigital. Plateforme d'art en ligne pour artistes avec galerie personnalisée, accrochage d'œuvres et note d'intention. Galeries d'artistes en ligne gratuites. Comment trouver une galerie d'art pour votre travail.{% endblock %}
 {% block og_image %}{% if triptych %}{{ absolute_media(triptych[0].image_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
 {% block og_image_alt %}{% if triptych %}{{ triptych[0].title }}, {{ triptych[0].artist.display_name }} — Artworksdigital{% else %}Artworksdigital{% endif %}{% endblock %}
@@ -20,7 +20,7 @@
       "@type": "WebPage",
       "@id": {{ (canonical_url('/') ~ '#accueil') | tojson }},
       "url": {{ canonical_url('/') | tojson }},
-      "name": "Artworksdigital - Créer une galerie d'artiste en ligne | Galeries d'art en ligne",
+      "name": "Art digital en ligne | Portfolio artistique | Galeries d'art en ligne",
       "description": {{ self.description() | tojson }},
       "inLanguage": "fr-FR",
       "isPartOf": {"@id": {{ (canonical_url('/') ~ '#site') | tojson }}},
