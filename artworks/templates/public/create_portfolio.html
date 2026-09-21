@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Créer un portfolio artistique en ligne | Artworksdigital - Plateforme d'art en ligne{% endblock %}
-{% block description %}Apprenez à créer votre portfolio artistique en ligne sur Artworksdigital. Plateforme d'art en ligne pour artistes avec galerie d'artiste personnalisée, accrochage d'œuvres et note d'intention. Créer une galerie d'artiste en ligne.{% endblock %}
+{% block description %}Apprenez à créer votre portfolio artistique en ligne sur Artworksdigital. Plateforme d'art en ligne pour artistes avec galerie d'artiste personnalisée, accrochage d'œuvres et note d'intention. Créer une galerie d'artiste en ligne. Comment trouver une galerie d'art pour votre travail.{% endblock %}
 {% block robots %}index, follow, max-image-preview:large{% endblock %}
 {% block canonical %}{{ canonical_url() }}{% endblock %}
 {% block og_image %}{{ default_og_image }}{% endblock %}
@@ -62,6 +62,7 @@
   <p class="lead">
     Artworksdigital vous permet de créer votre propre galerie d'artiste en ligne 
     avec une adresse personnalisée, un accrochage de vos œuvres et une note d'intention.
+    <strong>Comment trouver une galerie d'art pour votre travail ?</strong>
   </p>
 </section>
 
@@ -135,6 +136,7 @@
     <h2>Prêt à créer votre portfolio ?</h2>
     <p>
       Rejoignez des milliers d'artistes qui ont déjà créé leur galerie sur Artworksdigital.
+      <strong>Comment trouver une galerie d'art pour votre travail ?</strong>
     </p>
     <a class="btn btn-ink" href="{{ url_for('auth.register') }}">Ouvrir mon atelier</a>
     <a class="btn btn-ghost" href="{{ url_for('public.galleries') }}">Explorer les galeries</a>

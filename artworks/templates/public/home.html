@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Artworksdigital - Créer une galerie d'artiste en ligne | Galeries d'art en ligne{% endblock %}
-{% block description %}Créez votre galerie d'artiste en ligne sur Artworksdigital. Plateforme d'art en ligne pour artistes avec galerie personnalisée, accrochage d'œuvres et note d'intention. Galeries d'artistes en ligne gratuites.{% endblock %}
+{% block description %}Créez votre galerie d'artiste en ligne sur Artworksdigital. Plateforme d'art en ligne pour artistes avec galerie personnalisée, accrochage d'œuvres et note d'intention. Galeries d'artistes en ligne gratuites. Comment trouver une galerie d'art pour votre travail.{% endblock %}
 {% block og_image %}{% if triptych %}{{ absolute_media(triptych[0].image_path) }}{% else %}{{ default_og_image }}{% endif %}{% endblock %}
 {% block og_image_alt %}{% if triptych %}{{ triptych[0].title }}, {{ triptych[0].artist.display_name }} — Artworksdigital{% else %}Artworksdigital{% endif %}{% endblock %}
 {% block body_class %}home{% endblock %}
@@ -112,6 +112,7 @@
       Artworksdigital n’est ni une marketplace ni une vitrine collective.
       C’est un atelier pour composer <em>votre</em> galerie — une adresse à vous,
       un accrochage que vous décidez, une note d’intention qui vous ressemble.
+      <strong>Créez votre galerie d'artiste en ligne avec Artworksdigital</strong>.
     </p>
     <div class="hero-actions">
       <a class="btn btn-ink" href="{{ url_for('auth.register') }}">Ouvrir mon atelier</a>
@@ -275,6 +276,29 @@
       <p>Vous publiez. Les visiteurs entrent dans <em>votre</em> salle, à <span class="nowrap">/galerie/votre-nom</span>, et vous écrivent depuis là.</p>
     </li>
   </ol>
+</section>
+
+<section id="pourquoi">
+  <div class="band">
+    <div>
+      <p class="eyebrow">Pourquoi choisir Artworksdigital ?</p>
+      <h2>Créez votre galerie d'artiste en ligne</h2>
+    </div>
+  </div>
+  <div class="why-content">
+    <div class="why-item">
+      <h3>Création facile</h3>
+      <p>Créez votre galerie d'artiste en ligne en quelques clics. Aucune compétence technique n'est requise.</p>
+    </div>
+    <div class="why-item">
+      <h3>Portfolios personnalisés</h3>
+      <p>Personnalisez votre galerie avec votre propre design, votre note d'intention et vos œuvres.</p>
+    </div>
+    <div class="why-item">
+      <h3>Accès global</h3>
+      <p>Votre galerie est accessible à tous, partout dans le monde, à tout moment.</p>
+    </div>
+  </div>
 </section>
 
 {% include "_faq.html" %}

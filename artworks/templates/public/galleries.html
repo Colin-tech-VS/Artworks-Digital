@@ -3,7 +3,7 @@
     restreint à une discipline. Elles ne diffèrent que par leur titre,
     leur adresse canonique et le jeu de salles reçu. #}
 {% set here = url_for('public.discipline', slug=discipline.slug) if discipline else url_for('public.galleries') %}
-{% block title %}Galeries d'art en ligne | Portfolios d'artistes | Artworksdigital - Créer votre galerie d'artiste{% endblock %}
+{% block title %}Galeries d'art en ligne – Artworks Digital | Portfolios d'artistes{% endblock %}
 {% block description %}Découvrez les galeries d'artistes en ligne sur Artworksdigital. Portfolio artistique gratuit, accrochez vos œuvres. Explorez les galeries d'art en ligne pour trouver des artistes et leurs portfolios. Plateforme d'art en ligne pour artistes avec galerie personnalisée.{% endblock %}
 {% block robots %}{% if query %}noindex, follow, max-image-preview:large{% else %}index, follow, max-image-preview:large{% endif %}{% endblock %}
 {% block canonical %}{{ canonical_url(here) }}{% endblock %}
@@ -43,7 +43,7 @@
                 "contentUrl": {{ absolute_media(artist.cover_path) | tojson }},
                 "caption": {{ ('Galerie de ' ~ artist.display_name) | tojson }},
                 "creditText": {{ artist.display_name | tojson }}
-              }{% endif %}{% if artist.discipline %},
+              }{% endif %}{% if artist.discipline %}, 
               "jobTitle": {{ artist.discipline | tojson }},
               "hasOccupation": {"@type": "Occupation", "name": {{ artist.discipline | tojson }}},{% endif %}{% if artist.location %},
               "homeLocation": {"@type": "Place", "name": {{ artist.location | tojson }}},{% endif %}
